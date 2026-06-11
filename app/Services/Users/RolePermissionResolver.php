@@ -31,6 +31,8 @@ class RolePermissionResolver
                 'admin.taxonomy.view' => 'Taxonomy',
                 'admin.sections-studio.view' => 'Sections Studio',
                 'admin.media-library.view' => 'Media Library',
+                'admin.media-library.upload' => 'Upload media assets',
+                'admin.media-library.update' => 'Update media metadata',
                 'admin.comment-moderation.view' => 'Comment Moderation',
                 'admin.seo-growth-center.view' => 'SEO Growth Center',
             ],

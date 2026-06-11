@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
+use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -153,9 +154,22 @@ Route::prefix('dashboard')
             ->middleware('can:admin.locale-launch-center.publish')
             ->name('admin.locale-launch-center.status');
 
+        Route::get('media-library', [MediaLibraryController::class, 'index'])
+            ->middleware('can:admin.media-library.view')
+            ->name('admin.media-library.index');
+        Route::post('media-library', [MediaLibraryController::class, 'store'])
+            ->middleware('can:admin.media-library.upload')
+            ->name('admin.media-library.store');
+        Route::get('media-library/{mediaAsset}', [MediaLibraryController::class, 'edit'])
+            ->middleware('can:admin.media-library.view')
+            ->name('admin.media-library.edit');
+        Route::put('media-library/{mediaAsset}', [MediaLibraryController::class, 'update'])
+            ->middleware('can:admin.media-library.update')
+            ->name('admin.media-library.update');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.media-library.index'], true)) {
                     continue;
                 }
 
