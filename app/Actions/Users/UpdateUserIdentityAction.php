@@ -4,11 +4,14 @@ namespace App\Actions\Users;
 
 use App\Events\UserIdentityUpdated;
 use App\Models\User;
+use App\Services\Users\UserAuditLogger;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class UpdateUserIdentityAction
 {
+    public function __construct(private readonly UserAuditLogger $audit) {}
+
     /**
      * @param  array<string, mixed>  $identity
      */
@@ -31,6 +34,10 @@ class UpdateUserIdentityAction
                 ->all();
 
             if ($changes !== []) {
+                $this->audit->record($actor, $user, 'user.identity_updated', [
+                    'changed_keys' => array_keys($changes),
+                ]);
+
                 UserIdentityUpdated::dispatch($actor, $user, $changes);
             }
 

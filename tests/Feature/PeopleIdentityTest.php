@@ -139,6 +139,11 @@ class PeopleIdentityTest extends TestCase
             'role' => 'member',
             'status' => 'active',
         ]);
+        $this->assertDatabaseHas('user_audit_events', [
+            'actor_id' => $admin->id,
+            'subject_id' => $member->id,
+            'event' => 'user.identity_updated',
+        ]);
 
         Event::assertDispatched(UserIdentityUpdated::class, fn (UserIdentityUpdated $event): bool => $event->actor->is($admin)
             && $event->subject->is($member)

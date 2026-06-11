@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -94,9 +95,13 @@ Route::prefix('dashboard')
         Route::put('settings/legal', [SettingsController::class, 'updateLegal'])->middleware('can:admin.settings.manage')->name('admin.settings.legal.update');
         Route::delete('settings/{group}', [SettingsController::class, 'reset'])->middleware('can:admin.settings.manage')->name('admin.settings.reset');
 
+        Route::get('activity-audit-logs', AuditLogController::class)
+            ->middleware('can:admin.activity-audit-logs.view')
+            ->name('admin.activity-audit-logs.index');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index'], true)) {
                     continue;
                 }
 

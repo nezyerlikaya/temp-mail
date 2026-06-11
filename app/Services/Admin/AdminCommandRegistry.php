@@ -109,6 +109,7 @@ class AdminCommandRegistry
             'Security Defense Center',
             'People & Identity',
             'Roles & Permissions',
+            'Activity & Audit Logs',
             'Theme Launch Center',
             'Typography Center',
             'Update Center',
@@ -132,6 +133,7 @@ class AdminCommandRegistry
             'Typography Center' => ['font', 'typography', 'typeface'],
             'People & Identity' => ['user', 'people', 'identity', 'account'],
             'Roles & Permissions' => ['role', 'permission', 'access', 'admin'],
+            'Activity & Audit Logs' => ['audit', 'activity', 'log', 'compliance', 'security'],
             'Settings' => ['settings', 'system', 'general', 'maintenance', 'legal'],
             default => str($label)->lower()->explode(' ')->all(),
         };
