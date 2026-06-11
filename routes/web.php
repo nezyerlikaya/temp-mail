@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -105,9 +106,22 @@ Route::prefix('dashboard')
             ->middleware('can:admin.activity-audit-logs.manage-retention')
             ->name('admin.activity-audit-logs.retention.update');
 
+        Route::get('backups-health', [BackupController::class, 'index'])
+            ->middleware('can:admin.backups-health.view')
+            ->name('admin.backups-health.index');
+        Route::post('backups-health', [BackupController::class, 'store'])
+            ->middleware('can:admin.backups-health.create')
+            ->name('admin.backups-health.store');
+        Route::get('backups-health/{backup}/download', [BackupController::class, 'download'])
+            ->middleware('can:admin.backups-health.download')
+            ->name('admin.backups-health.download');
+        Route::delete('backups-health/{backup}', [BackupController::class, 'destroy'])
+            ->middleware('can:admin.backups-health.delete')
+            ->name('admin.backups-health.destroy');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index'], true)) {
                     continue;
                 }
 

@@ -65,6 +65,9 @@ class RolePermissionResolver
                 'admin.notifications.view' => 'Notifications',
                 'admin.email-templates.view' => 'Email Templates',
                 'admin.backups-health.view' => 'Backups & Health',
+                'admin.backups-health.create' => 'Create backups',
+                'admin.backups-health.download' => 'Download backups',
+                'admin.backups-health.delete' => 'Delete backups',
                 'admin.settings.view' => 'Settings',
                 'admin.settings.manage' => 'Update global settings',
             ],
@@ -74,6 +77,10 @@ class RolePermissionResolver
     public function allows(User $user, string $ability): bool
     {
         $role = $this->roleFor($user);
+
+        if (in_array($ability, $this->ownerOnlyAbilities(), true)) {
+            return $role === UserRole::Owner;
+        }
 
         if (in_array($role, [UserRole::Owner, UserRole::Admin], true)) {
             return str_starts_with($ability, 'admin.');
@@ -159,10 +166,23 @@ class RolePermissionResolver
 
     private function allowsRole(UserRole $role, string $ability): bool
     {
+        if (in_array($ability, $this->ownerOnlyAbilities(), true)) {
+            return $role === UserRole::Owner;
+        }
+
         if (in_array($role, [UserRole::Owner, UserRole::Admin], true)) {
             return str_starts_with($ability, 'admin.');
         }
 
         return in_array($ability, $this->grants()[$role->value] ?? [], true);
+    }
+
+    /** @return array<int, string> */
+    private function ownerOnlyAbilities(): array
+    {
+        return [
+            'admin.backups-health.download',
+            'admin.backups-health.delete',
+        ];
     }
 }
