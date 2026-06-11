@@ -1,4 +1,4 @@
-@props(['events'])
+@props(['events', 'diffs' => []])
 
 <div class="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
     <div class="overflow-x-auto">
@@ -14,7 +14,7 @@
             </thead>
             <tbody class="divide-y divide-stone-200">
                 @foreach ($events as $event)
-                    <x-audit.feed-item :event="$event" />
+                    <x-audit.feed-item :event="$event" :diff-rows="$diffs[$event->id] ?? []" />
                 @endforeach
             </tbody>
         </table>

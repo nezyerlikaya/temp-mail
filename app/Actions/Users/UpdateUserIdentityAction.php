@@ -36,6 +36,7 @@ class UpdateUserIdentityAction
             if ($changes !== []) {
                 $this->audit->record($actor, $user, 'user.identity_updated', [
                     'changed_keys' => array_keys($changes),
+                    'changes' => $changes,
                 ]);
 
                 UserIdentityUpdated::dispatch($actor, $user, $changes);

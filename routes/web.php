@@ -95,9 +95,15 @@ Route::prefix('dashboard')
         Route::put('settings/legal', [SettingsController::class, 'updateLegal'])->middleware('can:admin.settings.manage')->name('admin.settings.legal.update');
         Route::delete('settings/{group}', [SettingsController::class, 'reset'])->middleware('can:admin.settings.manage')->name('admin.settings.reset');
 
-        Route::get('activity-audit-logs', AuditLogController::class)
+        Route::get('activity-audit-logs', [AuditLogController::class, 'index'])
             ->middleware('can:admin.activity-audit-logs.view')
             ->name('admin.activity-audit-logs.index');
+        Route::get('activity-audit-logs/export', [AuditLogController::class, 'export'])
+            ->middleware('can:admin.activity-audit-logs.export')
+            ->name('admin.activity-audit-logs.export');
+        Route::put('activity-audit-logs/retention', [AuditLogController::class, 'updateRetention'])
+            ->middleware('can:admin.activity-audit-logs.manage-retention')
+            ->name('admin.activity-audit-logs.retention.update');
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {

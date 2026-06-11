@@ -20,6 +20,8 @@ class AuditLogFilterRequest extends FormRequest
             'actor' => ['nullable', 'string', 'max:120'],
             'action' => ['nullable', 'string', 'max:120'],
             'severity' => ['nullable', Rule::in(['info', 'warning', 'critical'])],
+            'target_type' => ['nullable', 'string', 'max:180'],
+            'correlation_id' => ['nullable', 'string', 'max:120'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ];

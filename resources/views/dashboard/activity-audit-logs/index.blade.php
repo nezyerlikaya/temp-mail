@@ -11,6 +11,10 @@
 
     <x-error-summary />
 
+    @if (session('status'))
+        <x-admin.alert variant="success" class="mb-6">{{ session('status') }}</x-admin.alert>
+    @endif
+
     <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Audit summary">
         @foreach ([
             ['label' => 'Events', 'value' => $summary['total']],
@@ -25,9 +29,20 @@
         @endforeach
     </section>
 
-    <x-admin.card title="Search and filters" description="Filter audit activity without changing the underlying records. Secret fields are masked before storage.">
-        <x-audit.filter-bar :filters="$filters" :options="$filterOptions" />
-    </x-admin.card>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div class="space-y-6">
+            <x-admin.card title="Search and filters" description="Filter audit activity without changing the underlying records. Secret fields are masked before storage.">
+                <x-audit.filter-bar :filters="$filters" :options="$filterOptions" />
+            </x-admin.card>
+
+            <x-audit.tamper-warning :readiness="$tamperReadiness" />
+        </div>
+
+        <div class="space-y-6">
+            <x-audit.export-panel :filters="$filters" :can-export="$canExport" />
+            <x-audit.retention-panel :retention="$retention" :can-manage="$canManageRetention" />
+        </div>
+    </div>
 
     <section class="mt-6" aria-labelledby="audit-feed-title">
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -39,10 +54,8 @@
         </div>
 
         @if ($events->count() > 0)
-            <x-audit.feed :events="$events" />
-            <div class="mt-5">
-                {{ $events->links() }}
-            </div>
+            <x-audit.feed :events="$events" :diffs="$diffs" />
+            <x-audit.pagination :paginator="$events" />
         @else
             <div class="rounded-lg border border-stone-200 bg-white shadow-sm">
                 <x-audit.empty-state />

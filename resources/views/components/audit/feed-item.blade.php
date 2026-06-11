@@ -1,4 +1,4 @@
-@props(['event'])
+@props(['event', 'diffRows' => []])
 
 <tr class="align-top transition hover:bg-stone-50/80">
     <td class="whitespace-nowrap px-5 py-4 text-sm font-bold text-stone-900">
@@ -25,10 +25,13 @@
         <span class="block">{{ $event->ip_address ?: 'No IP captured' }}</span>
         <span class="mt-1 block max-w-52 truncate text-xs text-stone-500">{{ $event->route_name ?: 'Background/system event' }}</span>
         @if ($event->correlation_id)
-            <span class="mt-1 block max-w-52 truncate text-xs text-stone-500">CID {{ $event->correlation_id }}</span>
+            <span class="mt-2 block">
+                <x-audit.correlation-badge :id="$event->correlation_id" />
+            </span>
         @endif
     </td>
-    <td class="px-5 py-4">
+    <td class="space-y-3 px-5 py-4">
+        <x-audit.diff-panel :rows="$diffRows" />
         @if ($event->metadata)
             <details class="group max-w-xl rounded-md border border-stone-200 bg-white">
                 <summary class="cursor-pointer list-none px-3 py-2 text-sm font-bold text-stone-700 focus:outline-none focus:ring-4 focus:ring-teal-700/15">

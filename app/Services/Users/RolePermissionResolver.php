@@ -57,6 +57,8 @@ class RolePermissionResolver
                 'admin.security-defense-center.view' => 'Security Defense Center',
                 'admin.abuse-reports.view' => 'Abuse Reports',
                 'admin.activity-audit-logs.view' => 'Activity & Audit Logs',
+                'admin.activity-audit-logs.export' => 'Export audit logs',
+                'admin.activity-audit-logs.manage-retention' => 'Update audit retention',
             ],
             'System' => [
                 'admin.update-center.view' => 'Update Center',

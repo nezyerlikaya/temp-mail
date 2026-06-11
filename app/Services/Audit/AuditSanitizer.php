@@ -19,7 +19,7 @@ class AuditSanitizer
     {
         return collect($metadata)
             ->mapWithKeys(fn (mixed $value, string $key): array => [
-                $key => $this->isSensitive($key) ? '[masked]' : $this->sanitizeValue($value),
+                $key => $this->isSensitive($key) ? $this->maskedValue($value) : $this->sanitizeValue($value),
             ])
             ->all();
     }
@@ -37,6 +37,17 @@ class AuditSanitizer
         }
 
         return $value;
+    }
+
+    private function maskedValue(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            return collect($value)
+                ->map(fn (): string => '[masked]')
+                ->all();
+        }
+
+        return '[masked]';
     }
 
     private function isSensitive(string $key): bool

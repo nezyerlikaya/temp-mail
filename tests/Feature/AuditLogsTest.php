@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\UserAuditEvent;
+use App\Services\Audit\AuditDiffService;
 use App\Services\Audit\AuditLogger;
+use App\Services\Audit\AuditRetentionService;
 use App\Services\Audit\AuditSanitizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -122,6 +124,137 @@ class AuditLogsTest extends TestCase
             ->assertOk()
             ->assertSee('Settings Updated')
             ->assertDontSee('auth.login_success');
+    }
+
+    public function test_audit_feed_filters_by_target_type_and_correlation_id(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $member = User::factory()->create();
+
+        app(AuditLogger::class)->record('user.identity_updated', $owner, $member, [], [
+            'correlation_id' => 'cid-visible-123',
+        ]);
+        app(AuditLogger::class)->record('system.settings_updated', $owner, $owner, [], [
+            'correlation_id' => 'cid-hidden-456',
+            'target_type' => 'settings',
+            'target_id' => 99,
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('admin.activity-audit-logs.index', [
+                'target_type' => User::class,
+                'correlation_id' => 'visible',
+            ]))
+            ->assertOk()
+            ->assertSee('cid-visible-123')
+            ->assertDontSee('cid-hidden-456');
+    }
+
+    public function test_diff_panel_masks_secret_fields(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $event = app(AuditLogger::class)->record('system.settings_updated', $owner, $owner, [
+            'changes' => [
+                'smtp_password' => ['old' => 'old-secret', 'new' => 'new-secret'],
+                'site_name' => ['old' => 'Old Mail', 'new' => 'New Mail'],
+            ],
+        ]);
+
+        $diff = app(AuditDiffService::class)->diff($event);
+
+        $this->assertSame('[masked]', $diff[0]['before']);
+        $this->assertSame('[masked]', $diff[0]['after']);
+
+        $this->actingAs($owner)
+            ->get(route('admin.activity-audit-logs.index'))
+            ->assertOk()
+            ->assertSee('Before / after diff')
+            ->assertSee('[masked]')
+            ->assertDontSee('old-secret')
+            ->assertDontSee('new-secret');
+    }
+
+    public function test_csv_export_is_owner_admin_only_and_masks_secrets(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $moderator = User::factory()->admin()->create(['role' => 'moderator']);
+
+        app(AuditLogger::class)->record('system.settings_updated', $owner, $owner, [
+            'database_password' => 'export-secret',
+            'safe' => 'visible',
+        ]);
+
+        $this->actingAs($moderator)
+            ->get(route('admin.activity-audit-logs.export'))
+            ->assertForbidden();
+
+        $response = $this->actingAs($owner)->get(route('admin.activity-audit-logs.export'));
+        $response->assertOk();
+
+        $csv = $response->streamedContent();
+
+        $this->assertStringContainsString('system.settings_updated', $csv);
+        $this->assertStringContainsString('[masked]', $csv);
+        $this->assertStringContainsString('visible', $csv);
+        $this->assertStringNotContainsString('export-secret', $csv);
+        $this->assertDatabaseHas('user_audit_events', [
+            'actor_id' => $owner->id,
+            'event' => 'audit.logs_exported',
+        ]);
+    }
+
+    public function test_retention_settings_validate_and_are_audited(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $moderator = User::factory()->admin()->create(['role' => 'moderator']);
+
+        $this->actingAs($moderator)
+            ->put(route('admin.activity-audit-logs.retention.update'), [
+                'retention_days' => 180,
+                'preserve_critical' => '1',
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($owner)
+            ->from(route('admin.activity-audit-logs.index'))
+            ->put(route('admin.activity-audit-logs.retention.update'), [
+                'retention_days' => 5,
+                'preserve_critical' => '1',
+            ])
+            ->assertSessionHasErrors('retention_days');
+
+        $this->actingAs($owner)
+            ->put(route('admin.activity-audit-logs.retention.update'), [
+                'retention_days' => 365,
+                'preserve_critical' => '1',
+            ])
+            ->assertRedirect(route('admin.activity-audit-logs.index'));
+
+        $this->assertDatabaseHas('audit_retention_settings', [
+            'retention_days' => 365,
+            'preserve_critical' => true,
+            'updated_by' => $owner->id,
+        ]);
+        $this->assertDatabaseHas('user_audit_events', [
+            'actor_id' => $owner->id,
+            'event' => 'audit.retention_updated',
+        ]);
+    }
+
+    public function test_retention_cleanup_preserves_critical_logs_by_default(): void
+    {
+        $owner = User::factory()->owner()->create();
+
+        $oldCritical = app(AuditLogger::class)->record('system.settings_updated', $owner, $owner, [], ['severity' => 'critical']);
+        $oldInfo = app(AuditLogger::class)->record('auth.login_success', $owner, $owner, [], ['severity' => 'info']);
+        $oldCritical->forceFill(['created_at' => now()->subDays(220), 'updated_at' => now()->subDays(220)])->save();
+        $oldInfo->forceFill(['created_at' => now()->subDays(220), 'updated_at' => now()->subDays(220)])->save();
+
+        $deleted = app(AuditRetentionService::class)->purgeExpired();
+
+        $this->assertSame(1, $deleted);
+        $this->assertDatabaseHas('user_audit_events', ['id' => $oldCritical->id]);
+        $this->assertDatabaseMissing('user_audit_events', ['id' => $oldInfo->id]);
     }
 
     public function test_failed_login_and_logout_are_audited_with_nullable_actor_readiness(): void

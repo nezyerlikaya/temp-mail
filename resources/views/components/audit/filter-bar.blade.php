@@ -54,4 +54,20 @@
         <x-form.input name="date_from" label="From" type="date" :value="$filters['date_from'] ?? null" />
         <x-form.input name="date_to" label="To" type="date" :value="$filters['date_to'] ?? null" />
     </div>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:col-span-5 lg:grid-cols-2">
+        <div>
+            <label for="target_type" class="block text-sm font-bold text-stone-900">Target type</label>
+            <select id="target_type" name="target_type" aria-invalid="{{ $errors->has('target_type') ? 'true' : 'false' }}" aria-describedby="{{ $errors->has('target_type') ? 'target-type-error' : '' }}" class="mt-2 block min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 text-base text-stone-950 focus:border-teal-700 focus:ring-4 focus:ring-teal-700/15">
+                <option value="">All targets</option>
+                @foreach ($options['targetTypes'] as $targetType)
+                    <option value="{{ $targetType }}" @selected(($filters['target_type'] ?? '') === $targetType)>{{ class_basename($targetType) }}</option>
+                @endforeach
+            </select>
+            @error('target_type')
+                <p id="target-type-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>
+            @enderror
+        </div>
+        <x-form.input name="correlation_id" label="Correlation ID" :value="$filters['correlation_id'] ?? null" autocomplete="off" placeholder="CID fragment" />
+    </div>
 </form>
