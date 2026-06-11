@@ -27,3 +27,17 @@ input[type='password']::-ms-reveal,
 input[type='password']::-ms-clear {
     display: none;
 }
+
+.settings-tabs-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #a8a29e transparent;
+}
+
+.settings-tabs-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+
+.settings-tabs-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #a8a29e;
+}

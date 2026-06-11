@@ -64,6 +64,7 @@ class RolePermissionResolver
                 'admin.email-templates.view' => 'Email Templates',
                 'admin.backups-health.view' => 'Backups & Health',
                 'admin.settings.view' => 'Settings',
+                'admin.settings.manage' => 'Update global settings',
             ],
         ];
     }

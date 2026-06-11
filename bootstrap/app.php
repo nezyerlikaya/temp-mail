@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforceApplicationMaintenance;
 use App\Http\Middleware\UseFileStorageForInstaller;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -14,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prependToGroup('web', UseFileStorageForInstaller::class);
+        $middleware->appendToGroup('web', EnforceApplicationMaintenance::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -3,7 +3,7 @@
         <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3 rounded-md focus:outline-none focus:ring-4 focus:ring-teal-300/25">
             <span class="grid size-9 shrink-0 place-items-center rounded-md bg-teal-300 text-sm font-black text-stone-950">TM</span>
             <span class="min-w-0">
-                <span class="block truncate text-sm font-extrabold text-white">Temp Mail Cloud</span>
+                <span class="block truncate text-sm font-extrabold text-white">{{ config('app.name') }}</span>
                 <span class="block truncate text-xs text-stone-400">Operations cockpit</span>
             </span>
         </a>

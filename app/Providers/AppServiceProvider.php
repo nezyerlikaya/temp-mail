@@ -6,15 +6,18 @@ use App\Models\User;
 use App\Policies\UserPolicy;
 use App\Services\Admin\AdminCommandRegistry;
 use App\Services\Admin\AdminNavigationRegistry;
+use App\Services\Settings\SettingsResolver;
 use App\Services\Users\RolePermissionResolver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View as ViewContract;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,6 +34,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        try {
+            if (Schema::hasTable('system_settings')) {
+                app(SettingsResolver::class)->applyRuntime();
+            }
+        } catch (Throwable) {
+            // Installer and database recovery must render before settings storage exists.
+        }
+
         $permissions = app(RolePermissionResolver::class);
 
         Gate::define('access-admin', fn (User $user): bool => $permissions->canAccessAdmin($user));

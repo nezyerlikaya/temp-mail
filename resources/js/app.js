@@ -42,6 +42,7 @@ import {
     TriangleAlert,
     UserRoundPen,
     Users,
+    Wrench,
     X,
     CornerDownLeft,
     FilePlus,
@@ -95,6 +96,7 @@ const adminIcons = {
     TriangleAlert,
     UserRoundPen,
     Users,
+    Wrench,
     X,
 };
 

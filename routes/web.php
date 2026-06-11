@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\Users\AuthorProfileController;
 use App\Http\Controllers\Admin\Users\RolePermissionController;
 use App\Http\Controllers\Admin\Users\UserController;
@@ -83,9 +84,19 @@ Route::prefix('dashboard')
             ->middleware('can:updateAvatar,user')
             ->name('admin.people-identity.avatar.update');
 
+        Route::get('settings', [SettingsController::class, 'index'])
+            ->middleware('can:admin.settings.view')
+            ->name('admin.settings.index');
+        Route::put('settings/general', [SettingsController::class, 'updateGeneral'])->middleware('can:admin.settings.manage')->name('admin.settings.general.update');
+        Route::put('settings/brand', [SettingsController::class, 'updateBrand'])->middleware('can:admin.settings.manage')->name('admin.settings.brand.update');
+        Route::put('settings/localization', [SettingsController::class, 'updateLocalization'])->middleware('can:admin.settings.manage')->name('admin.settings.localization.update');
+        Route::put('settings/maintenance', [SettingsController::class, 'updateMaintenance'])->middleware('can:admin.settings.manage')->name('admin.settings.maintenance.update');
+        Route::put('settings/legal', [SettingsController::class, 'updateLegal'])->middleware('can:admin.settings.manage')->name('admin.settings.legal.update');
+        Route::delete('settings/{group}', [SettingsController::class, 'reset'])->middleware('can:admin.settings.manage')->name('admin.settings.reset');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index'], true)) {
                     continue;
                 }
 

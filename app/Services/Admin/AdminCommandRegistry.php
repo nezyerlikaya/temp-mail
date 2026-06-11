@@ -113,6 +113,7 @@ class AdminCommandRegistry
             'Typography Center',
             'Update Center',
             'Backups & Health',
+            'Settings',
         ];
     }
 
@@ -131,6 +132,7 @@ class AdminCommandRegistry
             'Typography Center' => ['font', 'typography', 'typeface'],
             'People & Identity' => ['user', 'people', 'identity', 'account'],
             'Roles & Permissions' => ['role', 'permission', 'access', 'admin'],
+            'Settings' => ['settings', 'system', 'general', 'maintenance', 'legal'],
             default => str($label)->lower()->explode(' ')->all(),
         };
     }
