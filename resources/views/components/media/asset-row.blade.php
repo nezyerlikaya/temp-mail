@@ -7,6 +7,11 @@
     </td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ $asset->type }}</td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ $asset->uploader?->name ?? 'System' }}</td>
-    <td class="px-4 py-3"><x-media.status-badge :status="$asset->status" /></td>
+    <td class="px-4 py-3">
+        <div class="flex flex-col items-start gap-1">
+            <x-media.status-badge :status="$asset->status" />
+            <x-media.orphaned-badge :count="$asset->usages_count ?? 0" />
+        </div>
+    </td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ $asset->created_at?->format('M j, Y') }}</td>
 </tr>

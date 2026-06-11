@@ -9,6 +9,7 @@ use App\Http\Requests\Settings\UpdateGeneralSettingsRequest;
 use App\Http\Requests\Settings\UpdateLegalSettingsRequest;
 use App\Http\Requests\Settings\UpdateLocalizationDefaultsRequest;
 use App\Http\Requests\Settings\UpdateMaintenanceSettingsRequest;
+use App\Services\Media\MediaPickerSearchService;
 use App\Services\Settings\BrandAssetResolver;
 use App\Services\Settings\LegalPageResolver;
 use App\Services\Settings\SettingsResolver;
@@ -28,6 +29,7 @@ class SettingsController extends Controller
         BrandAssetResolver $brandAssets,
         LegalPageResolver $legalPages,
         SystemReadinessService $readiness,
+        MediaPickerSearchService $mediaPicker,
     ): View {
         Gate::authorize('admin.settings.view');
 
@@ -38,8 +40,11 @@ class SettingsController extends Controller
             'languages' => $settings->activeLanguages(),
             'timezones' => DateTimeZone::listIdentifiers(),
             'brandAssets' => $brandAssets->assets(),
+            'mediaPickerAssets' => $mediaPicker->options(['type' => 'image']),
             'legalPages' => $legalPages->pages(),
             'systemStatuses' => $readiness->statuses(),
+            'canSelectMedia' => $request->user()?->can('admin.media-library.select') ?? false,
+            'canUploadThroughPicker' => $request->user()?->can('admin.media-library.upload-through-picker') ?? false,
         ]);
     }
 

@@ -85,7 +85,10 @@
                                         <p class="truncate text-sm font-extrabold text-stone-950">{{ $asset->title ?: $asset->original_name }}</p>
                                         <p class="truncate text-xs text-stone-500">{{ $asset->original_name }}</p>
                                     </div>
-                                    <x-media.status-badge :status="$asset->status" />
+                                    <div class="flex flex-col items-end gap-1">
+                                        <x-media.status-badge :status="$asset->status" />
+                                        <x-media.orphaned-badge :count="$asset->usages_count" />
+                                    </div>
                                 </div>
                             @endforeach
                         </div>

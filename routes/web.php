@@ -157,9 +157,18 @@ Route::prefix('dashboard')
         Route::get('media-library', [MediaLibraryController::class, 'index'])
             ->middleware('can:admin.media-library.view')
             ->name('admin.media-library.index');
+        Route::get('media-library/picker/search', [MediaLibraryController::class, 'picker'])
+            ->middleware('can:admin.media-library.picker')
+            ->name('admin.media-library.picker');
         Route::post('media-library', [MediaLibraryController::class, 'store'])
             ->middleware('can:admin.media-library.upload')
             ->name('admin.media-library.store');
+        Route::post('media-library/usage', [MediaLibraryController::class, 'attachUsage'])
+            ->middleware('can:admin.media-library.update')
+            ->name('admin.media-library.usage.attach');
+        Route::delete('media-library/usage', [MediaLibraryController::class, 'detachUsage'])
+            ->middleware('can:admin.media-library.update')
+            ->name('admin.media-library.usage.detach');
         Route::get('media-library/{mediaAsset}', [MediaLibraryController::class, 'edit'])
             ->middleware('can:admin.media-library.view')
             ->name('admin.media-library.edit');

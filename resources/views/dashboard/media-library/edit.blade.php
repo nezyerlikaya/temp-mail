@@ -21,6 +21,7 @@
         </main>
 
         <aside class="min-w-0 space-y-6">
+            <x-media.usage-panel :usages="$usages" :summary="$usageSummary" />
             <x-admin.card title="Asset overview" description="The library keeps content metadata separate from file storage.">
                 <dl class="space-y-4 text-sm">
                     <div>

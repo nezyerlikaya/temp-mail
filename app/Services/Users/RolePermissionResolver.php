@@ -31,8 +31,12 @@ class RolePermissionResolver
                 'admin.taxonomy.view' => 'Taxonomy',
                 'admin.sections-studio.view' => 'Sections Studio',
                 'admin.media-library.view' => 'Media Library',
+                'admin.media-library.picker' => 'View media picker',
+                'admin.media-library.select' => 'Select media assets',
                 'admin.media-library.upload' => 'Upload media assets',
+                'admin.media-library.upload-through-picker' => 'Upload through media picker',
                 'admin.media-library.update' => 'Update media metadata',
+                'admin.media-library.usage' => 'View media usage',
                 'admin.comment-moderation.view' => 'Comment Moderation',
                 'admin.seo-growth-center.view' => 'SEO Growth Center',
             ],
@@ -157,7 +161,8 @@ class RolePermissionResolver
                 'admin.operations.view', 'admin.product-analytics.view',
                 'admin.locale-launch-center.view', 'admin.translation-center.view',
                 'admin.page-studio.view', 'admin.blog-studio.view', 'admin.taxonomy.view',
-                'admin.sections-studio.view', 'admin.media-library.view', 'admin.seo-growth-center.view',
+                'admin.sections-studio.view', 'admin.media-library.view', 'admin.media-library.picker',
+                'admin.media-library.select', 'admin.media-library.usage', 'admin.seo-growth-center.view',
                 'admin.author-profiles.view', 'admin.notifications.view',
             ],
             UserRole::Moderator->value => [
@@ -168,7 +173,8 @@ class RolePermissionResolver
             ],
             UserRole::Author->value => [
                 'admin.operations.view', 'admin.blog-studio.view',
-                'admin.media-library.view', 'admin.author-profiles.view',
+                'admin.media-library.view', 'admin.media-library.picker', 'admin.media-library.select',
+                'admin.author-profiles.view',
             ],
             UserRole::Member->value => [],
         ];

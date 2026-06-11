@@ -10,7 +10,7 @@ class MediaSearchService
     /** @param array<string, mixed> $filters */
     public function search(array $filters): LengthAwarePaginator
     {
-        $query = MediaAsset::query()->with('uploader')->latest();
+        $query = MediaAsset::query()->with('uploader')->withCount('usages')->latest();
 
         if (($filters['q'] ?? '') !== '') {
             $needle = (string) $filters['q'];

@@ -18,7 +18,7 @@ class UpdateAvatarRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'avatar_media_id' => ['nullable', 'integer', 'min:1'],
+            'avatar_media_id' => ['nullable', 'integer', 'exists:media_assets,id'],
             'avatar_color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'remove_avatar' => ['nullable', 'boolean'],
         ];
@@ -26,6 +26,11 @@ class UpdateAvatarRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['remove_avatar' => $this->boolean('remove_avatar')]);
+        $removeAvatar = $this->boolean('remove_avatar');
+
+        $this->merge([
+            'remove_avatar' => $removeAvatar,
+            'avatar_media_id' => $removeAvatar ? null : $this->input('avatar_media_id'),
+        ]);
     }
 }

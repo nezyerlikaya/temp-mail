@@ -18,6 +18,10 @@
             <p class="text-sm font-bold text-stone-500">Draft</p>
             <p class="mt-2 text-2xl font-extrabold text-stone-950">{{ $summary['draft'] ?? 0 }}</p>
         </div>
+        <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+            <p class="text-sm font-bold text-stone-500">Orphaned</p>
+            <p class="mt-2 text-2xl font-extrabold text-stone-950">{{ $summary['orphaned'] ?? 0 }}</p>
+        </div>
     </div>
 
     {{ $slot }}

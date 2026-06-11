@@ -55,8 +55,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-localization', fn (User $user): bool => $permissions->allows($user, 'admin.locale-launch-center.manage'));
         Gate::define('preview-locale-readiness', fn (User $user): bool => $permissions->allows($user, 'admin.locale-launch-center.preview'));
         Gate::define('view media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.view'));
+        Gate::define('view media picker', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.picker'));
+        Gate::define('select media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.select'));
         Gate::define('upload media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.upload'));
+        Gate::define('upload through picker', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.upload-through-picker'));
         Gate::define('update media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.update'));
+        Gate::define('view media usage', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.usage'));
 
         Gate::policy(User::class, UserPolicy::class);
 

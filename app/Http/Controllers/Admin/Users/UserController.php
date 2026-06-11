@@ -6,6 +6,7 @@ use App\Actions\Users\UpdateUserIdentityAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Users\UpdateUserIdentityRequest;
 use App\Models\User;
+use App\Services\Media\MediaPickerSearchService;
 use App\Services\Users\AuthorProfileService;
 use App\Services\Users\AvatarResolver;
 use App\Services\Users\MembershipSummaryResolver;
@@ -41,6 +42,7 @@ class UserController extends Controller
         AuthorProfileService $authors,
         AvatarResolver $avatars,
         MembershipSummaryResolver $memberships,
+        MediaPickerSearchService $mediaPicker,
     ): View {
         Gate::authorize('view', $user);
 
@@ -49,6 +51,9 @@ class UserController extends Controller
             'profileUser' => $user,
             'authorSummary' => $authors->summary($user),
             'avatar' => $avatars->resolve($user),
+            'mediaPickerAssets' => $mediaPicker->options(['type' => 'image']),
+            'canSelectMedia' => $request->user()?->can('admin.media-library.select') ?? false,
+            'canUploadThroughPicker' => $request->user()?->can('admin.media-library.upload-through-picker') ?? false,
             'membership' => $memberships->resolve($user),
             'canUpdateIdentity' => $request->user()->can('update', $user),
             'canUpdateAuthor' => $request->user()->can('updateAuthorProfile', $user),

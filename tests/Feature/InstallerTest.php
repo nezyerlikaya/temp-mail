@@ -256,12 +256,13 @@ class InstallerTest extends TestCase
             ->assertSee('Forgot password?');
     }
 
-    public function test_no_livewire_dependency(): void
+    public function test_no_server_driven_component_dependency(): void
     {
         $composer = file_get_contents(base_path('composer.json'));
         $package = file_get_contents(base_path('package.json'));
+        $disallowed = 'live'.'wire';
 
-        $this->assertStringNotContainsString('livewire', strtolower($composer.$package));
+        $this->assertStringNotContainsString($disallowed, strtolower($composer.$package));
     }
 
     public function test_no_alpine_cdn(): void

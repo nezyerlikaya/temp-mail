@@ -54,9 +54,9 @@
                         <x-form.input name="footer_brand_text" label="Footer brand text" :value="$settings['brand']['footer_brand_text']" required />
                     </div>
                     <div class="mt-6 grid gap-4 lg:grid-cols-3">
-                        <x-settings.media-picker-field name="logo_media_id" :asset="$brandAssets['logo']" />
-                        <x-settings.media-picker-field name="favicon_media_id" :asset="$brandAssets['favicon']" />
-                        <x-settings.media-picker-field name="app_icon_media_id" :asset="$brandAssets['app_icon']" />
+                        <x-settings.media-picker-field name="logo_media_id" :asset="$brandAssets['logo']" :assets="$mediaPickerAssets" :can-select="$canSelectMedia" :can-upload="$canUploadThroughPicker" />
+                        <x-settings.media-picker-field name="favicon_media_id" :asset="$brandAssets['favicon']" :assets="$mediaPickerAssets" :can-select="$canSelectMedia" :can-upload="$canUploadThroughPicker" />
+                        <x-settings.media-picker-field name="app_icon_media_id" :asset="$brandAssets['app_icon']" :assets="$mediaPickerAssets" :can-select="$canSelectMedia" :can-upload="$canUploadThroughPicker" />
                     </div>
                 </x-settings.setting-card>
                 <x-settings.save-bar group="brand" />

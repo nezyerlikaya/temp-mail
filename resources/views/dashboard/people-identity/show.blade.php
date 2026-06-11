@@ -65,7 +65,7 @@
 
             <div class="grid gap-6 lg:grid-cols-2">
                 <x-users.author-card :profile-user="$profileUser" :summary="$authorSummary" :avatar="$avatar" :edit-url="$canUpdateAuthor ? route('admin.author-profiles.edit', $profileUser) : null" />
-                <x-users.avatar-uploader :profile-user="$profileUser" :avatar="$avatar" :editable="$canUpdateAuthor" />
+                <x-users.avatar-uploader :profile-user="$profileUser" :avatar="$avatar" :editable="$canUpdateAuthor" :assets="$mediaPickerAssets" :can-select="$canSelectMedia" :can-upload="$canUploadThroughPicker" />
             </div>
 
             <x-users.membership-card :membership="$membership" />

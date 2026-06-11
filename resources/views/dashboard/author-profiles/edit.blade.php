@@ -71,7 +71,7 @@
                 </x-admin.card>
             </form>
 
-            <x-users.avatar-uploader :profile-user="$profileUser" :avatar="$avatar" />
+            <x-users.avatar-uploader :profile-user="$profileUser" :avatar="$avatar" :assets="$mediaPickerAssets" :can-select="$canSelectMedia" :can-upload="$canUploadThroughPicker" />
         </div>
 
         <aside class="space-y-6" aria-label="Author readiness summary">

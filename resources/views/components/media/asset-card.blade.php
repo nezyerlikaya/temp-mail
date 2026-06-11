@@ -14,7 +14,10 @@
                 <p class="truncate text-sm font-extrabold text-stone-950">{{ $asset->title ?: $asset->original_name }}</p>
                 <p class="mt-1 truncate text-xs text-stone-500">{{ $asset->original_name }}</p>
             </div>
-            <x-media.status-badge :status="$asset->status" />
+            <div class="flex flex-col items-end gap-1">
+                <x-media.status-badge :status="$asset->status" />
+                <x-media.orphaned-badge :count="$asset->usages_count ?? 0" />
+            </div>
         </div>
         <p class="mt-3 text-xs text-stone-500">{{ $asset->mime_type }} &middot; {{ number_format($asset->size_bytes / 1024, 1) }} KB</p>
     </a>
