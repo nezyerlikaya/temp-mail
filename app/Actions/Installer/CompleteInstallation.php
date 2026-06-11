@@ -29,7 +29,13 @@ class CompleteInstallation
             $this->refreshDatabaseConfig();
             Artisan::call('migrate', ['--force' => true]);
 
-            User::query()->create([...$admin, 'is_admin' => true]);
+            User::query()->create([
+                ...$admin,
+                'display_name' => $admin['name'],
+                'status' => 'active',
+                'role' => 'admin',
+                'is_admin' => true,
+            ]);
 
             $this->installState->lock();
         } catch (Throwable $throwable) {

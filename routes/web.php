@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
+use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\InstallerController;
+use App\Models\User;
 use App\Services\Admin\AdminNavigationRegistry;
 use App\Services\Installer\InstallState;
 use Illuminate\Support\Facades\Route;
@@ -46,9 +48,22 @@ Route::prefix('dashboard')
     ->group(function (): void {
         Route::get('/', OperationsOverviewController::class)->name('dashboard');
 
+        Route::get('people-identity', [UserController::class, 'index'])
+            ->middleware('can:viewAny,'.User::class)
+            ->name('admin.people-identity.index');
+        Route::get('people-identity/{user}', [UserController::class, 'show'])
+            ->middleware('can:view,user')
+            ->name('admin.people-identity.show');
+        Route::get('people-identity/{user}/edit', [UserController::class, 'edit'])
+            ->middleware('can:update,user')
+            ->name('admin.people-identity.edit');
+        Route::put('people-identity/{user}', [UserController::class, 'update'])
+            ->middleware('can:update,user')
+            ->name('admin.people-identity.update');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if ($item['route'] === 'dashboard') {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index'], true)) {
                     continue;
                 }
 

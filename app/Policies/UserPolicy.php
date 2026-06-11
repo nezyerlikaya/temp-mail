@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\User;
+
+class UserPolicy
+{
+    public function viewAny(User $actor): bool
+    {
+        return $actor->is_admin;
+    }
+
+    public function view(User $actor, User $subject): bool
+    {
+        return $actor->is_admin;
+    }
+
+    public function update(User $actor, User $subject): bool
+    {
+        return $actor->is_admin;
+    }
+}

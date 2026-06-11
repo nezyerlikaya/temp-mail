@@ -77,7 +77,9 @@ class AdminNavigationRegistry
                 $group['items'] = collect($group['items'])
                     ->filter(fn (array $item): bool => Gate::forUser($user)->allows($item['permission']))
                     ->map(function (array $item) use ($currentRoute): array {
-                        $item['active'] = $currentRoute === $item['route'];
+                        $routePrefix = str($item['route'])->beforeLast('.index')->toString();
+                        $item['active'] = $currentRoute === $item['route']
+                            || ($routePrefix !== $item['route'] && str_starts_with((string) $currentRoute, $routePrefix.'.'));
 
                         return $item;
                     })

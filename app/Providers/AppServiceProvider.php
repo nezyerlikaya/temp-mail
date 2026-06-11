@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Policies\UserPolicy;
 use App\Services\Admin\AdminCommandRegistry;
 use App\Services\Admin\AdminNavigationRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -34,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::define('access-admin', fn (User $user): bool => $user->is_admin);
+        Gate::policy(User::class, UserPolicy::class);
 
         View::composer('components.admin.sidebar', function (ViewContract $view): void {
             $user = request()->user();
