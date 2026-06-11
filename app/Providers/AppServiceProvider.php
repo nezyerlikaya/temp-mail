@@ -52,6 +52,8 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
+        Gate::define('manage-localization', fn (User $user): bool => $permissions->allows($user, 'admin.locale-launch-center.manage'));
+
         Gate::policy(User::class, UserPolicy::class);
 
         View::composer('components.admin.sidebar', function (ViewContract $view): void {

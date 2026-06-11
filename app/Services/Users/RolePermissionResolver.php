@@ -20,6 +20,7 @@ class RolePermissionResolver
             ],
             'Markets' => [
                 'admin.locale-launch-center.view' => 'Locale Launch Center',
+                'admin.locale-launch-center.manage' => 'Manage locale launch readiness',
                 'admin.translation-center.view' => 'Translation Center',
             ],
             'Content' => [

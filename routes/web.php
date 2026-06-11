@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -139,9 +140,19 @@ Route::prefix('dashboard')
             ->middleware('can:admin.update-center.rollback')
             ->name('admin.update-center.rollback-readiness');
 
+        Route::get('locale-launch-center', [LocaleLaunchController::class, 'index'])
+            ->middleware('can:admin.locale-launch-center.view')
+            ->name('admin.locale-launch-center.index');
+        Route::put('locale-launch-center', [LocaleLaunchController::class, 'update'])
+            ->middleware('can:manage-localization')
+            ->name('admin.locale-launch-center.update');
+        Route::post('locale-launch-center/bulk', [LocaleLaunchController::class, 'bulk'])
+            ->middleware('can:manage-localization')
+            ->name('admin.locale-launch-center.bulk');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index'], true)) {
                     continue;
                 }
 
