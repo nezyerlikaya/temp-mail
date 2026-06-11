@@ -3,11 +3,15 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\Admin\AdminNavigationRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as ViewContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,7 +28,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::before(function (User $user, string $ability): ?bool {
+            return $user->is_admin && str_starts_with($ability, 'admin.') ? true : null;
+        });
+
         Gate::define('access-admin', fn (User $user): bool => $user->is_admin);
+
+        View::composer('components.admin.sidebar', function (ViewContract $view): void {
+            $user = request()->user();
+
+            $view->with(
+                'navigationGroups',
+                $user
+                    ? app(AdminNavigationRegistry::class)->visibleFor($user, Route::currentRouteName())
+                    : [],
+            );
+        });
 
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip());

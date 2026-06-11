@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\OperationsOverviewController;
+use App\Http\Controllers\Admin\PlaceholderController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\InstallerController;
+use App\Services\Admin\AdminNavigationRegistry;
 use App\Services\Installer\InstallState;
 use Illuminate\Support\Facades\Route;
 
@@ -43,4 +45,16 @@ Route::prefix('dashboard')
     ->middleware(['auth', 'can:access-admin'])
     ->group(function (): void {
         Route::get('/', OperationsOverviewController::class)->name('dashboard');
+
+        foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
+            foreach ($group['items'] as $item) {
+                if ($item['route'] === 'dashboard') {
+                    continue;
+                }
+
+                Route::get($item['path'], PlaceholderController::class)
+                    ->middleware('can:'.$item['permission'])
+                    ->name($item['route']);
+            }
+        }
     });
