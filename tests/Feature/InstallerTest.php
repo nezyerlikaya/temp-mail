@@ -16,9 +16,15 @@ class InstallerTest extends TestCase
 
     private string $lockPath;
 
+    private string $recoveryPath;
+
     private bool $hadLock = false;
 
     private ?string $originalLock = null;
+
+    private bool $hadRecovery = false;
+
+    private ?string $originalRecovery = null;
 
     protected function setUp(): void
     {
@@ -28,12 +34,19 @@ class InstallerTest extends TestCase
 
         $this->envPath = base_path('.env');
         $this->lockPath = storage_path('app/installed.lock');
+        $this->recoveryPath = storage_path('app/installer-recovery.flag');
         $this->originalEnv = file_exists($this->envPath) ? file_get_contents($this->envPath) : null;
         $this->hadLock = file_exists($this->lockPath);
         $this->originalLock = $this->hadLock ? file_get_contents($this->lockPath) : null;
+        $this->hadRecovery = file_exists($this->recoveryPath);
+        $this->originalRecovery = $this->hadRecovery ? file_get_contents($this->recoveryPath) : null;
 
         if ($this->hadLock) {
             unlink($this->lockPath);
+        }
+
+        if ($this->hadRecovery) {
+            unlink($this->recoveryPath);
         }
     }
 
@@ -51,6 +64,12 @@ class InstallerTest extends TestCase
             file_put_contents($this->lockPath, $this->originalLock ?? '');
         } elseif (file_exists($this->lockPath)) {
             unlink($this->lockPath);
+        }
+
+        if ($this->hadRecovery) {
+            file_put_contents($this->recoveryPath, $this->originalRecovery ?? '');
+        } elseif (file_exists($this->recoveryPath)) {
+            unlink($this->recoveryPath);
         }
 
         parent::tearDown();
@@ -196,6 +215,35 @@ class InstallerTest extends TestCase
 
         $this->get(route('install.readiness'))
             ->assertRedirect(route('login'));
+    }
+
+    public function test_environment_recovery_reopens_installer_even_when_lock_exists(): void
+    {
+        app(InstallState::class)->lock();
+        file_put_contents($this->recoveryPath, 'recovered_at=testing');
+
+        $this->get(route('install.readiness'))
+            ->assertOk()
+            ->assertSee('System Readiness');
+    }
+
+    public function test_environment_recovery_blocks_non_installer_pages(): void
+    {
+        app(InstallState::class)->lock();
+        file_put_contents($this->recoveryPath, 'recovered_at=testing');
+
+        $this->get(route('login'))
+            ->assertRedirect(route('install.readiness'));
+    }
+
+    public function test_successful_lock_clears_environment_recovery_state(): void
+    {
+        file_put_contents($this->recoveryPath, 'recovered_at=testing');
+
+        app(InstallState::class)->lock();
+
+        $this->assertFileExists($this->lockPath);
+        $this->assertFileDoesNotExist($this->recoveryPath);
     }
 
     public function test_login_page_works_after_install(): void

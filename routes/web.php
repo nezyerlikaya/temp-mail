@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\InstallerController;
 use App\Services\Installer\InstallState;
@@ -34,6 +35,12 @@ Route::middleware('guest')->group(function (): void {
     })->name('register');
 });
 
-Route::get('/dashboard', fn () => view('dashboard'))
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
-    ->name('dashboard');
+    ->name('logout');
+
+Route::prefix('dashboard')
+    ->middleware(['auth', 'can:access-admin'])
+    ->group(function (): void {
+        Route::get('/', OperationsOverviewController::class)->name('dashboard');
+    });

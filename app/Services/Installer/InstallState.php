@@ -19,9 +19,14 @@ class InstallState
         return storage_path('app/installer-recovery.flag');
     }
 
+    public function isRecoveringEnvironment(): bool
+    {
+        return file_exists($this->recoveryPath());
+    }
+
     public function isInstalled(): bool
     {
-        if (file_exists($this->recoveryPath())) {
+        if ($this->isRecoveringEnvironment()) {
             return false;
         }
 
