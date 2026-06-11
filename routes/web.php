@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
+use App\Http\Controllers\Admin\PageStudioController;
 use App\Http\Controllers\Admin\PlaceholderController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UpdateCenterController;
@@ -154,6 +155,22 @@ Route::prefix('dashboard')
             ->middleware('can:admin.locale-launch-center.publish')
             ->name('admin.locale-launch-center.status');
 
+        Route::get('page-studio', [PageStudioController::class, 'index'])
+            ->middleware('can:admin.page-studio.view')
+            ->name('admin.page-studio.index');
+        Route::get('page-studio/create', [PageStudioController::class, 'create'])
+            ->middleware('can:admin.page-studio.create')
+            ->name('admin.page-studio.create');
+        Route::post('page-studio', [PageStudioController::class, 'store'])
+            ->middleware('can:admin.page-studio.create')
+            ->name('admin.page-studio.store');
+        Route::get('page-studio/{page}/edit', [PageStudioController::class, 'edit'])
+            ->middleware('can:admin.page-studio.update')
+            ->name('admin.page-studio.edit');
+        Route::put('page-studio/{page}', [PageStudioController::class, 'update'])
+            ->middleware('can:admin.page-studio.update')
+            ->name('admin.page-studio.update');
+
         Route::get('media-library', [MediaLibraryController::class, 'index'])
             ->middleware('can:admin.media-library.view')
             ->name('admin.media-library.index');
@@ -190,7 +207,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.media-library.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.media-library.index'], true)) {
                     continue;
                 }
 

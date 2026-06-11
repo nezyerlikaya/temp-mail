@@ -27,6 +27,10 @@ class RolePermissionResolver
             ],
             'Content' => [
                 'admin.page-studio.view' => 'Page Studio',
+                'admin.page-studio.create' => 'Create pages',
+                'admin.page-studio.update' => 'Update pages',
+                'admin.page-studio.publish' => 'Publish page readiness',
+                'admin.page-studio.trash' => 'Trash or restore page readiness',
                 'admin.blog-studio.view' => 'Blog Studio',
                 'admin.taxonomy.view' => 'Taxonomy',
                 'admin.sections-studio.view' => 'Sections Studio',
@@ -164,7 +168,9 @@ class RolePermissionResolver
             UserRole::Editor->value => [
                 'admin.operations.view', 'admin.product-analytics.view',
                 'admin.locale-launch-center.view', 'admin.translation-center.view',
-                'admin.page-studio.view', 'admin.blog-studio.view', 'admin.taxonomy.view',
+                'admin.page-studio.view', 'admin.page-studio.create', 'admin.page-studio.update',
+                'admin.page-studio.publish', 'admin.page-studio.trash',
+                'admin.blog-studio.view', 'admin.taxonomy.view',
                 'admin.sections-studio.view', 'admin.media-library.view', 'admin.media-library.picker',
                 'admin.media-library.select', 'admin.media-library.usage', 'admin.seo-growth-center.view',
                 'admin.author-profiles.view', 'admin.notifications.view',
@@ -176,7 +182,7 @@ class RolePermissionResolver
                 'admin.activity-audit-logs.view',
             ],
             UserRole::Author->value => [
-                'admin.operations.view', 'admin.blog-studio.view',
+                'admin.operations.view', 'admin.blog-studio.view', 'admin.page-studio.view',
                 'admin.media-library.view', 'admin.media-library.picker', 'admin.media-library.select',
                 'admin.author-profiles.view',
             ],
