@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\Admin\AdminCommandRegistry;
 use App\Services\Admin\AdminNavigationRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -42,6 +43,15 @@ class AppServiceProvider extends ServiceProvider
                 $user
                     ? app(AdminNavigationRegistry::class)->visibleFor($user, Route::currentRouteName())
                     : [],
+            );
+        });
+
+        View::composer('components.admin.command-palette', function (ViewContract $view): void {
+            $user = request()->user();
+
+            $view->with(
+                'commands',
+                $user ? app(AdminCommandRegistry::class)->visibleFor($user) : [],
             );
         });
 

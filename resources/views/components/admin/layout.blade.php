@@ -27,5 +27,7 @@
                 </x-admin.main>
             </div>
         </div>
+
+        <x-admin.command-palette />
     </body>
 </html>
