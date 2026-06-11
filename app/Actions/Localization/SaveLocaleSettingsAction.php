@@ -33,4 +33,14 @@ class SaveLocaleSettingsAction
             'bulk_action' => $action,
         ], ['module' => 'localization', 'action' => 'Bulk update locales', 'severity' => 'critical']);
     }
+
+    public function updateStatus(User $actor, string $localeCode, string $action): void
+    {
+        $this->store->updateStatus($localeCode, $action, $actor);
+
+        $this->audit->record('locale.status_updated', $actor, null, [
+            'locale' => $localeCode,
+            'status_action' => $action,
+        ], ['module' => 'localization', 'action' => 'Update locale status', 'severity' => 'critical']);
+    }
 }

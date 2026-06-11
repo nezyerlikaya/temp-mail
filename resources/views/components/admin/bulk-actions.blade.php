@@ -1,6 +1,6 @@
 @props(['disabled' => false])
 
-<form id="locale-bulk-form" method="POST" action="{{ route('admin.locale-launch-center.bulk') }}" class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
+<form id="locale-bulk-form" method="POST" action="{{ route('admin.locale-launch-center.bulk') }}" class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm" x-on:submit="statusMessage = 'Applying bulk action to selected locales.'">
     @csrf
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>

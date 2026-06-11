@@ -149,6 +149,9 @@ Route::prefix('dashboard')
         Route::post('locale-launch-center/bulk', [LocaleLaunchController::class, 'bulk'])
             ->middleware('can:manage-localization')
             ->name('admin.locale-launch-center.bulk');
+        Route::patch('locale-launch-center/{locale:locale}/status', [LocaleLaunchController::class, 'status'])
+            ->middleware('can:admin.locale-launch-center.publish')
+            ->name('admin.locale-launch-center.status');
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {

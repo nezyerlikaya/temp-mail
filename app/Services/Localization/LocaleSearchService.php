@@ -34,6 +34,15 @@ class LocaleSearchService
             $query->where('launch_status', $filters['status']);
         }
 
+        if (($filters['readiness'] ?? 'all') !== 'all') {
+            match ($filters['readiness']) {
+                'high' => $query->where('market_readiness', 'ready')->whereIn('launch_status', ['ready', 'launched']),
+                'needs_review' => $query->where('market_readiness', 'ready')->where('launch_status', 'draft'),
+                'blocked' => $query->where('market_readiness', 'blocked'),
+                default => null,
+            };
+        }
+
         $perPage = (int) ($filters['per_page'] ?? 10);
         $perPage = in_array($perPage, [10, 20, 30], true) ? $perPage : 10;
 

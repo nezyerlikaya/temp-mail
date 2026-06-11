@@ -21,6 +21,8 @@ class RolePermissionResolver
             'Markets' => [
                 'admin.locale-launch-center.view' => 'Locale Launch Center',
                 'admin.locale-launch-center.manage' => 'Manage locale launch readiness',
+                'admin.locale-launch-center.preview' => 'Preview locale readiness',
+                'admin.locale-launch-center.publish' => 'Publish or take locale offline',
                 'admin.translation-center.view' => 'Translation Center',
             ],
             'Content' => [

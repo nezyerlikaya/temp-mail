@@ -18,19 +18,15 @@
 
     <x-error-summary />
 
-    <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6" aria-label="Locale launch summary">
+    <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Locale launch summary">
         @foreach ([
-            ['label' => 'Locales', 'value' => $summary['total']],
-            ['label' => 'Active', 'value' => $summary['active']],
-            ['label' => 'Passive', 'value' => $summary['passive']],
-            ['label' => 'Ready', 'value' => $summary['ready']],
-            ['label' => 'RTL', 'value' => $summary['rtl']],
-            ['label' => 'Default', 'value' => strtoupper((string) $summary['default_locale'])],
+            ['label' => 'Total locales', 'value' => $summary['total'], 'description' => 'Priority markets'],
+            ['label' => 'Live locales', 'value' => $summary['live'], 'description' => 'Published and active'],
+            ['label' => 'In review', 'value' => $summary['in_review'], 'description' => 'Ready for launch review'],
+            ['label' => 'Draft locales', 'value' => $summary['draft'], 'description' => 'Not yet prepared'],
+            ['label' => 'Avg. text coverage', 'value' => $summary['average_translation_coverage'].'%', 'description' => 'Readiness estimate'],
         ] as $metric)
-            <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-                <p class="text-sm font-bold text-stone-500">{{ $metric['label'] }}</p>
-                <p class="mt-2 break-words text-2xl font-extrabold text-stone-950">{{ $metric['value'] }}</p>
-            </div>
+            <x-localization.launch-kpi-card :label="$metric['label']" :value="$metric['value']" :description="$metric['description']" />
         @endforeach
     </section>
 
@@ -44,7 +40,8 @@
         </x-admin.alert>
     @endif
 
-    <div class="space-y-6" x-data="{ selectAllVisible: false, toggleVisible() { document.querySelectorAll('.js-locale-bulk-checkbox').forEach((input) => input.checked = this.selectAllVisible) } }">
+    <div class="space-y-6" x-data="{ selectAllVisible: false, dirty: false, statusMessage: 'Locale Launch Center ready.', toggleVisible() { document.querySelectorAll('.js-locale-bulk-checkbox').forEach((input) => input.checked = this.selectAllVisible); this.statusMessage = this.selectAllVisible ? 'Visible locales selected.' : 'Visible locale selection cleared.' }, markDirty() { this.dirty = true; this.statusMessage = 'Unsaved locale changes.' } }" x-on:beforeunload.window="if (dirty) { $event.preventDefault(); $event.returnValue = '' }">
+        <div class="sr-only" role="status" aria-live="polite" x-text="statusMessage"></div>
         <x-localization.language-filters :filters="$filters" />
 
         <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -61,13 +58,13 @@
                 </div>
 
                 @if ($locales->count() > 0)
-                    <form method="POST" action="{{ route('admin.locale-launch-center.update') }}" class="space-y-5">
+                    <form method="POST" action="{{ route('admin.locale-launch-center.update') }}" class="space-y-5" x-on:change="markDirty()" x-on:submit="dirty = false; statusMessage = 'Saving locale readiness.'">
                         @csrf
                         @method('PUT')
 
                         <div class="grid gap-4 xl:grid-cols-2">
                             @foreach ($locales as $locale)
-                                <x-localization.language-card :locale="$locale" :readiness="$readiness[$locale->locale]" :can-manage="$canManageLocalization" />
+                                <x-localization.language-card :locale="$locale" :readiness="$readiness[$locale->locale]" :urls="$localeUrls[$locale->locale]" :can-manage="$canManageLocalization" :can-publish="$canPublishLocales" />
                             @endforeach
                         </div>
 
@@ -85,6 +82,7 @@
 
             <aside class="min-w-0 space-y-6">
                 <x-admin.bulk-actions :disabled="! $canManageLocalization" />
+                <x-localization.launch-queue :queue="$launchQueue" />
 
                 <x-admin.card title="Launch rules" description="Locale Launch Center only controls market readiness and locale availability.">
                     <ul class="space-y-3 text-sm leading-6 text-stone-700">

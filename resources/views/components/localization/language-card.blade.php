@@ -1,4 +1,4 @@
-@props(['locale', 'readiness', 'canManage'])
+@props(['locale', 'readiness', 'urls', 'canManage', 'canPublish'])
 
 <article class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm" dir="{{ $locale->direction }}">
     <div class="flex items-start justify-between gap-4">
@@ -12,11 +12,15 @@
             <p class="mt-1 text-sm font-bold text-stone-600">{{ $locale->native_name }} · {{ $locale->locale }} · {{ strtoupper($locale->direction) }}</p>
             <p class="mt-1 text-sm text-stone-500">{{ $locale->region }}</p>
         </div>
-        <x-localization.translation-status-badge :status="$locale->launch_status" />
+        <x-localization.translation-status-badge :status="$readiness['display_status']" />
     </div>
 
     <div class="mt-5">
         <x-localization.translation-progress :score="$readiness['score']" />
+    </div>
+
+    <div class="mt-5 rounded-lg border border-stone-200 bg-stone-50 p-4" dir="ltr">
+        <x-localization.market-readiness :categories="$readiness['categories']" />
     </div>
 
     @if (count($readiness['missing']) > 0)
@@ -65,4 +69,18 @@
         <input type="checkbox" name="locales[]" value="{{ $locale->locale }}" form="locale-bulk-form" class="js-locale-bulk-checkbox h-4 w-4 rounded border-stone-300 text-teal-700 focus:ring-4 focus:ring-teal-600/20">
         Select for bulk action
     </label>
+
+    <div class="mt-4 grid gap-2 sm:grid-cols-2" dir="ltr">
+        <a href="{{ $urls['preview'] }}" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-extrabold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-teal-600/20">Preview</a>
+        <a href="{{ $urls['translations'] }}" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-extrabold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-teal-600/20">Open Translation Center</a>
+        <a href="{{ $urls['seo'] }}" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-extrabold text-stone-700 shadow-sm transition hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-teal-600/20">Open SEO Growth Center</a>
+        <form method="POST" action="{{ route('admin.locale-launch-center.status', $locale) }}">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="status_action" value="{{ $readiness['display_status'] === 'Live' ? 'take_offline' : 'set_live' }}">
+            <button type="submit" class="inline-flex min-h-10 w-full items-center justify-center rounded-lg {{ $readiness['display_status'] === 'Live' ? 'border border-amber-300 bg-amber-50 text-amber-900' : 'bg-teal-700 text-white' }} px-3 py-2 text-sm font-extrabold shadow-sm transition focus:outline-none focus:ring-4 focus:ring-teal-600/20 disabled:cursor-not-allowed disabled:opacity-60" @disabled(! $canPublish)>
+                {{ $readiness['display_status'] === 'Live' ? 'Take Offline' : 'Set Live' }}
+            </button>
+        </form>
+    </div>
 </article>

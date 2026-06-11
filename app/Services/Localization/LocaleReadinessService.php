@@ -9,7 +9,7 @@ class LocaleReadinessService
 {
     /**
      * @param  Collection<int, Locale>  $locales
-     * @return array{total: int, active: int, passive: int, ready: int, launched: int, rtl: int, default_locale: string|null, issues: array<int, string>}
+     * @return array{total: int, active: int, passive: int, ready: int, launched: int, live: int, in_review: int, draft: int, offline: int, rtl: int, average_translation_coverage: int, default_locale: string|null, issues: array<int, string>}
      */
     public function summary(Collection $locales): array
     {
@@ -34,37 +34,82 @@ class LocaleReadinessService
             'passive' => $locales->where('is_active', false)->count(),
             'ready' => $locales->where('market_readiness', 'ready')->count(),
             'launched' => $locales->where('launch_status', 'launched')->count(),
+            'live' => $locales->where('launch_status', 'launched')->count(),
+            'in_review' => $locales->where('launch_status', 'ready')->count(),
+            'draft' => $locales->where('launch_status', 'draft')->count(),
+            'offline' => $locales->where('launch_status', 'paused')->count() + $locales->where('is_active', false)->count(),
             'rtl' => $locales->where('direction', 'rtl')->count(),
+            'average_translation_coverage' => (int) round($locales->avg(fn (Locale $locale): int => $this->forLocale($locale)['categories']['copy_ui_text']['score']) ?: 0),
             'default_locale' => $default?->locale,
             'issues' => $issues,
         ];
     }
 
-    /** @return array{score: int, label: string, missing: array<int, string>} */
+    /** @return array{score: int, label: string, display_status: string, missing: array<int, string>, categories: array<string, array{label: string, score: int, status: string}>} */
     public function forLocale(Locale $locale): array
     {
-        $checks = [
-            'Market readiness selected' => $locale->market_readiness !== 'planned',
-            'Launch status prepared' => in_array($locale->launch_status, ['ready', 'launched'], true),
-            'Direction confirmed' => in_array($locale->direction, ['ltr', 'rtl'], true),
-            'Active for launch' => $locale->is_active,
-        ];
+        $categories = $this->categories($locale);
 
-        $passed = collect($checks)->filter()->count();
-        $score = (int) round(($passed / count($checks)) * 100);
+        $score = (int) round(collect($categories)->avg('score'));
 
         return [
             'score' => $score,
             'label' => match (true) {
                 $score >= 100 => 'Launch ready',
-                $score >= 50 => 'Needs review',
+                $score >= 70 => 'In review',
                 default => 'Planned',
             },
-            'missing' => collect($checks)
-                ->filter(fn (bool $passed): bool => ! $passed)
-                ->keys()
+            'display_status' => $this->displayStatus($locale),
+            'missing' => collect($categories)
+                ->filter(fn (array $category): bool => $category['score'] < 70)
+                ->pluck('label')
                 ->values()
                 ->all(),
+            'categories' => $categories,
         ];
+    }
+
+    public function displayStatus(Locale $locale): string
+    {
+        return match (true) {
+            $locale->launch_status === 'launched' && $locale->is_active => 'Live',
+            $locale->launch_status === 'ready' && $locale->is_active => 'In Review',
+            $locale->launch_status === 'paused' || ! $locale->is_active => 'Offline',
+            default => 'Draft',
+        };
+    }
+
+    /** @return array<string, array{label: string, score: int, status: string}> */
+    private function categories(Locale $locale): array
+    {
+        $stored = is_array($locale->readiness) ? $locale->readiness : [];
+
+        $scores = [
+            'copy_ui_text' => $stored['copy_ui_text'] ?? ($locale->market_readiness === 'ready' ? 92 : 42),
+            'content' => $stored['content'] ?? match ($locale->launch_status) {
+                'launched' => 88,
+                'ready' => 74,
+                default => 38,
+            },
+            'seo' => $stored['seo'] ?? ($locale->launch_status === 'launched' ? 86 : ($locale->market_readiness === 'ready' ? 68 : 28)),
+            'mailbox_experience' => $stored['mailbox_experience'] ?? ($locale->is_active ? 78 : 40),
+            'transactional_emails' => $stored['transactional_emails'] ?? ($locale->is_active ? 76 : 35),
+            'compliance' => $stored['compliance'] ?? (in_array($locale->region, ['DACH', 'France', 'Italy', 'Netherlands', 'Poland', 'Nordics', 'Norway', 'Denmark', 'Finland', 'Czechia', 'Hungary', 'Romania', 'Greece'], true) ? 72 : 58),
+        ];
+
+        return collect([
+            'copy_ui_text' => 'Copy & UI Text coverage',
+            'content' => 'Content coverage',
+            'seo' => 'SEO readiness',
+            'mailbox_experience' => 'Mailbox Experience readiness',
+            'transactional_emails' => 'Transactional Emails readiness',
+            'compliance' => 'Compliance readiness',
+        ])->mapWithKeys(fn (string $label, string $key): array => [
+            $key => [
+                'label' => $label,
+                'score' => (int) $scores[$key],
+                'status' => $scores[$key] >= 85 ? 'ready' : ($scores[$key] >= 70 ? 'review' : 'missing'),
+            ],
+        ])->all();
     }
 }

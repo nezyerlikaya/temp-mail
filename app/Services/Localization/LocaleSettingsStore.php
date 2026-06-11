@@ -83,6 +83,31 @@ class LocaleSettingsStore
         });
     }
 
+    public function updateStatus(string $localeCode, string $action, User $actor): void
+    {
+        DB::transaction(function () use ($localeCode, $action, $actor): void {
+            $locale = Locale::query()->where('locale', $localeCode)->lockForUpdate()->firstOrFail();
+
+            if ($action === 'take_offline' && $locale->is_default) {
+                throw new \RuntimeException('The default locale cannot be taken offline until another active default is selected.');
+            }
+
+            $locale->forceFill(match ($action) {
+                'set_live' => [
+                    'is_active' => true,
+                    'market_readiness' => 'ready',
+                    'launch_status' => 'launched',
+                    'updated_by' => $actor->id,
+                ],
+                'take_offline' => [
+                    'is_active' => false,
+                    'launch_status' => 'paused',
+                    'updated_by' => $actor->id,
+                ],
+            })->save();
+        });
+    }
+
     /** @return array<int, array<string, mixed>> */
     public function defaults(): array
     {

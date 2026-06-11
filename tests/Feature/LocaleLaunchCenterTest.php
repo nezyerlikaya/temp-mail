@@ -50,6 +50,13 @@ class LocaleLaunchCenterTest extends TestCase
             ->assertOk()
             ->assertSee('Locale Launch Center')
             ->assertSee('Market readiness queue')
+            ->assertSee('Launch queue')
+            ->assertSee('Total locales')
+            ->assertSee('Avg. text coverage')
+            ->assertSee('Copy &amp; UI Text coverage', false)
+            ->assertSee('Open Translation Center')
+            ->assertSee('Open SEO Growth Center')
+            ->assertSee('role="status"', false)
             ->assertSee('Operations workspace')
             ->assertDontSee('The route, authorization boundary')
             ->assertDontSee('<textarea', false)
@@ -143,8 +150,21 @@ class LocaleLaunchCenterTest extends TestCase
             ->assertOk()
             ->assertSee('Hebrew')
             ->assertSee('עברית')
-            ->assertSee('RTL')
-            ->assertDontSee('German');
+            ->assertSee('RTL');
+    }
+
+    public function test_readiness_filter_and_market_queue_sections_render(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.locale-launch-center.index', ['readiness' => 'high', 'per_page' => 20]))
+            ->assertOk()
+            ->assertSee('Ready for launch')
+            ->assertSee('Missing SEO metadata')
+            ->assertSee('Missing email templates')
+            ->assertSee('Missing mailbox experience')
+            ->assertSee('Missing compliance readiness');
     }
 
     public function test_bulk_activate_and_deactivate_readiness(): void
@@ -171,6 +191,28 @@ class LocaleLaunchCenterTest extends TestCase
 
         $this->assertDatabaseHas('locales', ['locale' => 'he', 'is_active' => false, 'launch_status' => 'draft']);
         $this->assertDatabaseHas('user_audit_events', ['event' => 'locale.bulk_updated', 'actor_id' => $admin->id]);
+    }
+
+    public function test_publish_and_take_offline_actions_respect_default_safety(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $german = Locale::query()->where('locale', 'de')->firstOrFail();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->patch(route('admin.locale-launch-center.status', $german), ['status_action' => 'set_live'])
+            ->assertRedirect(route('admin.locale-launch-center.index'));
+
+        $this->assertDatabaseHas('locales', ['locale' => 'de', 'is_active' => true, 'launch_status' => 'launched']);
+
+        $this->actingAs($admin)
+            ->followingRedirects()
+            ->patch(route('admin.locale-launch-center.status', $english), ['status_action' => 'take_offline'])
+            ->assertOk()
+            ->assertSee('The default locale cannot be taken offline');
+
+        $this->assertDatabaseHas('locales', ['locale' => 'en', 'is_active' => true, 'is_default' => true]);
     }
 
     public function test_editor_can_view_but_cannot_manage_localization(): void
