@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UpdateCenterController;
 use App\Http\Controllers\Admin\Users\AuthorProfileController;
 use App\Http\Controllers\Admin\Users\RolePermissionController;
 use App\Http\Controllers\Admin\Users\UserController;
@@ -122,9 +123,16 @@ Route::prefix('dashboard')
             ->middleware('can:admin.backups-health.delete')
             ->name('admin.backups-health.destroy');
 
+        Route::get('update-center', [UpdateCenterController::class, 'index'])
+            ->middleware('can:admin.update-center.view')
+            ->name('admin.update-center.index');
+        Route::post('update-center/check', [UpdateCenterController::class, 'check'])
+            ->middleware('can:admin.update-center.check')
+            ->name('admin.update-center.check');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index'], true)) {
                     continue;
                 }
 
