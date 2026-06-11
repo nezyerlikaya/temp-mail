@@ -5,12 +5,16 @@ namespace Tests\Feature;
 use App\Models\UpdateCheck;
 use App\Models\User;
 use App\Services\Updates\UpdateCompatibilityChecker;
+use App\Services\Updates\UpdateLockService;
+use App\Services\Updates\UpdatePackageVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
+use ZipArchive;
 
 class UpdateCenterTest extends TestCase
 {
@@ -32,10 +36,14 @@ class UpdateCenterTest extends TestCase
         if (file_exists($this->recoveryPath)) {
             unlink($this->recoveryPath);
         }
+
+        File::deleteDirectory(storage_path('app/update-center'));
     }
 
     protected function tearDown(): void
     {
+        File::deleteDirectory(storage_path('app/update-center'));
+
         if ($this->originalRecovery !== null) {
             file_put_contents($this->recoveryPath, $this->originalRecovery);
         } elseif (file_exists($this->recoveryPath)) {
@@ -187,7 +195,7 @@ class UpdateCenterTest extends TestCase
         $this->assertTrue(collect($compatibility['results'])->contains(fn (array $check): bool => $check['status'] === 'failed'));
     }
 
-    public function test_no_install_routes_or_actions_exist_in_part_one(): void
+    public function test_update_install_routes_are_explicit_and_do_not_expose_repair_tools(): void
     {
         $updateRoutes = collect(Route::getRoutes())
             ->map(fn ($route): ?string => $route->getName())
@@ -195,8 +203,141 @@ class UpdateCenterTest extends TestCase
 
         $this->assertTrue($updateRoutes->contains('admin.update-center.index'));
         $this->assertTrue($updateRoutes->contains('admin.update-center.check'));
-        $this->assertFalse($updateRoutes->contains(fn (string $name): bool => str_contains($name, 'install')));
-        $this->assertFalse(File::exists(app_path('Actions/Updates/InstallUpdateAction.php')));
+        $this->assertTrue($updateRoutes->contains('admin.update-center.install'));
+        $this->assertTrue($updateRoutes->contains('admin.update-center.manual-upload'));
+        $this->assertTrue($updateRoutes->contains('admin.update-center.rollback-readiness'));
+        $this->assertFalse($updateRoutes->contains(fn (string $name): bool => str_contains($name, 'repair')));
         $this->assertSame(0, UpdateCheck::query()->count());
+    }
+
+    public function test_package_verification_rejects_bad_checksum(): void
+    {
+        $zip = $this->zipWith(['storage/app/update-center/smoke.txt' => 'ok']);
+
+        $this->expectExceptionMessage('checksum does not match');
+
+        app(UpdatePackageVerifier::class)->verify($zip, str_repeat('0', 64));
+    }
+
+    public function test_protected_paths_cannot_be_overwritten(): void
+    {
+        $zip = $this->zipWith(['.env' => 'APP_KEY=leaked']);
+        $checksum = hash_file('sha256', $zip);
+
+        $this->expectExceptionMessage('protected path');
+
+        app(UpdatePackageVerifier::class)->verify($zip, $checksum);
+    }
+
+    public function test_update_lock_prevents_concurrent_install(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $check = $this->availableCheck($admin, hash('sha256', 'package'));
+
+        app(UpdateLockService::class)->acquire('other-admin@example.test');
+
+        $this->actingAs($admin)
+            ->followingRedirects()
+            ->post(route('admin.update-center.install'), [
+                'confirm_backup' => '1',
+                'confirm_protected_paths' => '1',
+            ])
+            ->assertOk()
+            ->assertSee('Another update operation is already running');
+
+        $this->assertDatabaseMissing('update_checks', [
+            'id' => $check->id,
+            'status' => 'installed',
+        ]);
+
+        app(UpdateLockService::class)->release();
+    }
+
+    public function test_manual_upload_path_is_validated_safely(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $zip = $this->zipWith(['storage/app/public/avatar.png' => 'overwrite']);
+        $checksum = hash_file('sha256', $zip);
+
+        $this->actingAs($admin)
+            ->followingRedirects()
+            ->post(route('admin.update-center.manual-upload'), [
+                'expected_checksum' => $checksum,
+                'package' => new UploadedFile($zip, 'manual.zip', 'application/zip', null, true),
+            ])
+            ->assertOk()
+            ->assertSee('protected path');
+    }
+
+    public function test_failed_update_shows_clean_recovery_state_and_records_history(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $zip = $this->zipWith(['storage/app/update-center/smoke.txt' => 'safe']);
+        $this->availableCheck($admin, str_repeat('f', 64));
+
+        Http::fake([
+            'https://updates.example.test/packages/update.zip' => Http::response(file_get_contents($zip), 200),
+        ]);
+
+        $this->actingAs($admin)
+            ->followingRedirects()
+            ->post(route('admin.update-center.install'), [
+                'confirm_backup' => '1',
+                'confirm_protected_paths' => '1',
+                'maintenance_message' => 'Updating Temp Mail Cloud',
+            ])
+            ->assertOk()
+            ->assertSee('Update installation failed safely')
+            ->assertSee('checksum does not match');
+
+        $this->assertDatabaseHas('update_checks', ['status' => 'pending']);
+        $this->assertDatabaseHas('update_checks', ['status' => 'downloaded']);
+        $this->assertDatabaseHas('update_checks', ['status' => 'failed']);
+        $this->assertFalse(app(UpdateLockService::class)->isLocked());
+    }
+
+    /** @param array<string, string> $files */
+    private function zipWith(array $files): string
+    {
+        $path = storage_path('framework/testing/update-package-'.str()->uuid().'.zip');
+        File::ensureDirectoryExists(dirname($path));
+
+        $zip = new ZipArchive;
+        $this->assertTrue($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE));
+
+        foreach ($files as $name => $contents) {
+            $zip->addFromString($name, $contents);
+        }
+
+        $zip->close();
+
+        return $path;
+    }
+
+    private function availableCheck(User $admin, string $checksum): UpdateCheck
+    {
+        return UpdateCheck::query()->create([
+            'uuid' => (string) str()->uuid(),
+            'channel' => 'stable',
+            'current_version' => '1.0.0',
+            'latest_version' => '1.2.0',
+            'status' => 'available',
+            'endpoint' => 'https://updates.example.test/manifest',
+            'https_endpoint' => true,
+            'signed_manifest' => true,
+            'checksum' => $checksum,
+            'signature' => null,
+            'manifest' => [
+                'version' => '1.2.0',
+                'package_url' => 'https://updates.example.test/packages/update.zip',
+                'requires_migrations' => true,
+            ],
+            'compatibility' => [
+                'compatible' => true,
+                'results' => [],
+            ],
+            'checked_by' => $admin->id,
+            'checked_at' => now(),
+        ]);
     }
 }

@@ -4,7 +4,7 @@
     $steps = [
         ['key' => 'manifest', 'label' => 'Manifest', 'description' => 'Fetch release metadata'],
         ['key' => 'compatibility', 'label' => 'Compatibility', 'description' => 'Check server readiness'],
-        ['key' => 'install', 'label' => 'Install', 'description' => 'Deferred to next step'],
+        ['key' => 'install', 'label' => 'Install', 'description' => 'Locked, verified package install'],
     ];
 @endphp
 

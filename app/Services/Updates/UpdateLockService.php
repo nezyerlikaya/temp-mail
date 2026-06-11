@@ -42,7 +42,31 @@ class UpdateLockService
         return File::exists($this->path());
     }
 
-    private function path(): string
+    public function acquire(string $owner): void
+    {
+        File::ensureDirectoryExists(dirname($this->path()));
+
+        $handle = @fopen($this->path(), 'x');
+
+        if ($handle === false) {
+            throw new \RuntimeException('Another update operation is already running. Wait until the active update lock clears.');
+        }
+
+        fwrite($handle, json_encode([
+            'owner' => $owner,
+            'created_at' => now()->toIso8601String(),
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        fclose($handle);
+    }
+
+    public function release(): void
+    {
+        if (File::exists($this->path())) {
+            File::delete($this->path());
+        }
+    }
+
+    public function path(): string
     {
         return storage_path('app/update-center/update.lock');
     }

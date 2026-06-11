@@ -1,4 +1,4 @@
-@props(['lockStatus', 'licenseReadiness'])
+@props(['lockStatus', 'licenseReadiness', 'backupReadiness' => null])
 
 <div class="rounded-lg border border-amber-200 bg-amber-50 p-5 text-amber-950">
     <div class="flex items-start justify-between gap-4">
@@ -10,6 +10,12 @@
     </div>
 
     <dl class="mt-4 grid gap-3 text-sm">
+        @if ($backupReadiness)
+            <div>
+                <dt class="font-extrabold">Backup requirement</dt>
+                <dd class="mt-1">{{ $backupReadiness['message'] }} Completed backups: {{ $backupReadiness['summary']['completed'] ?? 0 }}.</dd>
+            </div>
+        @endif
         <div>
             <dt class="font-extrabold">Update lock</dt>
             <dd class="mt-1">{{ $lockStatus['message'] }}</dd>

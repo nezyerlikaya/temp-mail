@@ -129,6 +129,15 @@ Route::prefix('dashboard')
         Route::post('update-center/check', [UpdateCenterController::class, 'check'])
             ->middleware('can:admin.update-center.check')
             ->name('admin.update-center.check');
+        Route::post('update-center/install', [UpdateCenterController::class, 'install'])
+            ->middleware('can:admin.update-center.install')
+            ->name('admin.update-center.install');
+        Route::post('update-center/manual-upload', [UpdateCenterController::class, 'uploadManual'])
+            ->middleware('can:admin.update-center.manual-upload')
+            ->name('admin.update-center.manual-upload');
+        Route::post('update-center/rollback-readiness', [UpdateCenterController::class, 'rollback'])
+            ->middleware('can:admin.update-center.rollback')
+            ->name('admin.update-center.rollback-readiness');
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {

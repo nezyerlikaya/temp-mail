@@ -5,7 +5,7 @@
         description="Check official release manifests, review compatibility, and prepare safely before any install action."
     >
         <x-slot:actions>
-            <x-admin.status-badge status="Manifest Ready" />
+            <x-admin.status-badge status="Update Ready" />
         </x-slot:actions>
     </x-admin.page-header>
 
@@ -20,6 +20,7 @@
     @endif
 
     <x-error-summary />
+    <x-updates.update-lock-warning :lock-status="$lockStatus" class="mb-6" />
 
     <section class="mb-6 grid gap-4 lg:grid-cols-3" aria-label="Update version summary">
         <x-updates.version-card label="Installed version" :version="$currentVersion" status="current" description="Read from application configuration." />
@@ -29,11 +30,12 @@
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <main class="min-w-0 space-y-6">
-            <x-admin.card title="Safe update workflow" description="Part 1 verifies metadata and readiness only. Installation remains intentionally unavailable.">
-                <x-updates.update-stepper current="manifest" />
+            <x-admin.card title="Safe update workflow" description="Manifest, package verification, installation lock, and recovery readiness stay visible before any update action.">
+                <x-updates.update-stepper :current="$latestCheck?->status === 'installed' ? 'install' : 'compatibility'" />
             </x-admin.card>
 
             <x-updates.compatibility-checklist :compatibility="$compatibility" />
+            <x-updates.install-summary :check="$latestCheck" :backup-readiness="$backupReadiness" :protected-paths="$protectedPaths" :can-install="$canInstallUpdates" />
 
             <x-updates.release-notes :manifest="$latestCheck?->manifest ?? []" />
 
@@ -107,7 +109,10 @@
             </x-admin.card>
 
             <x-updates.package-verification :check="$latestCheck" />
-            <x-updates.backup-warning :lock-status="$lockStatus" :license-readiness="$licenseReadiness" />
+            <x-updates.backup-warning :lock-status="$lockStatus" :license-readiness="$licenseReadiness" :backup-readiness="$backupReadiness" />
+            <x-updates.manual-update-panel :manual-steps="$manualSteps" :can-upload="$canUploadManualUpdates" />
+            <x-updates.rollback-readiness :readiness="$rollbackReadiness" />
+            <x-updates.post-update-health :check="$latestCheck" />
         </aside>
     </div>
 </x-admin.layout>

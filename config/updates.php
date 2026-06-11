@@ -6,4 +6,7 @@ return [
     'default_channel' => env('UPDATE_CHANNEL', 'stable'),
     'required_extensions' => ['pdo', 'openssl', 'mbstring', 'json', 'curl', 'zip'],
     'history_limit' => 50,
+    'signature_public_key' => env('UPDATE_SIGNATURE_PUBLIC_KEY'),
+    'max_package_bytes' => (int) env('UPDATE_MAX_PACKAGE_BYTES', 64 * 1024 * 1024),
+    'manual_package_disk' => 'local',
 ];

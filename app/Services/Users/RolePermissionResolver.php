@@ -63,6 +63,9 @@ class RolePermissionResolver
             'System' => [
                 'admin.update-center.view' => 'Update Center',
                 'admin.update-center.check' => 'Check for updates',
+                'admin.update-center.install' => 'Install updates',
+                'admin.update-center.manual-upload' => 'Upload manual update package',
+                'admin.update-center.rollback' => 'Review rollback readiness',
                 'admin.notifications.view' => 'Notifications',
                 'admin.email-templates.view' => 'Email Templates',
                 'admin.backups-health.view' => 'Backups & Health',
