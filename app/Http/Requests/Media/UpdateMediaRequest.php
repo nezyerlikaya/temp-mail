@@ -8,7 +8,7 @@ class UpdateMediaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('admin.media-library.update') ?? false;
+        return $this->user()?->can('admin.media-library.update-metadata') ?? false;
     }
 
     /** @return array<string, array<int, string>> */
@@ -18,7 +18,6 @@ class UpdateMediaRequest extends FormRequest
             'title' => ['nullable', 'string', 'max:120'],
             'alt_text' => ['nullable', 'string', 'max:160'],
             'caption' => ['nullable', 'string', 'max:500'],
-            'status' => ['required', 'in:active,draft'],
         ];
     }
 }

@@ -17,7 +17,8 @@ class MediaFilterRequest extends FormRequest
         return [
             'q' => ['nullable', 'string', 'max:120'],
             'type' => ['nullable', 'in:all,image,document,avatar,seo'],
-            'status' => ['nullable', 'in:all,active,draft'],
+            'status' => ['nullable', 'in:all,active,hidden,trashed'],
+            'usage' => ['nullable', 'in:all,orphaned,in-use'],
             'uploader' => ['nullable', 'integer', 'exists:users,id'],
             'date' => ['nullable', 'in:all,today,week'],
         ];

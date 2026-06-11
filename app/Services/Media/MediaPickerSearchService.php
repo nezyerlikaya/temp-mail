@@ -14,6 +14,7 @@ class MediaPickerSearchService
     {
         $query = MediaAsset::query()
             ->withCount('usages')
+            ->where('status', 'active')
             ->latest();
 
         if (($filters['q'] ?? '') !== '') {

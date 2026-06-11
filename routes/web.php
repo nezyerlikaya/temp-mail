@@ -173,8 +173,20 @@ Route::prefix('dashboard')
             ->middleware('can:admin.media-library.view')
             ->name('admin.media-library.edit');
         Route::put('media-library/{mediaAsset}', [MediaLibraryController::class, 'update'])
-            ->middleware('can:admin.media-library.update')
+            ->middleware('can:admin.media-library.update-metadata')
             ->name('admin.media-library.update');
+        Route::patch('media-library/{mediaAsset}/status', [MediaLibraryController::class, 'updateStatus'])
+            ->middleware('can:admin.media-library.update')
+            ->name('admin.media-library.status.update');
+        Route::post('media-library/{mediaAsset}/trash', [MediaLibraryController::class, 'trash'])
+            ->middleware('can:admin.media-library.trash')
+            ->name('admin.media-library.trash');
+        Route::post('media-library/{mediaAsset}/restore', [MediaLibraryController::class, 'restore'])
+            ->middleware('can:admin.media-library.restore')
+            ->name('admin.media-library.restore');
+        Route::delete('media-library/{mediaAsset}', [MediaLibraryController::class, 'destroy'])
+            ->middleware('can:admin.media-library.delete')
+            ->name('admin.media-library.destroy');
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {

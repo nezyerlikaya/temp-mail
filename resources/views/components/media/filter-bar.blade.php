@@ -1,7 +1,7 @@
 @props(['filters' => [], 'uploadTargets' => []])
 
 <form method="GET" action="{{ route('admin.media-library.index') }}" class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-    <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_140px_140px_140px_120px_auto]">
+    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_130px_130px_130px_120px_120px_auto]">
         <div>
             <label for="media-q" class="text-xs font-extrabold uppercase text-stone-500">Search</label>
             <input id="media-q" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="File name, title, alt text" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
@@ -17,8 +17,16 @@
         <div>
             <label for="media-status" class="text-xs font-extrabold uppercase text-stone-500">Status</label>
             <select id="media-status" name="status" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
-                @foreach (['all' => 'All', 'active' => 'Active', 'draft' => 'Draft'] as $value => $label)
+                @foreach (['all' => 'All', 'active' => 'Active', 'hidden' => 'Hidden', 'trashed' => 'Trashed'] as $value => $label)
                     <option value="{{ $value }}" @selected(($filters['status'] ?? 'all') === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="media-usage" class="text-xs font-extrabold uppercase text-stone-500">Usage</label>
+            <select id="media-usage" name="usage" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
+                @foreach (['all' => 'All', 'orphaned' => 'Orphaned', 'in-use' => 'In use'] as $value => $label)
+                    <option value="{{ $value }}" @selected(($filters['usage'] ?? 'all') === $value)>{{ $label }}</option>
                 @endforeach
             </select>
         </div>

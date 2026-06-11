@@ -60,6 +60,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('upload media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.upload'));
         Gate::define('upload through picker', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.upload-through-picker'));
         Gate::define('update media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.update'));
+        Gate::define('update media metadata', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.update-metadata'));
+        Gate::define('trash media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.trash'));
+        Gate::define('restore media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.restore'));
+        Gate::define('delete media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.delete'));
         Gate::define('view media usage', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.usage'));
 
         Gate::policy(User::class, UserPolicy::class);

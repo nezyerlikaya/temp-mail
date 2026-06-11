@@ -30,6 +30,14 @@ class MediaSearchService
             $query->where('status', $filters['status']);
         }
 
+        if (($filters['usage'] ?? 'all') === 'orphaned') {
+            $query->whereDoesntHave('usages');
+        }
+
+        if (($filters['usage'] ?? 'all') === 'in-use') {
+            $query->whereHas('usages');
+        }
+
         if (($filters['uploader'] ?? '') !== '') {
             $query->where('uploaded_by', (int) $filters['uploader']);
         }

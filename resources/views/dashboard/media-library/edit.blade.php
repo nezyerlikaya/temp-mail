@@ -22,6 +22,17 @@
 
         <aside class="min-w-0 space-y-6">
             <x-media.usage-panel :usages="$usages" :summary="$usageSummary" />
+            <x-media.quality-warning :warnings="$qualityWarnings" />
+            <x-media.avatar-preview :asset="$asset" :readiness="$avatarReadiness" />
+            <x-media.seo-image-readiness :readiness="$seoReadiness" />
+            <x-media.lifecycle-actions
+                :asset="$asset"
+                :lifecycle="$lifecycle"
+                :can-update="$canUpdateMedia"
+                :can-trash="$canTrashMedia"
+                :can-restore="$canRestoreMedia"
+                :can-delete="$canDeleteMedia"
+            />
             <x-admin.card title="Asset overview" description="The library keeps content metadata separate from file storage.">
                 <dl class="space-y-4 text-sm">
                     <div>
@@ -31,6 +42,16 @@
                     <div>
                         <dt class="text-xs font-bold uppercase text-stone-500">Public URL</dt>
                         <dd class="mt-1 break-all font-mono text-xs text-stone-600">{{ $url }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-bold uppercase text-stone-500">Dimensions</dt>
+                        <dd class="mt-1 font-extrabold text-stone-950">
+                            {{ $imageMetadata['width'] ?: 'Unknown' }} x {{ $imageMetadata['height'] ?: 'Unknown' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-bold uppercase text-stone-500">Aspect ratio</dt>
+                        <dd class="mt-1 font-extrabold text-stone-950">{{ $imageMetadata['aspect_ratio'] ?: 'Unknown' }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs font-bold uppercase text-stone-500">Uploaded by</dt>

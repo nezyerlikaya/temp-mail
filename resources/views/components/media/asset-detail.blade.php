@@ -22,7 +22,7 @@
                     <div><dt class="text-xs font-bold uppercase text-stone-500">Disk</dt><dd class="mt-1 text-sm font-extrabold text-stone-950">{{ $asset->disk }}</dd></div>
                     <div><dt class="text-xs font-bold uppercase text-stone-500">Mime type</dt><dd class="mt-1 text-sm font-extrabold text-stone-950">{{ $asset->mime_type }}</dd></div>
                     <div><dt class="text-xs font-bold uppercase text-stone-500">Size</dt><dd class="mt-1 text-sm font-extrabold text-stone-950">{{ number_format($asset->size_bytes / 1024, 1) }} KB</dd></div>
-                    <div><dt class="text-xs font-bold uppercase text-stone-500">Dimensions</dt><dd class="mt-1 text-sm font-extrabold text-stone-950">{{ $asset->width ?: '—' }} × {{ $asset->height ?: '—' }}</dd></div>
+                    <div><dt class="text-xs font-bold uppercase text-stone-500">Dimensions</dt><dd class="mt-1 text-sm font-extrabold text-stone-950">{{ $asset->width ?: 'Unknown' }} x {{ $asset->height ?: 'Unknown' }}</dd></div>
                     <div><dt class="text-xs font-bold uppercase text-stone-500">Uploaded by</dt><dd class="mt-1 text-sm font-extrabold text-stone-950">{{ $asset->uploader?->name ?? 'System' }}</dd></div>
                 </dl>
 
@@ -87,23 +87,6 @@
                     >{{ old('caption', $asset->caption) }}</textarea>
                     @error('caption')
                         <p id="media-caption-detail-error" class="mt-2 text-sm font-bold text-red-700" role="alert">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="media-status-detail" class="text-sm font-extrabold text-stone-950">Status</label>
-                    <select
-                        id="media-status-detail"
-                        name="status"
-                        class="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20"
-                        @error('status') aria-invalid="true" aria-describedby="media-status-detail-error" @enderror
-                        @disabled(! $canUpdate)
-                    >
-                        <option value="active" @selected(old('status', $asset->status) === 'active')>Active</option>
-                        <option value="draft" @selected(old('status', $asset->status) === 'draft')>Draft</option>
-                    </select>
-                    @error('status')
-                        <p id="media-status-detail-error" class="mt-2 text-sm font-bold text-red-700" role="alert">{{ $message }}</p>
                     @enderror
                 </div>
 

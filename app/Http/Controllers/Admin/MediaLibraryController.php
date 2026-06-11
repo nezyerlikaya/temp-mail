@@ -3,21 +3,33 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Media\AttachMediaUsageAction;
+use App\Actions\Media\DeleteMediaAction;
 use App\Actions\Media\DetachMediaUsageAction;
 use App\Actions\Media\MediaUploadAction;
+use App\Actions\Media\RestoreMediaAction;
+use App\Actions\Media\TrashMediaAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Media\AttachMediaUsageRequest;
+use App\Http\Requests\Media\DeleteMediaRequest;
 use App\Http\Requests\Media\DetachMediaUsageRequest;
 use App\Http\Requests\Media\MediaFilterRequest;
 use App\Http\Requests\Media\MediaPickerSearchRequest;
+use App\Http\Requests\Media\RestoreMediaRequest;
+use App\Http\Requests\Media\TrashMediaRequest;
 use App\Http\Requests\Media\UpdateMediaRequest;
+use App\Http\Requests\Media\UpdateMediaStatusRequest;
 use App\Http\Requests\Media\UploadMediaRequest;
 use App\Models\MediaAsset;
+use App\Services\Audit\AuditLogger;
+use App\Services\Media\AvatarMediaResolver;
 use App\Services\Media\MediaAssetService;
+use App\Services\Media\MediaLifecycleService;
 use App\Services\Media\MediaPickerSearchService;
+use App\Services\Media\MediaQualityService;
 use App\Services\Media\MediaSearchService;
 use App\Services\Media\MediaUrlResolver;
 use App\Services\Media\MediaUsageService;
+use App\Services\Media\SeoImageReadinessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,6 +59,7 @@ class MediaLibraryController extends Controller
                 'q' => (string) $request->query('q', ''),
                 'type' => (string) $request->query('type', 'all'),
                 'status' => (string) $request->query('status', 'all'),
+                'usage' => (string) $request->query('usage', 'all'),
                 'uploader' => (string) $request->query('uploader', ''),
                 'date' => (string) $request->query('date', 'all'),
             ],
@@ -65,6 +78,8 @@ class MediaLibraryController extends Controller
             'pickerAssets' => $picker->options(['type' => 'all']),
             'canUploadMedia' => $request->user()?->can('admin.media-library.upload') ?? false,
             'canUpdateMedia' => $request->user()?->can('admin.media-library.update') ?? false,
+            'canTrashMedia' => $request->user()?->can('admin.media-library.trash') ?? false,
+            'canRestoreMedia' => $request->user()?->can('admin.media-library.restore') ?? false,
         ]);
     }
 
@@ -83,8 +98,16 @@ class MediaLibraryController extends Controller
             ->with('status', 'Media asset uploaded successfully.');
     }
 
-    public function edit(Request $request, MediaAsset $mediaAsset, MediaUrlResolver $urls, MediaUsageService $usage): View
-    {
+    public function edit(
+        Request $request,
+        MediaAsset $mediaAsset,
+        MediaUrlResolver $urls,
+        MediaUsageService $usage,
+        MediaLifecycleService $lifecycle,
+        MediaQualityService $quality,
+        AvatarMediaResolver $avatar,
+        SeoImageReadinessService $seo,
+    ): View {
         $request->user()?->can('admin.media-library.view') || abort(403);
 
         return view('dashboard.media-library.edit', [
@@ -93,17 +116,81 @@ class MediaLibraryController extends Controller
             'url' => $urls->url($mediaAsset),
             'usages' => $usage->forAsset($mediaAsset),
             'usageSummary' => $usage->summary($mediaAsset),
+            'lifecycle' => $lifecycle->state($mediaAsset),
+            'qualityWarnings' => $quality->warnings($mediaAsset),
+            'imageMetadata' => $quality->metadata($mediaAsset),
+            'avatarReadiness' => $avatar->resolve($mediaAsset),
+            'seoReadiness' => $seo->assess($mediaAsset),
             'canUpdateMedia' => $request->user()?->can('admin.media-library.update') ?? false,
+            'canTrashMedia' => $request->user()?->can('admin.media-library.trash') ?? false,
+            'canRestoreMedia' => $request->user()?->can('admin.media-library.restore') ?? false,
+            'canDeleteMedia' => $request->user()?->can('admin.media-library.delete') ?? false,
         ]);
     }
 
-    public function update(UpdateMediaRequest $request, MediaAsset $mediaAsset): RedirectResponse
+    public function update(UpdateMediaRequest $request, MediaAsset $mediaAsset, AuditLogger $audit): RedirectResponse
     {
+        $before = $mediaAsset->only(['title', 'alt_text', 'caption']);
         $mediaAsset->update($request->validated());
+        $changes = collect($mediaAsset->only(['title', 'alt_text', 'caption']))
+            ->filter(fn (mixed $value, string $key): bool => $before[$key] !== $value)
+            ->all();
+
+        if ($changes !== []) {
+            $audit->record('media.updated', $request->user(), null, [
+                'media_uuid' => $mediaAsset->uuid,
+                'changes' => $changes,
+            ], ['module' => 'media', 'action' => 'Update media metadata', 'target' => $mediaAsset]);
+        }
 
         return redirect()
             ->route('admin.media-library.edit', $mediaAsset)
             ->with('status', 'Media asset updated.');
+    }
+
+    public function updateStatus(
+        UpdateMediaStatusRequest $request,
+        MediaAsset $mediaAsset,
+        MediaLifecycleService $lifecycle,
+        AuditLogger $audit,
+    ): RedirectResponse {
+        $previousStatus = $mediaAsset->status;
+        $lifecycle->updateStatus($mediaAsset, $request->string('status')->toString());
+
+        $audit->record('media.status_updated', $request->user(), null, [
+            'media_uuid' => $mediaAsset->uuid,
+            'previous_status' => $previousStatus,
+            'status' => $mediaAsset->status,
+        ], ['module' => 'media', 'action' => 'Update media status', 'target' => $mediaAsset]);
+
+        return back()->with('status', 'Media visibility updated.');
+    }
+
+    public function trash(TrashMediaRequest $request, MediaAsset $mediaAsset, TrashMediaAction $trash): RedirectResponse
+    {
+        $trash->handle($request->user(), $mediaAsset);
+
+        return back()->with('status', 'Media asset moved to trash.');
+    }
+
+    public function restore(RestoreMediaRequest $request, MediaAsset $mediaAsset, RestoreMediaAction $restore): RedirectResponse
+    {
+        $restore->handle($request->user(), $mediaAsset);
+
+        return back()->with('status', 'Media asset restored.');
+    }
+
+    public function destroy(DeleteMediaRequest $request, MediaAsset $mediaAsset, DeleteMediaAction $delete): RedirectResponse
+    {
+        $delete->handle(
+            $request->user(),
+            $mediaAsset,
+            $request->boolean('confirm_in_use_delete'),
+        );
+
+        return redirect()
+            ->route('admin.media-library.index', ['status' => 'trashed'])
+            ->with('status', 'Media asset permanently deleted.');
     }
 
     public function picker(MediaPickerSearchRequest $request, MediaPickerSearchService $search): JsonResponse

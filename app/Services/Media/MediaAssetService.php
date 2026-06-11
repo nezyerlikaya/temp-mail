@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class MediaAssetService
 {
-    /** @return array{total: int, images: int, documents: int, active: int, draft: int, orphaned: int} */
+    /** @return array{total: int, images: int, documents: int, active: int, hidden: int, trashed: int, orphaned: int} */
     public function summary(): array
     {
         return [
@@ -15,7 +15,8 @@ class MediaAssetService
             'images' => MediaAsset::query()->where('type', 'image')->count(),
             'documents' => MediaAsset::query()->where('type', 'document')->count(),
             'active' => MediaAsset::query()->where('status', 'active')->count(),
-            'draft' => MediaAsset::query()->where('status', 'draft')->count(),
+            'hidden' => MediaAsset::query()->where('status', 'hidden')->count(),
+            'trashed' => MediaAsset::query()->where('status', 'trashed')->count(),
             'orphaned' => MediaAsset::query()->whereDoesntHave('usages')->count(),
         ];
     }

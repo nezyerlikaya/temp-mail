@@ -23,7 +23,7 @@ class UploadMediaRequest extends FormRequest
             'alt_text' => ['nullable', 'string', 'max:160'],
             'caption' => ['nullable', 'string', 'max:500'],
             'type' => ['nullable', 'in:image,document,avatar,seo'],
-            'status' => ['nullable', 'in:active,draft'],
+            'status' => ['nullable', 'in:active,hidden'],
         ];
     }
 }

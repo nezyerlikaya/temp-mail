@@ -85,7 +85,7 @@
                     <label for="media-status" class="text-sm font-extrabold text-stone-950">Status</label>
                     <select id="media-status" name="status" class="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20" @disabled(! $canUpload)>
                         <option value="active" @selected(old('status', 'active') === 'active')>Active</option>
-                        <option value="draft" @selected(old('status') === 'draft')>Draft</option>
+                        <option value="hidden" @selected(old('status') === 'hidden')>Hidden</option>
                     </select>
                 </div>
             </div>
