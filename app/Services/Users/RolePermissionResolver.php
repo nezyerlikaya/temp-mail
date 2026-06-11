@@ -68,6 +68,7 @@ class RolePermissionResolver
                 'admin.backups-health.create' => 'Create backups',
                 'admin.backups-health.download' => 'Download backups',
                 'admin.backups-health.delete' => 'Delete backups',
+                'admin.backups-health.run-health' => 'Run system health checks',
                 'admin.settings.view' => 'Settings',
                 'admin.settings.manage' => 'Update global settings',
             ],

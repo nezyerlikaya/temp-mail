@@ -112,6 +112,9 @@ Route::prefix('dashboard')
         Route::post('backups-health', [BackupController::class, 'store'])
             ->middleware('can:admin.backups-health.create')
             ->name('admin.backups-health.store');
+        Route::post('backups-health/health-check', [BackupController::class, 'runHealthCheck'])
+            ->middleware('can:admin.backups-health.run-health')
+            ->name('admin.backups-health.health-check.run');
         Route::get('backups-health/{backup}/download', [BackupController::class, 'download'])
             ->middleware('can:admin.backups-health.download')
             ->name('admin.backups-health.download');
