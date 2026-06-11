@@ -33,7 +33,7 @@ class CompleteInstallation
                 ...$admin,
                 'display_name' => $admin['name'],
                 'status' => 'active',
-                'role' => 'admin',
+                'role' => 'owner',
                 'is_admin' => true,
             ]);
 

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Policies\UserPolicy;
 use App\Services\Admin\AdminCommandRegistry;
 use App\Services\Admin\AdminNavigationRegistry;
+use App\Services\Users\RolePermissionResolver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -30,11 +31,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::before(function (User $user, string $ability): ?bool {
-            return $user->is_admin && str_starts_with($ability, 'admin.') ? true : null;
-        });
+        $permissions = app(RolePermissionResolver::class);
 
-        Gate::define('access-admin', fn (User $user): bool => $user->is_admin);
+        Gate::define('access-admin', fn (User $user): bool => $permissions->canAccessAdmin($user));
+
+        foreach ($permissions->abilityMap() as $abilities) {
+            foreach (array_keys($abilities) as $ability) {
+                Gate::define($ability, fn (User $user): bool => $permissions->allows($user, $ability));
+            }
+        }
+
         Gate::policy(User::class, UserPolicy::class);
 
         View::composer('components.admin.sidebar', function (ViewContract $view): void {

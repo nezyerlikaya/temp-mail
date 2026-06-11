@@ -32,7 +32,6 @@ class UpdateUserIdentityRequest extends FormRequest
             'username' => ['nullable', 'string', 'min:3', 'max:40', 'alpha_dash:ascii', Rule::unique(User::class)->ignore($profileUser)],
             'email' => ['required', 'email', 'max:255', Rule::unique(User::class)->ignore($profileUser)],
             'status' => ['required', Rule::in(array_keys(app(UserStatusService::class)->statuses()))],
-            'role' => ['required', Rule::in(array_keys(app(UserProfileService::class)->roles()))],
             'timezone' => ['required', 'timezone:all'],
             'language_preference' => ['required', Rule::in(array_keys(app(UserProfileService::class)->languages()))],
             'bio' => ['nullable', 'string', 'max:2000'],

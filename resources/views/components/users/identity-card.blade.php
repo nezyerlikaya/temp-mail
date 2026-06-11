@@ -16,7 +16,7 @@
     <div class="mt-5 flex flex-wrap gap-2 border-t border-stone-200 pt-4">
         <x-users.status-badge :status="$profileUser->status" />
         <x-users.role-badge :role="$profileUser->role" />
-        @if ($profileUser->is_admin)
+        @if ($profileUser->hasAdminAccess())
             <span class="inline-flex items-center rounded-full bg-stone-900 px-2.5 py-1 text-xs font-bold text-white">Admin access</span>
         @endif
     </div>

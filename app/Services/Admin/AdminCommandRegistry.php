@@ -108,6 +108,7 @@ class AdminCommandRegistry
             'SEO Growth Center',
             'Security Defense Center',
             'People & Identity',
+            'Roles & Permissions',
             'Theme Launch Center',
             'Typography Center',
             'Update Center',
@@ -129,6 +130,7 @@ class AdminCommandRegistry
             'Theme Launch Center' => ['theme', 'design', 'horizon', 'atlas', 'legacy'],
             'Typography Center' => ['font', 'typography', 'typeface'],
             'People & Identity' => ['user', 'people', 'identity', 'account'],
+            'Roles & Permissions' => ['role', 'permission', 'access', 'admin'],
             default => str($label)->lower()->explode(' ')->all(),
         };
     }

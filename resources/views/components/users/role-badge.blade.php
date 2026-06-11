@@ -2,7 +2,9 @@
 
 @php
     $styles = [
+        'owner' => 'bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-200',
         'admin' => 'bg-violet-100 text-violet-800 ring-violet-200',
+        'editor' => 'bg-blue-100 text-blue-800 ring-blue-200',
         'moderator' => 'bg-amber-100 text-amber-900 ring-amber-200',
         'author' => 'bg-cyan-100 text-cyan-800 ring-cyan-200',
         'member' => 'bg-stone-100 text-stone-700 ring-stone-200',

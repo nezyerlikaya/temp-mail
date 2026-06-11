@@ -2,7 +2,7 @@
     <x-admin.page-header
         eyebrow="People & Identity"
         title="Edit identity"
-        description="Update account identity and profile readiness. Membership plans remain separate from role and admin access."
+        description="Update account identity and profile readiness. Role changes use the protected Roles & Permissions workflow."
     />
 
     <x-error-summary />
@@ -26,17 +26,6 @@
                     <x-form.input name="display_name" label="Display name" :value="$profileUser->display_name" autocomplete="nickname" />
                     <x-form.input name="username" label="Username" :value="$profileUser->username" autocomplete="username" help="Use letters, numbers, dashes, and underscores." />
                     <x-form.input name="email" label="Email" type="email" :value="$profileUser->email" autocomplete="email" inputmode="email" />
-
-                    <div>
-                        <label for="role" class="block text-sm font-bold text-stone-900">Role classification</label>
-                        <select id="role" name="role" class="mt-2 block w-full rounded-lg border border-stone-300 bg-white px-4 py-3 text-base text-stone-950 outline-none focus:border-teal-700 focus:ring-4 focus:ring-teal-700/15" aria-invalid="{{ $errors->has('role') ? 'true' : 'false' }}" aria-describedby="{{ $errors->has('role') ? 'role-error' : 'role-help' }}">
-                            @foreach ($roles as $value => $label)
-                                <option value="{{ $value }}" @selected(old('role', $profileUser->role) === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <p id="role-help" class="mt-2 text-sm text-stone-600">Role classification does not grant admin access by itself.</p>
-                        @error('role')<p id="role-error" class="mt-2 text-sm font-semibold text-red-700">{{ $message }}</p>@enderror
-                    </div>
 
                     <div>
                         <label for="status" class="block text-sm font-bold text-stone-900">Account status</label>

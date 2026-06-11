@@ -107,7 +107,7 @@ class PeopleIdentityTest extends TestCase
             ->get(route('admin.people-identity.edit', $member))
             ->assertOk()
             ->assertSee('Edit identity')
-            ->assertSee('Role classification')
+            ->assertSee('Roles & Permissions workflow')
             ->assertSee('Account status');
     }
 
@@ -125,7 +125,6 @@ class PeopleIdentityTest extends TestCase
                 'username' => 'updated-person',
                 'email' => 'updated@example.com',
                 'status' => 'active',
-                'role' => 'author',
                 'timezone' => 'Europe/Istanbul',
                 'language_preference' => 'tr',
                 'bio' => 'Profile biography ready for future author pages.',
@@ -137,7 +136,7 @@ class PeopleIdentityTest extends TestCase
             'id' => $member->id,
             'name' => 'Updated Person',
             'username' => 'updated-person',
-            'role' => 'author',
+            'role' => 'member',
             'status' => 'active',
         ]);
 
@@ -158,7 +157,6 @@ class PeopleIdentityTest extends TestCase
                 'name' => '',
                 'email' => 'invalid-email',
                 'status' => 'unknown',
-                'role' => 'premium',
                 'timezone' => 'Mars/Olympus',
                 'language_preference' => 'xx',
             ])
@@ -179,7 +177,6 @@ class PeopleIdentityTest extends TestCase
                 'username' => $admin->username,
                 'email' => $admin->email,
                 'status' => 'suspended',
-                'role' => 'admin',
                 'timezone' => 'UTC',
                 'language_preference' => 'en',
                 'bio' => null,

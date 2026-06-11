@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
+use App\Http\Controllers\Admin\Users\RolePermissionController;
 use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\InstallerController;
@@ -61,9 +62,16 @@ Route::prefix('dashboard')
             ->middleware('can:update,user')
             ->name('admin.people-identity.update');
 
+        Route::get('roles-permissions', [RolePermissionController::class, 'index'])
+            ->middleware('can:admin.roles-permissions.view')
+            ->name('admin.roles-permissions.index');
+        Route::patch('roles-permissions/{user}', [RolePermissionController::class, 'update'])
+            ->middleware('can:admin.roles-permissions.manage')
+            ->name('admin.roles-permissions.update');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index'], true)) {
                     continue;
                 }
 

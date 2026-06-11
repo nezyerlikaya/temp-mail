@@ -2,6 +2,7 @@
 
 namespace App\Services\Users;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use DateTimeZone;
 
@@ -28,12 +29,9 @@ class UserProfileService
      */
     public function roles(): array
     {
-        return [
-            'admin' => 'Admin',
-            'moderator' => 'Moderator',
-            'author' => 'Author',
-            'member' => 'Member',
-        ];
+        return collect(UserRole::cases())->mapWithKeys(fn (UserRole $role): array => [
+            $role->value => $role->label(),
+        ])->all();
     }
 
     /**

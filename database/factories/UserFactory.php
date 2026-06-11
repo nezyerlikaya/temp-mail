@@ -61,6 +61,22 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function owner(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+            'role' => 'owner',
+        ]);
+    }
+
+    public function editor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+            'role' => 'editor',
+        ]);
+    }
+
     public function suspended(): static
     {
         return $this->state(fn (array $attributes) => [
