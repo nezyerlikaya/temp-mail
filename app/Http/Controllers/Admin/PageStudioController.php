@@ -9,6 +9,7 @@ use App\Http\Requests\Pages\PageFilterRequest;
 use App\Http\Requests\Pages\StorePageRequest;
 use App\Http\Requests\Pages\UpdatePageRequest;
 use App\Models\Page;
+use App\Services\Pages\PageEditorService;
 use App\Services\Pages\PageSearchService;
 use App\Services\Pages\PageStore;
 use Illuminate\Http\RedirectResponse;
@@ -39,17 +40,14 @@ class PageStudioController extends Controller
         ]);
     }
 
-    public function create(PageFilterRequest $request, PageStore $store): View
+    public function create(PageFilterRequest $request, PageEditorService $editor): View
     {
         $request->user()?->can('admin.page-studio.create') || abort(403);
 
         return view('dashboard.page-studio.create', [
             'adminUser' => $request->user(),
             'page' => null,
-            'locales' => $store->locales(),
-            'pageTypes' => $store->pageTypes(),
-            'statuses' => $store->statuses(),
-            'readinessOptions' => $store->contentReadinessOptions(),
+            'editor' => $editor->data(null, $request->user()),
         ]);
     }
 
@@ -62,17 +60,15 @@ class PageStudioController extends Controller
             ->with('status', 'Page foundation created.');
     }
 
-    public function edit(PageFilterRequest $request, Page $page, PageStore $store): View
+    public function edit(PageFilterRequest $request, Page $page, PageEditorService $editor): View
     {
         $request->user()?->can('admin.page-studio.update') || abort(403);
+        $page->load(['locale', 'author', 'featuredMedia']);
 
         return view('dashboard.page-studio.edit', [
             'adminUser' => $request->user(),
-            'page' => $page->load(['locale', 'author']),
-            'locales' => $store->locales(),
-            'pageTypes' => $store->pageTypes(),
-            'statuses' => $store->statuses(),
-            'readinessOptions' => $store->contentReadinessOptions(),
+            'page' => $page,
+            'editor' => $editor->data($page, $request->user()),
         ]);
     }
 

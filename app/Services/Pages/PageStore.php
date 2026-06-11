@@ -34,11 +34,8 @@ class PageStore
     {
         return [
             'draft' => 'Draft',
-            'active' => 'Active',
             'hidden' => 'Hidden',
             'published' => 'Published',
-            'scheduled' => 'Scheduled',
-            'trashed' => 'Trashed',
         ];
     }
 

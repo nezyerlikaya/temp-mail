@@ -14,6 +14,7 @@ class CreatePageAction
 {
     public function __construct(
         private readonly PageSlugService $slugs,
+        private readonly PublishPageAction $publisher,
         private readonly AuditLogger $audit,
         private readonly AttachMediaUsageAction $attachMediaUsage,
     ) {}
@@ -22,6 +23,9 @@ class CreatePageAction
     public function handle(User $actor, array $payload): Page
     {
         return DB::transaction(function () use ($actor, $payload): Page {
+            $payload['status'] = $this->publisher->statusForIntent($payload['intent'] ?? null, (string) ($payload['status'] ?? 'draft'));
+            unset($payload['intent']);
+
             $payload['slug'] = $payload['slug'] ?: $this->slugs->fromTitle((string) $payload['title']);
             $payload['author_id'] = $payload['author_id'] ?? $actor->id;
             $payload['published_at'] = $payload['status'] === 'published'

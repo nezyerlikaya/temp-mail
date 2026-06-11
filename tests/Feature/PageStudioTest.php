@@ -3,11 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\Locale;
+use App\Models\MediaAsset;
 use App\Models\Page;
 use App\Models\User;
 use App\Services\Localization\LocaleSettingsStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class PageStudioTest extends TestCase
@@ -19,6 +24,7 @@ class PageStudioTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
+        Storage::fake('public');
     }
 
     public function test_page_studio_renders_inside_admin_shell_and_replaces_placeholder(): void
@@ -66,8 +72,42 @@ class PageStudioTest extends TestCase
             ])
             ->assertOk()
             ->assertSee('Please fix the highlighted fields.')
+            ->assertSee('page-errors-title')
             ->assertSee('aria-invalid="true"', false)
             ->assertSee('role="alert"', false);
+    }
+
+    public function test_page_editor_create_and_edit_render_with_media_picker_inside_admin_shell(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $asset = $this->seedAsset($admin);
+        $page = Page::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'title' => 'About Temp Mail',
+            'slug' => 'about-temp-mail',
+            'featured_media_id' => $asset->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.page-studio.create'))
+            ->assertOk()
+            ->assertSee('Page editor')
+            ->assertSee('Publish panel')
+            ->assertSee('Choose media')
+            ->assertSee('Content editor')
+            ->assertDontSee('page_translations');
+
+        $this->actingAs($admin)
+            ->get(route('admin.page-studio.edit', $page))
+            ->assertOk()
+            ->assertSee('About Temp Mail')
+            ->assertSee('Picker Hero')
+            ->assertSee('Save draft')
+            ->assertSee('Publish')
+            ->assertSee('Hide');
     }
 
     public function test_slugs_are_safe_and_unique_per_language(): void
@@ -148,6 +188,93 @@ class PageStudioTest extends TestCase
         $this->assertDatabaseHas('user_audit_events', ['event' => 'page.created', 'actor_id' => $admin->id]);
     }
 
+    public function test_language_specific_page_save_persists_content_publish_intent_and_media_usage(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $asset = $this->seedAsset($admin);
+
+        $response = $this->actingAs($admin)
+            ->post(route('admin.page-studio.store'), [
+                'locale_id' => $english->id,
+                'title' => 'English Help Center',
+                'slug' => '',
+                'page_type' => 'faq_readiness',
+                'status' => 'draft',
+                'intent' => 'publish',
+                'content_readiness' => 'ready',
+                'excerpt' => 'Help for temporary inbox users.',
+                'content' => 'Use this page for the English help center.',
+                'featured_media_id' => $asset->id,
+            ]);
+
+        $response->assertRedirect();
+
+        $page = Page::query()->where('slug', 'english-help-center')->firstOrFail();
+
+        $this->assertSame('published', $page->status);
+        $this->assertNotNull($page->published_at);
+        $this->assertSame('Use this page for the English help center.', $page->content);
+        $this->assertDatabaseHas('media_usages', [
+            'media_asset_id' => $asset->id,
+            'module' => 'pages',
+            'usage_context' => 'page_studio',
+            'slot' => 'featured_media_id',
+            'usable_type' => Page::class,
+            'usable_id' => (string) $page->id,
+        ]);
+    }
+
+    public function test_update_page_can_hide_and_preserves_accessible_field_errors(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $page = Page::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.page-studio.update', $page), [
+                'locale_id' => $english->id,
+                'title' => 'Hidden Knowledge Base',
+                'slug' => 'hidden-knowledge-base',
+                'page_type' => 'faq_readiness',
+                'status' => 'published',
+                'intent' => 'hide',
+                'content_readiness' => 'needs_review',
+                'content' => 'Hidden while content is reviewed.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('pages', [
+            'id' => $page->id,
+            'status' => 'hidden',
+            'slug' => 'hidden-knowledge-base',
+        ]);
+
+        $this->actingAs($admin)
+            ->followingRedirects()
+            ->from(route('admin.page-studio.edit', $page))
+            ->put(route('admin.page-studio.update', $page), [
+                'locale_id' => $english->id,
+                'title' => '',
+                'slug' => 'bad/slug',
+                'page_type' => 'faq_readiness',
+                'status' => 'draft',
+                'content_readiness' => 'outline',
+            ])
+            ->assertOk()
+            ->assertSee('Please fix the highlighted fields.')
+            ->assertSee('page-title-error')
+            ->assertSee('page-slug-error')
+            ->assertSee('aria-invalid="true"', false);
+    }
+
     public function test_page_filters_by_language_status_type_author_and_search(): void
     {
         $admin = User::factory()->admin()->create();
@@ -191,6 +318,39 @@ class PageStudioTest extends TestCase
         $this->assertFalse(method_exists(Page::class, 'translations'));
     }
 
+    public function test_featured_media_field_has_safe_fallback_when_media_library_is_unavailable(): void
+    {
+        view()->share('errors', new ViewErrorBag);
+
+        $html = Blade::render('<x-pages.featured-media-field :media-library-ready="false" fallback-value="12" />');
+
+        $this->assertStringContainsString('Featured media', $html);
+        $this->assertStringContainsString('Media Library is not available yet', $html);
+        $this->assertStringNotContainsString('Choose media', $html);
+        $this->assertStringNotContainsString('file path', $html);
+    }
+
+    public function test_page_editor_sources_do_not_use_livewire_cdn_alpine_or_hardcoded_localhost(): void
+    {
+        $files = [
+            resource_path('views/dashboard/page-studio/create.blade.php'),
+            resource_path('views/dashboard/page-studio/edit.blade.php'),
+            resource_path('views/components/pages/page-editor.blade.php'),
+            resource_path('views/components/pages/publish-panel.blade.php'),
+            resource_path('views/components/pages/featured-media-field.blade.php'),
+        ];
+
+        foreach ($files as $file) {
+            $contents = file_get_contents($file) ?: '';
+
+            $this->assertStringNotContainsString('Livewire', $contents, $file);
+            $this->assertStringNotContainsString('livewire', $contents, $file);
+            $this->assertStringNotContainsString('cdn.tailwindcss', $contents, $file);
+            $this->assertStringNotContainsString('unpkg.com/alpine', $contents, $file);
+            $this->assertStringNotContainsString('127.0.0.1', $contents, $file);
+        }
+    }
+
     public function test_editor_can_create_but_author_can_only_view_page_studio(): void
     {
         app(LocaleSettingsStore::class)->ensureSeeded();
@@ -221,5 +381,29 @@ class PageStudioTest extends TestCase
                 'content_readiness' => 'outline',
             ])
             ->assertForbidden();
+    }
+
+    private function seedAsset(User $uploader): MediaAsset
+    {
+        $path = 'media/'.Str::uuid().'/picker-hero.png';
+        Storage::disk('public')->put($path, 'fake-image');
+
+        return MediaAsset::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'original_name' => 'picker-hero.png',
+            'file_name' => 'picker-hero.png',
+            'disk' => 'public',
+            'path' => $path,
+            'mime_type' => 'image/png',
+            'size_bytes' => 1024,
+            'width' => 1200,
+            'height' => 800,
+            'type' => 'image',
+            'status' => 'active',
+            'title' => 'Picker Hero',
+            'alt_text' => 'Picker hero asset',
+            'caption' => 'Ready for selection.',
+            'uploaded_by' => $uploader->id,
+        ]);
     }
 }

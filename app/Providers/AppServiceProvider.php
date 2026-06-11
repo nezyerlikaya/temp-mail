@@ -57,6 +57,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view pages', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.view'));
         Gate::define('create page', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.create'));
         Gate::define('update page', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.update'));
+        Gate::define('publish page', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.publish'));
+        Gate::define('hide page', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.hide'));
         Gate::define('publish page readiness', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.publish'));
         Gate::define('trash page readiness', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.trash'));
         Gate::define('view media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.view'));

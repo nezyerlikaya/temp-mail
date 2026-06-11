@@ -21,7 +21,15 @@ class UpdatePageRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('admin.page-studio.update') ?? false;
+        if (! ($this->user()?->can('admin.page-studio.update') ?? false)) {
+            return false;
+        }
+
+        return match ($this->input('intent')) {
+            'publish' => $this->user()?->can('admin.page-studio.publish') ?? false,
+            'hide' => $this->user()?->can('admin.page-studio.hide') ?? false,
+            default => true,
+        };
     }
 
     /** @return array<string, array<int, mixed>> */
@@ -47,6 +55,7 @@ class UpdatePageRequest extends FormRequest
             'featured_media_id' => ['nullable', 'integer', 'exists:media_assets,id'],
             'page_type' => ['required', Rule::in(array_keys($store->pageTypes()))],
             'status' => ['required', Rule::in(array_keys($store->statuses()))],
+            'intent' => ['nullable', Rule::in(['save_draft', 'publish', 'hide'])],
             'published_at' => ['nullable', 'date'],
         ];
     }

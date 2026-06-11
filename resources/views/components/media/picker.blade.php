@@ -13,6 +13,7 @@
     $searchId = 'media-picker-search-'.$id;
     $typeId = 'media-picker-type-'.$id;
     $titleId = 'media-picker-title-'.$id;
+    $oldValue = old($name);
     $initial = $selected ? [
         'id' => $selected['id'],
         'title' => $selected['title'],
@@ -21,7 +22,15 @@
         'mime_type' => $selected['mime_type'],
         'url' => $selected['url'],
         'usage_count' => $selected['usage_count'] ?? 0,
-    ] : null;
+    ] : (filled($oldValue) ? [
+        'id' => (int) $oldValue,
+        'title' => 'Media #'.$oldValue,
+        'original_name' => 'Previously selected media',
+        'type' => 'image',
+        'mime_type' => '',
+        'url' => null,
+        'usage_count' => 0,
+    ] : null);
 @endphp
 
 <div

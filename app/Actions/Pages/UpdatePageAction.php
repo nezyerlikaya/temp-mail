@@ -15,6 +15,7 @@ class UpdatePageAction
 {
     public function __construct(
         private readonly PageSlugService $slugs,
+        private readonly PublishPageAction $publisher,
         private readonly AuditLogger $audit,
         private readonly AttachMediaUsageAction $attachMediaUsage,
         private readonly DetachMediaUsageAction $detachMediaUsage,
@@ -24,7 +25,10 @@ class UpdatePageAction
     public function handle(User $actor, Page $page, array $payload): Page
     {
         return DB::transaction(function () use ($actor, $page, $payload): Page {
-            $before = $page->only(['locale_id', 'title', 'slug', 'page_type', 'status', 'content_readiness', 'featured_media_id']);
+            $before = $page->only(['locale_id', 'title', 'slug', 'excerpt', 'content', 'page_type', 'status', 'content_readiness', 'featured_media_id', 'published_at']);
+            $payload['status'] = $this->publisher->statusForIntent($payload['intent'] ?? null, (string) ($payload['status'] ?? $page->status));
+            unset($payload['intent']);
+
             $payload['slug'] = $payload['slug'] ?: $this->slugs->fromTitle((string) $payload['title']);
             $payload['published_at'] = $payload['status'] === 'published'
                 ? ($payload['published_at'] ?? $page->published_at ?? now())
