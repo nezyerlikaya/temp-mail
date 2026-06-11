@@ -23,4 +23,15 @@ class UserPolicy
     {
         return $this->permissions->allows($actor, 'admin.roles-permissions.manage');
     }
+
+    public function updateAuthorProfile(User $actor, User $subject): bool
+    {
+        return $this->permissions->allows($actor, 'admin.roles-permissions.manage')
+            || ($actor->is($subject) && $this->permissions->allows($actor, 'admin.author-profiles.view'));
+    }
+
+    public function updateAvatar(User $actor, User $subject): bool
+    {
+        return $this->updateAuthorProfile($actor, $subject);
+    }
 }

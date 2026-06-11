@@ -37,6 +37,17 @@ class UserFactory extends Factory
             'bio' => null,
             'website' => null,
             'avatar_media_id' => null,
+            'public_author_slug' => null,
+            'author_bio' => null,
+            'social_links' => null,
+            'author_profile_active' => false,
+            'featured_author' => false,
+            'avatar_color' => '#0f766e',
+            'current_plan_reference' => null,
+            'membership_status' => 'none',
+            'premium_starts_at' => null,
+            'premium_ends_at' => null,
+            'membership_granted_by' => null,
             'password' => static::$password ??= Hash::make('password'),
             'is_admin' => false,
             'remember_token' => Str::random(10),
@@ -74,6 +85,17 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'is_admin' => true,
             'role' => 'editor',
+        ]);
+    }
+
+    public function author(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+            'role' => 'author',
+            'display_name' => fake()->name(),
+            'public_author_slug' => fake()->unique()->slug(2),
+            'author_bio' => fake()->paragraph(),
         ]);
     }
 

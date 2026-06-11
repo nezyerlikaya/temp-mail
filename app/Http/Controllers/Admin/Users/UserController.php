@@ -6,6 +6,9 @@ use App\Actions\Users\UpdateUserIdentityAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Users\UpdateUserIdentityRequest;
 use App\Models\User;
+use App\Services\Users\AuthorProfileService;
+use App\Services\Users\AvatarResolver;
+use App\Services\Users\MembershipSummaryResolver;
 use App\Services\Users\UserProfileService;
 use App\Services\Users\UserSearchService;
 use App\Services\Users\UserStatusService;
@@ -32,13 +35,23 @@ class UserController extends Controller
         ]);
     }
 
-    public function show(Request $request, User $user): View
-    {
+    public function show(
+        Request $request,
+        User $user,
+        AuthorProfileService $authors,
+        AvatarResolver $avatars,
+        MembershipSummaryResolver $memberships,
+    ): View {
         Gate::authorize('view', $user);
 
         return view('dashboard.people-identity.show', [
             'adminUser' => $request->user(),
             'profileUser' => $user,
+            'authorSummary' => $authors->summary($user),
+            'avatar' => $avatars->resolve($user),
+            'membership' => $memberships->resolve($user),
+            'canUpdateIdentity' => $request->user()->can('update', $user),
+            'canUpdateAuthor' => $request->user()->can('updateAuthorProfile', $user),
         ]);
     }
 

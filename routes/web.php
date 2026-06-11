@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PlaceholderController;
+use App\Http\Controllers\Admin\Users\AuthorProfileController;
 use App\Http\Controllers\Admin\Users\RolePermissionController;
 use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -69,9 +70,22 @@ Route::prefix('dashboard')
             ->middleware('can:admin.roles-permissions.manage')
             ->name('admin.roles-permissions.update');
 
+        Route::get('author-profiles', [AuthorProfileController::class, 'index'])
+            ->middleware('can:admin.author-profiles.view')
+            ->name('admin.author-profiles.index');
+        Route::get('author-profiles/{user}/edit', [AuthorProfileController::class, 'edit'])
+            ->middleware('can:updateAuthorProfile,user')
+            ->name('admin.author-profiles.edit');
+        Route::put('author-profiles/{user}', [AuthorProfileController::class, 'update'])
+            ->middleware('can:updateAuthorProfile,user')
+            ->name('admin.author-profiles.update');
+        Route::patch('people-identity/{user}/avatar', [AuthorProfileController::class, 'updateAvatar'])
+            ->middleware('can:updateAvatar,user')
+            ->name('admin.people-identity.avatar.update');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index'], true)) {
                     continue;
                 }
 
