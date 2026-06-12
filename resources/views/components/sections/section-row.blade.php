@@ -11,4 +11,7 @@
     <td class="px-4 py-3"><x-sections.status-badge :status="$section->status" /></td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ str($section->visibility)->headline() }}</td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ $section->items_count }}</td>
+    <td class="px-4 py-3">
+        <a href="{{ route('admin.sections-studio.edit', $section) }}" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-stone-300 px-3 text-xs font-extrabold text-stone-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">Edit</a>
+    </td>
 </tr>

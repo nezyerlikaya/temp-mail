@@ -44,6 +44,16 @@ class SectionStore
         ];
     }
 
+    /** @return array<string, string> */
+    public function deviceVisibilities(): array
+    {
+        return [
+            'all' => 'All devices',
+            'desktop' => 'Desktop only',
+            'mobile' => 'Mobile only',
+        ];
+    }
+
     /** @return array<string, int> */
     public function summary(): array
     {

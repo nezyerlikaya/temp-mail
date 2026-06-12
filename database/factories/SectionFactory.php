@@ -39,6 +39,7 @@ class SectionFactory extends Factory
             'status' => 'draft',
             'sort_order' => 0,
             'visibility' => 'public',
+            'device_visibility' => 'all',
             'created_by' => User::factory()->admin(),
             'updated_by' => null,
             'trashed_at' => null,

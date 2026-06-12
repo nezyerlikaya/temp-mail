@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'status',
     'sort_order',
     'visibility',
+    'device_visibility',
     'created_by',
     'updated_by',
     'trashed_at',

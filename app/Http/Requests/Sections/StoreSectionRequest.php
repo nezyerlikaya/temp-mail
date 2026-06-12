@@ -10,6 +10,13 @@ use Illuminate\Validation\Rule;
 
 class StoreSectionRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if (blank($this->input('device_visibility'))) {
+            $this->merge(['device_visibility' => 'all']);
+        }
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->can('admin.sections-studio.create') ?? false;
@@ -26,9 +33,15 @@ class StoreSectionRequest extends FormRequest
             'subtitle' => ['nullable', 'string', 'max:600'],
             'content' => ['nullable', 'string', 'max:10000'],
             'settings' => ['nullable', 'array'],
+            'settings.button_label' => ['nullable', 'string', 'max:120'],
+            'settings.button_url' => ['nullable', 'string', 'max:500'],
+            'settings.post_count' => ['nullable', 'integer', 'min:1', 'max:24'],
+            'settings.category_id' => ['nullable', 'integer', 'exists:blog_categories,id'],
+            'settings.layout' => ['nullable', Rule::in(['grid', 'list', 'compact'])],
             'status' => ['required', Rule::in(array_keys(app(SectionStore::class)->editorStatuses()))],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'visibility' => ['required', Rule::in(array_keys(app(SectionStore::class)->visibilities()))],
+            'device_visibility' => ['required', Rule::in(array_keys(app(SectionStore::class)->deviceVisibilities()))],
         ];
     }
 }

@@ -81,6 +81,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view sections', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.view'));
         Gate::define('create section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.create'));
         Gate::define('update section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.update'));
+        Gate::define('reorder section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.reorder'));
+        Gate::define('update section items', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.items.update'));
         Gate::define('publish section readiness', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.publish'));
         Gate::define('trash section readiness', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.trash'));
         Gate::define('view media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.view'));

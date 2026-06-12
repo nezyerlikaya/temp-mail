@@ -245,12 +245,33 @@ Route::prefix('dashboard')
         Route::get('sections-studio', [SectionsStudioController::class, 'index'])
             ->middleware('can:admin.sections-studio.view')
             ->name('admin.sections-studio.index');
+        Route::get('sections-studio/create', [SectionsStudioController::class, 'create'])
+            ->middleware('can:admin.sections-studio.create')
+            ->name('admin.sections-studio.create');
         Route::post('sections-studio', [SectionsStudioController::class, 'store'])
             ->middleware('can:admin.sections-studio.create')
             ->name('admin.sections-studio.store');
+        Route::post('sections-studio/reorder', [SectionsStudioController::class, 'reorder'])
+            ->middleware('can:admin.sections-studio.reorder')
+            ->name('admin.sections-studio.reorder');
+        Route::get('sections-studio/{section}/edit', [SectionsStudioController::class, 'edit'])
+            ->middleware('can:admin.sections-studio.update')
+            ->name('admin.sections-studio.edit');
         Route::put('sections-studio/{section}', [SectionsStudioController::class, 'update'])
             ->middleware('can:admin.sections-studio.update')
             ->name('admin.sections-studio.update');
+        Route::post('sections-studio/{section}/items', [SectionsStudioController::class, 'storeItem'])
+            ->middleware('can:admin.sections-studio.items.update')
+            ->name('admin.sections-studio.items.store');
+        Route::post('sections-studio/{section}/items/reorder', [SectionsStudioController::class, 'reorderItems'])
+            ->middleware('can:admin.sections-studio.items.update')
+            ->name('admin.sections-studio.items.reorder');
+        Route::put('sections-studio/{section}/items/{sectionItem}', [SectionsStudioController::class, 'updateItem'])
+            ->middleware('can:admin.sections-studio.items.update')
+            ->name('admin.sections-studio.items.update');
+        Route::delete('sections-studio/{section}/items/{sectionItem}', [SectionsStudioController::class, 'destroyItem'])
+            ->middleware('can:admin.sections-studio.items.update')
+            ->name('admin.sections-studio.items.destroy');
 
         Route::get('media-library', [MediaLibraryController::class, 'index'])
             ->middleware('can:admin.media-library.view')

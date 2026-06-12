@@ -23,4 +23,8 @@
         <span>{{ $section->creator?->name ?? 'System' }}</span>
         <span>Order {{ $section->sort_order }}</span>
     </div>
+
+    <a href="{{ route('admin.sections-studio.edit', $section) }}" class="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-stone-950 px-3 text-sm font-extrabold text-white focus:outline-none focus:ring-4 focus:ring-teal-600/20">
+        Edit section
+    </a>
 </article>

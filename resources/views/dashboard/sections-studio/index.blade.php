@@ -3,7 +3,13 @@
         eyebrow="Content"
         title="Sections Studio"
         description="Language-specific CTA, FAQ, trust, and teaser content records for future theme rendering."
-    />
+    >
+        <x-slot:actions>
+            @if ($canCreateSection)
+                <a href="{{ route('admin.sections-studio.create') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-extrabold text-white shadow-sm focus:outline-none focus:ring-4 focus:ring-teal-600/20">Create section</a>
+            @endif
+        </x-slot:actions>
+    </x-admin.page-header>
 
     @if (session('status'))
         <x-admin.alert variant="success" class="mb-6">{{ session('status') }}</x-admin.alert>
@@ -30,6 +36,43 @@
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
             <main class="min-w-0 space-y-6">
                 <x-sections.filter-bar :filters="$filters" :locales="$locales" :types="$types" :placements="$placements" :statuses="$statuses" />
+
+                @if ($canReorderSection && ($filters['locale_id'] ?? 'all') !== 'all' && ($filters['placement'] ?? 'all') !== 'all' && $sections->count() > 1)
+                    @php
+                        $orderItems = $sections->map(fn ($section): array => ['id' => $section->id, 'title' => $section->title])->values();
+                    @endphp
+                    <form method="POST" action="{{ route('admin.sections-studio.reorder') }}" class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm" x-data="{
+                        items: {{ Illuminate\Support\Js::from($orderItems) }},
+                        draggedId: null,
+                        moveBefore(targetId) {
+                            if (!this.draggedId || this.draggedId === targetId) return;
+                            const from = this.items.findIndex(item => item.id === this.draggedId);
+                            const to = this.items.findIndex(item => item.id === targetId);
+                            const [moved] = this.items.splice(from, 1);
+                            this.items.splice(to, 0, moved);
+                        }
+                    }">
+                        @csrf
+                        <input type="hidden" name="locale_id" value="{{ $filters['locale_id'] }}">
+                        <input type="hidden" name="placement" value="{{ $filters['placement'] }}">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h2 class="font-extrabold text-stone-950">Section ordering</h2>
+                                <p class="mt-1 text-sm text-stone-600">Drag records within this language and placement scope.</p>
+                            </div>
+                            <button type="submit" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-stone-300 px-4 text-sm font-extrabold text-stone-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">Save order</button>
+                        </div>
+                        <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                            <template x-for="item in items" :key="item.id">
+                                <div draggable="true" x-on:dragstart="draggedId = item.id" x-on:dragover.prevent x-on:drop.prevent="moveBefore(item.id)" class="flex items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 p-3">
+                                    <input type="hidden" name="order[]" x-bind:value="item.id">
+                                    <x-sections.drag-handle />
+                                    <span class="min-w-0 truncate text-sm font-extrabold text-stone-800" x-text="item.title"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </form>
+                @endif
 
                 @if ($sections->count() > 0)
                     <section class="space-y-6" aria-labelledby="section-results-title">
@@ -59,6 +102,7 @@
                                             <th scope="col" class="px-4 py-3">Status</th>
                                             <th scope="col" class="px-4 py-3">Visibility</th>
                                             <th scope="col" class="px-4 py-3">Items</th>
+                                            <th scope="col" class="px-4 py-3">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -78,69 +122,6 @@
             </main>
 
             <aside class="min-w-0 space-y-6">
-                <x-admin.card title="Create foundation" description="A compact first-pass form for section records. Full editor arrives in the next part.">
-                    @if ($canCreateSection)
-                        <form method="POST" action="{{ route('admin.sections-studio.store') }}" class="space-y-4" x-data="{ submitting: false }" x-on:submit="if (submitting) { $event.preventDefault(); return; } submitting = true" x-bind:aria-busy="submitting.toString()" x-bind:class="{ 'pointer-events-none opacity-70': submitting }">
-                            @csrf
-
-                            <div>
-                                <label for="section-create-locale" class="text-sm font-extrabold text-stone-800">Language</label>
-                                <select id="section-create-locale" name="locale_id" class="mt-2 block min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20" @error('locale_id') aria-invalid="true" aria-describedby="section-create-locale-error" @enderror>
-                                    <option value="">Choose language</option>
-                                    @foreach ($locales as $locale)
-                                        <option value="{{ $locale->id }}" @selected((string) old('locale_id') === (string) $locale->id)>{{ $locale->language_name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('locale_id') <p id="section-create-locale-error" class="mt-2 text-sm font-bold text-red-700" role="alert">{{ $message }}</p> @enderror
-                            </div>
-
-                            <div class="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label for="section-create-type" class="text-sm font-extrabold text-stone-800">Type</label>
-                                    <select id="section-create-type" name="section_type" class="mt-2 block min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
-                                        @foreach ($types as $value => $label)
-                                            <option value="{{ $value }}" @selected(old('section_type', 'cta') === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label for="section-create-status" class="text-sm font-extrabold text-stone-800">Status</label>
-                                    <select id="section-create-status" name="status" class="mt-2 block min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
-                                        @foreach ($editorStatuses as $value => $label)
-                                            <option value="{{ $value }}" @selected(old('status', 'draft') === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="section-create-placement" class="text-sm font-extrabold text-stone-800">Placement</label>
-                                <select id="section-create-placement" name="placement" class="mt-2 block min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
-                                    @foreach ($placements as $value => $label)
-                                        <option value="{{ $value }}" @selected(old('placement', 'home.primary') === $value)>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="section-create-title" class="text-sm font-extrabold text-stone-800">Title</label>
-                                <input id="section-create-title" name="title" value="{{ old('title') }}" type="text" class="mt-2 block min-h-11 w-full rounded-lg border border-stone-300 px-3 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20" @error('title') aria-invalid="true" aria-describedby="section-create-title-error" @enderror>
-                                @error('title') <p id="section-create-title-error" class="mt-2 text-sm font-bold text-red-700" role="alert">{{ $message }}</p> @enderror
-                            </div>
-
-                            <input type="hidden" name="visibility" value="{{ old('visibility', 'public') }}">
-                            <input type="hidden" name="sort_order" value="{{ old('sort_order', 0) }}">
-
-                            <button type="submit" x-bind:disabled="submitting" class="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-teal-600/25 disabled:cursor-not-allowed disabled:opacity-70">
-                                <span x-text="submitting ? 'Creating...' : 'Create section'"></span>
-                            </button>
-                        </form>
-                    @else
-                        <p class="text-sm font-bold text-stone-600">Your role can view sections but cannot create them.</p>
-                    @endif
-                </x-admin.card>
-
                 <x-admin.card title="Foundation rules" description="Sections remain language-specific records.">
                     <div class="space-y-3 text-sm">
                         <div class="rounded-lg border border-stone-200 p-3">
