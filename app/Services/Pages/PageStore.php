@@ -92,6 +92,7 @@ class PageStore
     {
         return Page::query()
             ->with(['locale', 'author'])
+            ->where('status', '!=', 'trashed')
             ->latest()
             ->limit($limit)
             ->get();

@@ -42,6 +42,17 @@ class CreatePageAction
                 'page_type' => $page->page_type,
             ], ['module' => 'pages', 'action' => 'Create page', 'target' => $page]);
 
+            if (in_array($page->status, ['published', 'hidden'], true)) {
+                $this->audit->record('page.'.$page->status, $actor, null, [
+                    'page_id' => $page->id,
+                    'status' => $page->status,
+                ], [
+                    'module' => 'pages',
+                    'action' => $page->status === 'published' ? 'Publish page' : 'Hide page',
+                    'target' => $page,
+                ]);
+            }
+
             return $page;
         });
     }

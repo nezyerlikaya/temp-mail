@@ -227,6 +227,11 @@ class PageStudioTest extends TestCase
             'usable_type' => Page::class,
             'usable_id' => (string) $page->id,
         ]);
+        $this->assertDatabaseHas('user_audit_events', [
+            'event' => 'page.published',
+            'actor_id' => $admin->id,
+            'target_id' => (string) $page->id,
+        ]);
     }
 
     public function test_update_page_can_hide_and_preserves_accessible_field_errors(): void

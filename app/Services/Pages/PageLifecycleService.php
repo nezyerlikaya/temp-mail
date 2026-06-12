@@ -3,7 +3,7 @@
 namespace App\Services\Pages;
 
 use App\Models\Page;
-use InvalidArgumentException;
+use Illuminate\Validation\ValidationException;
 
 class PageLifecycleService
 {
@@ -22,7 +22,9 @@ class PageLifecycleService
     public function assertCanTransition(Page $page, string $target): void
     {
         if (! in_array($target, $this->allowedTransitions($page), true)) {
-            throw new InvalidArgumentException('This page cannot move from '.str($page->status)->headline().' to '.str($target)->headline().'.');
+            throw ValidationException::withMessages([
+                'status' => 'This page cannot move from '.str($page->status)->headline().' to '.str($target)->headline().'.',
+            ]);
         }
     }
 }
