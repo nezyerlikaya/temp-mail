@@ -73,6 +73,8 @@ class RolePermissionResolver
                 'admin.media-library.usage' => 'View media usage',
                 'admin.comment-moderation.view' => 'Comment Moderation',
                 'admin.seo-growth-center.view' => 'SEO Growth Center',
+                'admin.seo-growth-center.update' => 'Update SEO records',
+                'admin.seo-growth-center.manage' => 'Manage SEO settings',
             ],
             'Mail Infrastructure' => [
                 'admin.domains.view' => 'Domains',
@@ -206,7 +208,8 @@ class RolePermissionResolver
                 'admin.sections-studio.publish', 'admin.sections-studio.activate', 'admin.sections-studio.hide',
                 'admin.sections-studio.preview', 'admin.sections-studio.restore', 'admin.sections-studio.trash',
                 'admin.media-library.view', 'admin.media-library.picker',
-                'admin.media-library.select', 'admin.media-library.usage', 'admin.seo-growth-center.view',
+                'admin.media-library.select', 'admin.media-library.usage',
+                'admin.seo-growth-center.view', 'admin.seo-growth-center.update',
                 'admin.author-profiles.view', 'admin.notifications.view',
             ],
             UserRole::Moderator->value => [

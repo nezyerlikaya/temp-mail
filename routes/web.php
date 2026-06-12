@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PageStudioController;
 use App\Http\Controllers\Admin\PlaceholderController;
 use App\Http\Controllers\Admin\SectionsStudioController;
+use App\Http\Controllers\Admin\SeoGrowthCenterController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UpdateCenterController;
 use App\Http\Controllers\Admin\Users\AuthorProfileController;
@@ -325,9 +326,19 @@ Route::prefix('dashboard')
             ->middleware('can:admin.media-library.delete')
             ->name('admin.media-library.destroy');
 
+        Route::get('seo-growth-center', [SeoGrowthCenterController::class, 'index'])
+            ->middleware('can:admin.seo-growth-center.view')
+            ->name('admin.seo-growth-center.index');
+        Route::post('seo-growth-center/records', [SeoGrowthCenterController::class, 'ensure'])
+            ->middleware('can:admin.seo-growth-center.update')
+            ->name('admin.seo-growth-center.records.ensure');
+        Route::put('seo-growth-center/records/{seoRecord}', [SeoGrowthCenterController::class, 'update'])
+            ->middleware('can:admin.seo-growth-center.update')
+            ->name('admin.seo-growth-center.records.update');
+
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 

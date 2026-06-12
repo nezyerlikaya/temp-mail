@@ -102,6 +102,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('restore media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.restore'));
         Gate::define('delete media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.delete'));
         Gate::define('view media usage', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.usage'));
+        Gate::define('view SEO', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.view'));
+        Gate::define('update SEO', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.update'));
+        Gate::define('manage SEO settings', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.manage'));
 
         Gate::policy(User::class, UserPolicy::class);
 
