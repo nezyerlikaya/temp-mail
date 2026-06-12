@@ -33,6 +33,8 @@ class BlogCategoryFactory extends Factory
             'slug' => str($name)->slug()->toString(),
             'description' => fake()->sentence(),
             'is_active' => true,
+            'status' => 'active',
+            'sort_order' => 0,
         ];
     }
 }

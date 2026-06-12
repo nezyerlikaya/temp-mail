@@ -23,10 +23,19 @@ class UpdateBlogPostRequest extends FormRequest
             return false;
         }
 
+        if ($this->hasTaxonomyInput() && ! ($this->user()?->can('admin.taxonomy.attach') ?? false)) {
+            return false;
+        }
+
         return match ($this->input('intent')) {
             'publish', 'hide' => $this->user()?->can('admin.blog-studio.publish') ?? false,
             default => true,
         };
+    }
+
+    private function hasTaxonomyInput(): bool
+    {
+        return filled($this->input('blog_category_id')) || filled($this->input('tag_ids'));
     }
 
     /** @return array<string, array<int, mixed>> */

@@ -16,6 +16,7 @@ class CreateBlogPostAction
     public function __construct(
         private readonly BlogSlugService $slugs,
         private readonly PublishBlogPostAction $publisher,
+        private readonly AttachPostTaxonomyAction $taxonomy,
         private readonly AuditLogger $audit,
         private readonly AttachMediaUsageAction $attachMediaUsage,
     ) {}
@@ -40,7 +41,7 @@ class CreateBlogPostAction
             $payload['preview_token'] = $payload['preview_token'] ?? Str::random(48);
 
             $post = BlogPost::query()->create($payload);
-            $post->tags()->sync($tagIds);
+            $this->taxonomy->handle($post, $post->blog_category_id, $tagIds);
             $this->syncMediaUsage($actor, $post);
 
             $this->audit->record('blog_post.created', $actor, null, [

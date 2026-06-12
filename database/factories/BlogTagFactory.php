@@ -31,6 +31,8 @@ class BlogTagFactory extends Factory
             ])->id,
             'name' => str($name)->headline()->toString(),
             'slug' => str($name)->slug()->toString(),
+            'description' => fake()->sentence(),
+            'status' => 'active',
         ];
     }
 }

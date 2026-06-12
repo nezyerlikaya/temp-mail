@@ -70,6 +70,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('update post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.update'));
         Gate::define('publish post readiness', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.publish'));
         Gate::define('trash post readiness', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.trash'));
+        Gate::define('view taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.view'));
+        Gate::define('create taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.create'));
+        Gate::define('update taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.update'));
+        Gate::define('attach taxonomy to post', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.attach'));
         Gate::define('view media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.view'));
         Gate::define('view media picker', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.picker'));
         Gate::define('select media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.select'));

@@ -16,6 +16,7 @@ class UpdateBlogPostAction
     public function __construct(
         private readonly BlogSlugService $slugs,
         private readonly PublishBlogPostAction $publisher,
+        private readonly AttachPostTaxonomyAction $taxonomy,
         private readonly AuditLogger $audit,
         private readonly AttachMediaUsageAction $attachMediaUsage,
         private readonly DetachMediaUsageAction $detachMediaUsage,
@@ -44,7 +45,7 @@ class UpdateBlogPostAction
             $post->refresh();
 
             if (is_array($tagIds)) {
-                $post->tags()->sync($tagIds);
+                $this->taxonomy->handle($post, $post->blog_category_id, $tagIds);
             }
 
             $this->syncMediaUsage($actor, $post, $previousMediaId);

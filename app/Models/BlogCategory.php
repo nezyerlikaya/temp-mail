@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'slug',
     'description',
     'is_active',
+    'status',
+    'sort_order',
 ])]
 class BlogCategory extends Model
 {
@@ -26,6 +28,7 @@ class BlogCategory extends Model
         return [
             'locale_id' => 'integer',
             'is_active' => 'boolean',
+            'sort_order' => 'integer',
         ];
     }
 

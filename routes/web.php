@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BlogStudioController;
+use App\Http\Controllers\Admin\BlogTaxonomyController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
@@ -206,6 +207,22 @@ Route::prefix('dashboard')
             ->middleware('can:admin.blog-studio.update')
             ->name('admin.blog-studio.update');
 
+        Route::get('taxonomy', [BlogTaxonomyController::class, 'index'])
+            ->middleware('can:admin.taxonomy.view')
+            ->name('admin.taxonomy.index');
+        Route::post('taxonomy/categories', [BlogTaxonomyController::class, 'storeCategory'])
+            ->middleware('can:admin.taxonomy.create')
+            ->name('admin.taxonomy.categories.store');
+        Route::put('taxonomy/categories/{blogCategory}', [BlogTaxonomyController::class, 'updateCategory'])
+            ->middleware('can:admin.taxonomy.update')
+            ->name('admin.taxonomy.categories.update');
+        Route::post('taxonomy/tags', [BlogTaxonomyController::class, 'storeTag'])
+            ->middleware('can:admin.taxonomy.create')
+            ->name('admin.taxonomy.tags.store');
+        Route::put('taxonomy/tags/{blogTag}', [BlogTaxonomyController::class, 'updateTag'])
+            ->middleware('can:admin.taxonomy.update')
+            ->name('admin.taxonomy.tags.update');
+
         Route::get('media-library', [MediaLibraryController::class, 'index'])
             ->middleware('can:admin.media-library.view')
             ->name('admin.media-library.index');
@@ -242,7 +259,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.media-library.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.media-library.index'], true)) {
                     continue;
                 }
 

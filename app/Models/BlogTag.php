@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'locale_id',
     'name',
     'slug',
+    'description',
+    'status',
 ])]
 class BlogTag extends Model
 {
