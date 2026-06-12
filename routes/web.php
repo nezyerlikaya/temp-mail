@@ -113,6 +113,14 @@ Route::prefix('dashboard')
             ->middleware('can:update plan limits')->name('admin.plans-memberships.limits');
         Route::post('plans-memberships/{plan}/status', [PlanMembershipController::class, 'toggle'])
             ->middleware('can:activate deactivate plans')->name('admin.plans-memberships.status');
+        Route::post('plans-memberships/memberships', [PlanMembershipController::class, 'grant'])
+            ->middleware('can:grant membership')->name('admin.plans-memberships.memberships.grant');
+        Route::put('plans-memberships/memberships/{membership}/extend', [PlanMembershipController::class, 'extend'])
+            ->middleware('can:extend membership')->name('admin.plans-memberships.memberships.extend');
+        Route::post('plans-memberships/memberships/{membership}/cancel', [PlanMembershipController::class, 'cancel'])
+            ->middleware('can:cancel downgrade membership')->name('admin.plans-memberships.memberships.cancel');
+        Route::post('plans-memberships/memberships/{membership}/downgrade', [PlanMembershipController::class, 'downgrade'])
+            ->middleware('can:cancel downgrade membership')->name('admin.plans-memberships.memberships.downgrade');
 
         Route::get('people-identity', [UserController::class, 'index'])
             ->middleware('can:viewAny,'.User::class)

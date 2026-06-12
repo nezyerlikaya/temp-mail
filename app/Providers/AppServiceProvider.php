@@ -159,6 +159,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('update plans', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.update'));
         Gate::define('update plan limits', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.limits'));
         Gate::define('activate deactivate plans', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.status'));
+        Gate::define('view memberships', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.memberships.view'));
+        Gate::define('grant membership', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.memberships.grant'));
+        Gate::define('extend membership', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.memberships.extend'));
+        Gate::define('cancel downgrade membership', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.memberships.cancel'));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

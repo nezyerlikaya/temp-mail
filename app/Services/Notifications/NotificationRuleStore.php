@@ -27,6 +27,7 @@ class NotificationRuleStore
             'smtp_imap_test_failed' => $this->rule('warning', ['owner', 'admin'], true, true, 'daily', 'mail-infrastructure'),
             'update_available' => $this->rule('info', ['owner', 'admin'], true, false, 'daily', 'system'),
             'premium_expiring_soon' => $this->rule('warning', ['owner', 'admin'], true, true, 'daily', 'billing'),
+            'premium_expired' => $this->rule('warning', ['owner', 'admin'], true, true, 'daily', 'billing'),
             'security_setting_changed' => $this->rule('critical', ['owner', 'admin'], true, true, 'immediate', 'trust'),
             'backup_failed' => $this->rule('critical', ['owner', 'admin'], true, true, 'immediate', 'system'),
         ];
@@ -61,6 +62,7 @@ class NotificationRuleStore
             'smtp_imap_test_failed' => 'SMTP/IMAP test failed',
             'update_available' => 'Update available',
             'premium_expiring_soon' => 'Premium expiring soon',
+            'premium_expired' => 'Premium expired',
             'security_setting_changed' => 'Security setting changed',
             'backup_failed' => 'Backup failed',
         ];
