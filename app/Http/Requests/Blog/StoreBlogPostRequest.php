@@ -27,7 +27,8 @@ class StoreBlogPostRequest extends FormRequest
         }
 
         return match ($this->input('intent')) {
-            'publish', 'hide' => $this->user()?->can('admin.blog-studio.publish') ?? false,
+            'publish' => $this->user()?->can('admin.blog-studio.publish') ?? false,
+            'hide' => $this->user()?->can('admin.blog-studio.hide') ?? false,
             default => true,
         };
     }

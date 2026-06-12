@@ -1,7 +1,7 @@
 @props(['post' => null, 'statuses' => [], 'selectedStatus' => 'draft', 'canPublish' => false, 'canHide' => false])
 
 <aside class="min-w-0 space-y-4">
-    <x-admin.card title="Publish panel" description="Save the draft, publish, or hide this language-specific post.">
+    <x-admin.card title="Publish panel" description="Save, publish, schedule by future date, or hide this language-specific post.">
         <div class="space-y-4">
             <div>
                 <label for="blog-status" class="text-sm font-extrabold text-stone-950">Status</label>
@@ -28,6 +28,7 @@
                 @error('published_at')
                     <p id="blog-published-at-error" class="mt-2 text-sm font-bold text-red-700" role="alert">{{ $message }}</p>
                 @enderror
+                <p class="mt-2 text-xs font-bold text-stone-500">A future date with Publish marks this post as scheduled readiness.</p>
             </div>
 
             <div class="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm">

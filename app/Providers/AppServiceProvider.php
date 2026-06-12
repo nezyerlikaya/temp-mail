@@ -68,8 +68,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view posts', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.view'));
         Gate::define('create post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.create'));
         Gate::define('update post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.update'));
-        Gate::define('publish post readiness', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.publish'));
-        Gate::define('trash post readiness', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.trash'));
+        Gate::define('publish post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.publish'));
+        Gate::define('hide post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.hide'));
+        Gate::define('preview post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.preview'));
+        Gate::define('restore post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.restore'));
+        Gate::define('trash post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.trash'));
+        Gate::define('permanently delete post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.delete'));
         Gate::define('view taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.view'));
         Gate::define('create taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.create'));
         Gate::define('update taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.update'));

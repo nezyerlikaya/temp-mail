@@ -36,10 +36,11 @@ class BlogPostEditorService
             'canSelectMedia' => $mediaLibraryReady && ($actor?->can('admin.media-library.select') ?? false),
             'canUploadMedia' => $mediaLibraryReady && ($actor?->can('admin.media-library.upload-through-picker') ?? false),
             'canPublish' => $actor?->can('admin.blog-studio.publish') ?? false,
-            'canHide' => $actor?->can('admin.blog-studio.publish') ?? false,
+            'canHide' => $actor?->can('admin.blog-studio.hide') ?? false,
             'canTrash' => $actor?->can('admin.blog-studio.trash') ?? false,
-            'canRestore' => $actor?->can('admin.blog-studio.trash') ?? false,
-            'canPreview' => $actor?->can('admin.blog-studio.view') ?? false,
+            'canRestore' => $actor?->can('admin.blog-studio.restore') ?? false,
+            'canDelete' => $actor?->can('admin.blog-studio.delete') ?? false,
+            'canPreview' => $actor?->can('admin.blog-studio.preview') ?? false,
         ];
     }
 

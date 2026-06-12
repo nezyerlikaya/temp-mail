@@ -14,8 +14,6 @@ class PublishBlogPostRequest extends FormRequest
     /** @return array<string, array<int, string>> */
     public function rules(): array
     {
-        return [
-            'confirm_publish' => ['nullable', 'accepted'],
-        ];
+        return [];
     }
 }

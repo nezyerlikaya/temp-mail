@@ -206,6 +206,24 @@ Route::prefix('dashboard')
         Route::put('blog-studio/{blogPost}', [BlogStudioController::class, 'update'])
             ->middleware('can:admin.blog-studio.update')
             ->name('admin.blog-studio.update');
+        Route::get('blog-studio/{blogPost}/preview', [BlogStudioController::class, 'preview'])
+            ->middleware(['can:admin.blog-studio.preview', 'signed'])
+            ->name('admin.blog-studio.preview');
+        Route::post('blog-studio/{blogPost}/publish', [BlogStudioController::class, 'publish'])
+            ->middleware('can:admin.blog-studio.publish')
+            ->name('admin.blog-studio.publish');
+        Route::post('blog-studio/{blogPost}/hide', [BlogStudioController::class, 'hide'])
+            ->middleware('can:admin.blog-studio.hide')
+            ->name('admin.blog-studio.hide');
+        Route::post('blog-studio/{blogPost}/trash', [BlogStudioController::class, 'trash'])
+            ->middleware('can:admin.blog-studio.trash')
+            ->name('admin.blog-studio.trash');
+        Route::post('blog-studio/{blogPost}/restore', [BlogStudioController::class, 'restore'])
+            ->middleware('can:admin.blog-studio.restore')
+            ->name('admin.blog-studio.restore');
+        Route::delete('blog-studio/{blogPost}', [BlogStudioController::class, 'destroy'])
+            ->middleware('can:admin.blog-studio.delete')
+            ->name('admin.blog-studio.destroy');
 
         Route::get('taxonomy', [BlogTaxonomyController::class, 'index'])
             ->middleware('can:admin.taxonomy.view')

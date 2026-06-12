@@ -8,6 +8,7 @@ use App\Models\BlogTag;
 use App\Models\Locale;
 use App\Models\MediaAsset;
 use App\Models\User;
+use App\Services\Blog\BlogPostPreviewService;
 use App\Services\Blog\BlogPostSearchService;
 use App\Services\Localization\LocaleSettingsStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -367,6 +368,151 @@ class BlogStudioTest extends TestCase
         $this->assertTrue($trashed->getCollection()->contains('title', 'Trashed editorial plan'));
     }
 
+    public function test_blog_post_lifecycle_trash_restore_publish_hide_and_delete_are_audited(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $post = BlogPost::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'status' => 'draft',
+            'title' => 'Lifecycle post',
+            'slug' => 'lifecycle-post',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.blog-studio.publish', $post))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('blog_posts', ['id' => $post->id, 'status' => 'published']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'blog_post.published', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.blog-studio.hide', $post))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('blog_posts', ['id' => $post->id, 'status' => 'hidden']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'blog_post.hidden', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.blog-studio.trash', $post), ['confirm_trash' => '1'])
+            ->assertRedirect(route('admin.blog-studio.index', ['status' => 'trashed']));
+
+        $this->assertDatabaseHas('blog_posts', ['id' => $post->id, 'status' => 'trashed']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'blog_post.trashed', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.blog-studio.restore', $post))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('blog_posts', ['id' => $post->id, 'status' => 'draft', 'trashed_at' => null]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'blog_post.restored', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.blog-studio.trash', $post), ['confirm_trash' => '1']);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.blog-studio.destroy', $post), ['confirm_delete' => '1'])
+            ->assertRedirect(route('admin.blog-studio.index', ['status' => 'trashed']));
+
+        $this->assertDatabaseMissing('blog_posts', ['id' => $post->id]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'blog_post.permanently_deleted', 'actor_id' => $admin->id]);
+    }
+
+    public function test_blog_trash_filter_preview_and_status_transitions_are_safe(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $draft = BlogPost::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'title' => 'Private draft preview',
+            'slug' => 'private-draft-preview',
+            'content' => 'Private blog preview content.',
+            'status' => 'draft',
+        ]);
+        BlogPost::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'title' => 'Trashed blog post',
+            'slug' => 'trashed-blog-post',
+            'status' => 'trashed',
+            'trashed_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.blog-studio.preview', $draft))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->get(app(BlogPostPreviewService::class)->previewUrl($draft))
+            ->assertOk()
+            ->assertSee('Signed preview')
+            ->assertSee('Private blog preview content.')
+            ->assertSee('Temporary Blog Studio preview');
+
+        $this->actingAs($admin)
+            ->get(route('admin.blog-studio.index', ['status' => 'trashed']))
+            ->assertOk()
+            ->assertViewHas('filters', fn (array $filters): bool => ($filters['status'] ?? null) === 'trashed')
+            ->assertViewHas('posts', fn ($posts): bool => $posts->getCollection()->contains('title', 'Trashed blog post')
+                && ! $posts->getCollection()->contains('title', 'Private draft preview'))
+            ->assertSee('Viewing trash')
+            ->assertSee('Trashed blog post');
+
+        $this->actingAs($admin)
+            ->post(route('admin.blog-studio.restore', $draft))
+            ->assertSessionHasErrors('status');
+    }
+
+    public function test_blog_scheduled_publish_readiness_uses_future_publish_date(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $future = now()->addDays(3)->format('Y-m-d\TH:i');
+
+        $this->actingAs($admin)
+            ->post(route('admin.blog-studio.store'), [
+                'locale_id' => $english->id,
+                'title' => 'Scheduled mailbox launch',
+                'slug' => '',
+                'content_readiness' => 'ready',
+                'status' => 'draft',
+                'intent' => 'publish',
+                'published_at' => $future,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('blog_posts', [
+            'slug' => 'scheduled-mailbox-launch',
+            'status' => 'scheduled',
+        ]);
+    }
+
+    public function test_author_can_preview_but_cannot_delete_blog_posts(): void
+    {
+        $author = User::factory()->author()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $post = BlogPost::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $author->id,
+            'status' => 'trashed',
+            'trashed_at' => now(),
+        ]);
+
+        $this->actingAs($author)
+            ->get(app(BlogPostPreviewService::class)->previewUrl($post))
+            ->assertOk();
+
+        $this->actingAs($author)
+            ->delete(route('admin.blog-studio.destroy', $post), ['confirm_delete' => '1'])
+            ->assertForbidden();
+    }
+
     public function test_blog_studio_sources_do_not_use_forbidden_patterns(): void
     {
         $files = [
@@ -377,12 +523,21 @@ class BlogStudioTest extends TestCase
             app_path('Services/Blog/BlogPostStore.php'),
             app_path('Services/Blog/BlogPostSearchService.php'),
             app_path('Services/Blog/BlogSlugService.php'),
+            app_path('Services/Blog/BlogPostLifecycleService.php'),
+            app_path('Services/Blog/BlogPostPreviewService.php'),
+            app_path('Actions/Blog/TrashBlogPostAction.php'),
+            app_path('Actions/Blog/RestoreBlogPostAction.php'),
+            app_path('Actions/Blog/DeleteBlogPostAction.php'),
             resource_path('views/dashboard/blog-studio/index.blade.php'),
+            resource_path('views/dashboard/blog-studio/preview.blade.php'),
             resource_path('views/components/blog/filter-bar.blade.php'),
             resource_path('views/components/blog/post-card.blade.php'),
             resource_path('views/components/blog/post-row.blade.php'),
             resource_path('views/components/blog/post-editor.blade.php'),
             resource_path('views/components/blog/publish-panel.blade.php'),
+            resource_path('views/components/blog/lifecycle-actions.blade.php'),
+            resource_path('views/components/blog/public-url-panel.blade.php'),
+            resource_path('views/components/blog/delete-warning.blade.php'),
             resource_path('views/dashboard/blog-studio/create.blade.php'),
             resource_path('views/dashboard/blog-studio/edit.blade.php'),
         ];

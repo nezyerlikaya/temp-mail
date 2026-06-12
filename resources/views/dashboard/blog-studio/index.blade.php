@@ -46,12 +46,15 @@
                                 <h2 id="blog-results-title" class="text-lg font-extrabold text-stone-950">Post records</h2>
                                 <p class="mt-1 text-sm text-stone-600">Search and filter by language, status, category, author, or date.</p>
                             </div>
-                            <p class="text-sm font-bold text-stone-500">{{ $posts->total() }} records</p>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <x-blog.trash-filter :active="($filters['status'] ?? 'all') === 'trashed'" />
+                                <p class="text-sm font-bold text-stone-500">{{ $posts->total() }} records</p>
+                            </div>
                         </div>
 
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             @foreach ($posts as $post)
-                                <x-blog.post-card :post="$post" />
+                                <x-blog.post-card :post="$post" :preview-url="$previewUrls[$post->id] ?? null" :can-preview="$canPreviewPost" />
                             @endforeach
                         </div>
 
@@ -66,12 +69,12 @@
                                             <th scope="col" class="px-4 py-3">Status</th>
                                             <th scope="col" class="px-4 py-3">Readiness</th>
                                             <th scope="col" class="px-4 py-3">Author</th>
-                                            <th scope="col" class="px-4 py-3">Created</th>
+                                            <th scope="col" class="px-4 py-3">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($posts as $post)
-                                            <x-blog.post-row :post="$post" />
+                                            <x-blog.post-row :post="$post" :preview-url="$previewUrls[$post->id] ?? null" :can-preview="$canPreviewPost" />
                                         @endforeach
                                     </tbody>
                                 </table>

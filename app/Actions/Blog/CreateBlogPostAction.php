@@ -8,6 +8,7 @@ use App\Models\MediaAsset;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Blog\BlogSlugService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -27,12 +28,13 @@ class CreateBlogPostAction
         return DB::transaction(function () use ($actor, $payload): BlogPost {
             $tagIds = $payload['tag_ids'] ?? [];
             $payload['status'] = $this->publisher->statusForIntent($payload['intent'] ?? null, (string) ($payload['status'] ?? 'draft'));
+            $payload['status'] = $this->statusWithScheduleReadiness($payload);
             unset($payload['tag_ids']);
             unset($payload['intent']);
 
             $payload['slug'] = $payload['slug'] ?: $this->slugs->fromTitle((string) $payload['title']);
             $payload['author_id'] = $payload['author_id'] ?? $actor->id;
-            $payload['published_at'] = $payload['status'] === 'published'
+            $payload['published_at'] = in_array($payload['status'], ['published', 'scheduled'], true)
                 ? ($payload['published_at'] ?? now())
                 : ($payload['published_at'] ?? null);
             $payload['trashed_at'] = $payload['status'] === 'trashed'
@@ -55,6 +57,16 @@ class CreateBlogPostAction
 
             return $post;
         });
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function statusWithScheduleReadiness(array $payload): string
+    {
+        if (($payload['status'] ?? null) !== 'published' || blank($payload['published_at'] ?? null)) {
+            return (string) ($payload['status'] ?? 'draft');
+        }
+
+        return Carbon::parse((string) $payload['published_at'])->isFuture() ? 'scheduled' : 'published';
     }
 
     private function syncMediaUsage(User $actor, BlogPost $post): void

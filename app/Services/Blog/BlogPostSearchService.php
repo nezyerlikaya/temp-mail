@@ -4,6 +4,7 @@ namespace App\Services\Blog;
 
 use App\Models\BlogPost;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class BlogPostSearchService
 {
@@ -49,5 +50,19 @@ class BlogPostSearchService
         }
 
         return $query->paginate(12)->withQueryString();
+    }
+
+    /**
+     * @param  LengthAwarePaginator<int, BlogPost>  $posts
+     * @return array<int, string>
+     */
+    public function previewUrls(LengthAwarePaginator $posts, BlogPostPreviewService $preview): array
+    {
+        /** @var Collection<int, BlogPost> $collection */
+        $collection = $posts->getCollection();
+
+        return $collection->mapWithKeys(fn (BlogPost $post): array => [
+            $post->id => $preview->previewUrl($post),
+        ])->all();
     }
 }

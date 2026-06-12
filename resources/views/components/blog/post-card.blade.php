@@ -1,4 +1,4 @@
-@props(['post'])
+@props(['post', 'previewUrl' => null, 'canPreview' => false])
 
 <article class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
     <a href="{{ route('admin.blog-studio.edit', $post) }}" class="block focus:outline-none focus:ring-4 focus:ring-teal-600/20">
@@ -27,4 +27,11 @@
             <span>{{ $post->created_at?->format('M j, Y') }}</span>
         </div>
     </a>
+
+    <div class="mt-4 grid gap-2 sm:grid-cols-2">
+        <a href="{{ route('admin.blog-studio.edit', $post) }}" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-stone-950 px-3 py-2 text-sm font-extrabold text-white transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
+            Edit
+        </a>
+        <x-blog.preview-button :url="$previewUrl" :enabled="$canPreview && $previewUrl !== null" label="Preview" class="w-full" />
+    </div>
 </article>
