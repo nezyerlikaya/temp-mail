@@ -75,6 +75,9 @@ class RolePermissionResolver
                 'admin.seo-growth-center.view' => 'SEO Growth Center',
                 'admin.seo-growth-center.update' => 'Update SEO records',
                 'admin.seo-growth-center.manage' => 'Manage SEO settings',
+                'admin.seo-growth-center.preview' => 'Preview SEO records',
+                'admin.seo-growth-center.schema' => 'Update SEO schema',
+                'admin.seo-growth-center.media' => 'Select SEO media',
             ],
             'Mail Infrastructure' => [
                 'admin.domains.view' => 'Domains',
@@ -210,6 +213,8 @@ class RolePermissionResolver
                 'admin.media-library.view', 'admin.media-library.picker',
                 'admin.media-library.select', 'admin.media-library.usage',
                 'admin.seo-growth-center.view', 'admin.seo-growth-center.update',
+                'admin.seo-growth-center.preview', 'admin.seo-growth-center.schema',
+                'admin.seo-growth-center.media',
                 'admin.author-profiles.view', 'admin.notifications.view',
             ],
             UserRole::Moderator->value => [

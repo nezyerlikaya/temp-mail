@@ -329,12 +329,21 @@ Route::prefix('dashboard')
         Route::get('seo-growth-center', [SeoGrowthCenterController::class, 'index'])
             ->middleware('can:admin.seo-growth-center.view')
             ->name('admin.seo-growth-center.index');
+        Route::get('seo-growth-center/create', [SeoGrowthCenterController::class, 'create'])
+            ->middleware('can:admin.seo-growth-center.update')
+            ->name('admin.seo-growth-center.records.create');
         Route::post('seo-growth-center/records', [SeoGrowthCenterController::class, 'ensure'])
             ->middleware('can:admin.seo-growth-center.update')
             ->name('admin.seo-growth-center.records.ensure');
+        Route::get('seo-growth-center/records/{seoRecord}/edit', [SeoGrowthCenterController::class, 'edit'])
+            ->middleware('can:admin.seo-growth-center.update')
+            ->name('admin.seo-growth-center.records.edit');
         Route::put('seo-growth-center/records/{seoRecord}', [SeoGrowthCenterController::class, 'update'])
             ->middleware('can:admin.seo-growth-center.update')
             ->name('admin.seo-growth-center.records.update');
+        Route::post('seo-growth-center/records/{seoRecord}/preview', [SeoGrowthCenterController::class, 'preview'])
+            ->middleware('can:admin.seo-growth-center.preview')
+            ->name('admin.seo-growth-center.records.preview');
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {

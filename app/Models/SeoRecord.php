@@ -24,8 +24,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'og_description',
     'og_image_media_id',
     'twitter_card',
+    'twitter_title',
+    'twitter_description',
+    'twitter_image_media_id',
     'schema_type',
     'schema_json',
+    'breadcrumb_title',
     'created_by',
     'updated_by',
 ])]
@@ -41,6 +45,7 @@ class SeoRecord extends Model
             'include_in_sitemap' => 'boolean',
             'sitemap_priority' => 'decimal:1',
             'og_image_media_id' => 'integer',
+            'twitter_image_media_id' => 'integer',
             'schema_json' => 'array',
             'created_by' => 'integer',
             'updated_by' => 'integer',
@@ -57,6 +62,12 @@ class SeoRecord extends Model
     public function ogImage(): BelongsTo
     {
         return $this->belongsTo(MediaAsset::class, 'og_image_media_id');
+    }
+
+    /** @return BelongsTo<MediaAsset, $this> */
+    public function twitterImage(): BelongsTo
+    {
+        return $this->belongsTo(MediaAsset::class, 'twitter_image_media_id');
     }
 
     /** @return BelongsTo<User, $this> */

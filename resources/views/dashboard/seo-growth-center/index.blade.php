@@ -5,6 +5,9 @@
         description="Target-specific, language-specific metadata readiness for search, social cards, robots, sitemap, and schema."
     >
         <x-slot:actions>
+            @if ($canUpdateSeo)
+                <a href="{{ route('admin.seo-growth-center.records.create') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-extrabold text-white shadow-sm focus:outline-none focus:ring-4 focus:ring-teal-600/20">Create SEO record</a>
+            @endif
             <x-admin.status-badge status="Readiness" />
         </x-slot:actions>
     </x-admin.page-header>
