@@ -12,7 +12,7 @@ class NotificationRecipientResolver
     public function __construct(private readonly RolePermissionResolver $permissions) {}
 
     /** @param array<int, User|int>|null $recipients */
-    public function resolve(string $eventKey, string $severity, ?string $module, ?array $recipients = null): Collection
+    public function resolve(string $eventKey, string $severity, ?string $module, ?array $recipients = null, ?array $roles = null): Collection
     {
         if ($recipients !== null && $recipients !== []) {
             return User::query()
@@ -24,7 +24,9 @@ class NotificationRecipientResolver
 
         $query = User::query()->where('status', 'active');
 
-        if ($severity === 'critical' || $this->isSecurityCritical($eventKey)) {
+        if ($roles !== null && $roles !== []) {
+            $query->whereIn('role', $roles);
+        } elseif ($severity === 'critical' || $this->isSecurityCritical($eventKey)) {
             $query->whereIn('role', ['owner', 'admin']);
         } else {
             $query->whereIn('role', ['owner', 'admin', 'editor', 'moderator']);

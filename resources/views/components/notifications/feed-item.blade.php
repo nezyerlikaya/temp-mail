@@ -6,6 +6,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 <x-notifications.severity-badge :severity="$notification->severity" />
                 <x-notifications.unread-badge :unread="$notification->isUnread()" />
+                <x-notifications.deduplication-badge :notification="$notification" />
                 @if ($notification->related_module)
                     <span class="rounded-full bg-stone-100 px-2 py-1 text-xs font-bold text-stone-600">{{ str($notification->related_module)->replace('-', ' ')->headline() }}</span>
                 @endif
@@ -37,5 +38,9 @@
                 </form>
             @endunless
         </div>
+    </div>
+
+    <div class="mt-3">
+        <x-notifications.snooze-menu :notification="$notification" />
     </div>
 </article>

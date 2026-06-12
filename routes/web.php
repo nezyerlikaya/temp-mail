@@ -157,9 +157,15 @@ Route::prefix('dashboard')
         Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])
             ->middleware('can:mark notification')
             ->name('admin.notifications.mark-all-read');
+        Route::put('notifications/rules', [NotificationController::class, 'updateRules'])
+            ->middleware('can:update notification rules')
+            ->name('admin.notifications.rules.update');
         Route::post('notifications/{systemNotification}/mark-read', [NotificationController::class, 'markRead'])
             ->middleware('can:mark notification,systemNotification')
             ->name('admin.notifications.mark-read');
+        Route::post('notifications/{systemNotification}/snooze', [NotificationController::class, 'snooze'])
+            ->middleware('can:snooze notifications,systemNotification')
+            ->name('admin.notifications.snooze');
         Route::post('notifications/{systemNotification}/archive', [NotificationController::class, 'archive'])
             ->middleware('can:archive notification,systemNotification')
             ->name('admin.notifications.archive');

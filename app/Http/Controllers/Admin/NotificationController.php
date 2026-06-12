@@ -5,12 +5,19 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Notifications\ArchiveNotificationAction;
 use App\Actions\Notifications\MarkAllNotificationsReadAction;
 use App\Actions\Notifications\MarkNotificationReadAction;
+use App\Actions\Notifications\SnoozeNotificationAction;
+use App\Actions\Notifications\UpdateNotificationRulesAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Notifications\ArchiveNotificationRequest;
 use App\Http\Requests\Notifications\MarkAllNotificationsReadRequest;
 use App\Http\Requests\Notifications\MarkNotificationRequest;
 use App\Http\Requests\Notifications\NotificationFilterRequest;
+use App\Http\Requests\Notifications\SnoozeNotificationRequest;
+use App\Http\Requests\Notifications\UpdateNotificationRulesRequest;
 use App\Models\SystemNotification;
+use App\Services\Notifications\NotificationDependencyChecker;
+use App\Services\Notifications\NotificationDigestService;
+use App\Services\Notifications\NotificationRuleStore;
 use App\Services\Notifications\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -18,9 +25,15 @@ use Illuminate\View\View;
 
 class NotificationController extends Controller
 {
-    public function index(NotificationFilterRequest $request, NotificationService $notifications): View
-    {
+    public function index(
+        NotificationFilterRequest $request,
+        NotificationService $notifications,
+        NotificationRuleStore $rules,
+        NotificationDependencyChecker $dependencies,
+        NotificationDigestService $digest,
+    ): View {
         $user = $request->user();
+        $notificationRules = $rules->all();
 
         return view('dashboard.notifications.index', [
             'adminUser' => $user,
@@ -29,14 +42,28 @@ class NotificationController extends Controller
             'summary' => $notifications->summary($user),
             'selectedNotification' => null,
             'selectedActionLink' => null,
+            'notificationRules' => $notificationRules,
+            'ruleLabels' => $rules->labels(),
+            'ruleModules' => $rules->modules(),
+            'roleOptions' => $rules->roleOptions(),
+            'dependencyWarnings' => $dependencies->warnings($notificationRules),
+            'digestReadiness' => $digest->readiness(),
+            'canUpdateRules' => $user->can('update notification rules'),
         ]);
     }
 
-    public function show(NotificationFilterRequest $request, SystemNotification $systemNotification, NotificationService $notifications): View
-    {
+    public function show(
+        NotificationFilterRequest $request,
+        SystemNotification $systemNotification,
+        NotificationService $notifications,
+        NotificationRuleStore $rules,
+        NotificationDependencyChecker $dependencies,
+        NotificationDigestService $digest,
+    ): View {
         Gate::authorize('view notification', $systemNotification);
 
         $user = $request->user();
+        $notificationRules = $rules->all();
 
         return view('dashboard.notifications.index', [
             'adminUser' => $user,
@@ -45,6 +72,13 @@ class NotificationController extends Controller
             'summary' => $notifications->summary($user),
             'selectedNotification' => $systemNotification,
             'selectedActionLink' => $notifications->actionLink($systemNotification, $user),
+            'notificationRules' => $notificationRules,
+            'ruleLabels' => $rules->labels(),
+            'ruleModules' => $rules->modules(),
+            'roleOptions' => $rules->roleOptions(),
+            'dependencyWarnings' => $dependencies->warnings($notificationRules),
+            'digestReadiness' => $digest->readiness(),
+            'canUpdateRules' => $user->can('update notification rules'),
         ]);
     }
 
@@ -73,5 +107,22 @@ class NotificationController extends Controller
         $action->handle($request->user(), $systemNotification);
 
         return redirect()->route('admin.notifications.index')->with('status', 'Notification archived.');
+    }
+
+    public function updateRules(UpdateNotificationRulesRequest $request, UpdateNotificationRulesAction $action): RedirectResponse
+    {
+        $action->handle($request->user(), $request->ruleSettings());
+
+        return back()->with('status', 'Notification rules saved.');
+    }
+
+    public function snooze(
+        SnoozeNotificationRequest $request,
+        SystemNotification $systemNotification,
+        SnoozeNotificationAction $action,
+    ): RedirectResponse {
+        $action->handle($request->user(), $systemNotification, (string) $request->validated('duration'));
+
+        return back()->with('status', 'Notification snoozed.');
     }
 }

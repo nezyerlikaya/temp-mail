@@ -120,6 +120,7 @@ class RolePermissionResolver
                 'admin.update-center.manual-upload' => 'Upload manual update package',
                 'admin.update-center.rollback' => 'Review rollback readiness',
                 'admin.notifications.view' => 'Notifications',
+                'admin.notifications.rules' => 'Update notification rules',
                 'admin.email-templates.view' => 'Email Templates',
                 'admin.email-templates.create' => 'Create email templates',
                 'admin.email-templates.update' => 'Update email templates',

@@ -28,6 +28,12 @@ class SystemNotificationFactory extends Factory
             'action_url' => null,
             'read_at' => null,
             'archived_at' => null,
+            'occurrence_count' => 1,
+            'first_occurred_at' => now(),
+            'last_occurred_at' => now(),
+            'snoozed_until' => null,
+            'deduplication_key' => null,
+            'digest_status' => null,
             'email_status' => null,
         ];
     }

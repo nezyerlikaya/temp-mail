@@ -61,6 +61,18 @@
         </form>
     </x-admin.card>
 
+    <div class="mb-6">
+        <x-notifications.rules-panel
+            :rules="$notificationRules"
+            :labels="$ruleLabels"
+            :modules="$ruleModules"
+            :roles="$roleOptions"
+            :warnings="$dependencyWarnings"
+            :digest-readiness="$digestReadiness"
+            :can-update="$canUpdateRules"
+        />
+    </div>
+
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div class="min-w-0 space-y-4">
             <x-notifications.feed :notifications="$notifications" :selected-notification="$selectedNotification" />

@@ -6,6 +6,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 <x-notifications.severity-badge :severity="$notification->severity" />
                 <x-notifications.unread-badge :unread="$notification->isUnread()" />
+                <x-notifications.deduplication-badge :notification="$notification" />
                 @if ($notification->isArchived())
                     <span class="rounded-full bg-stone-900 px-2 py-1 text-xs font-extrabold text-white">Archived</span>
                 @endif
@@ -35,6 +36,18 @@
                     <dt class="font-bold text-stone-500">Email delivery</dt>
                     <dd class="mt-1 font-extrabold text-stone-900">{{ str($notification->email_status ?? 'not attempted')->headline() }}</dd>
                 </div>
+                <div class="rounded-lg bg-stone-50 p-3">
+                    <dt class="font-bold text-stone-500">Occurrence window</dt>
+                    <dd class="mt-1 font-extrabold text-stone-900">
+                        {{ $notification->first_occurred_at?->format('M j, Y H:i') ?? $notification->created_at->format('M j, Y H:i') }}
+                        -
+                        {{ $notification->last_occurred_at?->format('M j, Y H:i') ?? $notification->updated_at->format('M j, Y H:i') }}
+                    </dd>
+                </div>
+                <div class="rounded-lg bg-stone-50 p-3">
+                    <dt class="font-bold text-stone-500">Snooze</dt>
+                    <dd class="mt-1 font-extrabold text-stone-900">{{ $notification->snoozed_until?->format('M j, Y H:i') ?? 'Not snoozed' }}</dd>
+                </div>
             </dl>
 
             <div class="flex flex-wrap gap-2">
@@ -52,6 +65,8 @@
                     </form>
                 @endunless
             </div>
+
+            <x-notifications.snooze-menu :notification="$notification" />
         </div>
     @else
         <x-admin.empty-state title="Select a notification" description="Open a feed item to review target readiness, delivery status, and the permission-aware action link." />

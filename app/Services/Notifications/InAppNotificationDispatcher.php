@@ -8,7 +8,12 @@ use Illuminate\Support\Collection;
 
 class InAppNotificationDispatcher
 {
-    public function __construct(private readonly NotificationRecipientResolver $recipients) {}
+    public function __construct(
+        private readonly NotificationRecipientResolver $recipients,
+        private readonly NotificationRuleResolver $rules,
+        private readonly NotificationDeduplicationService $deduplication,
+        private readonly NotificationDigestService $digest,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $payload
@@ -17,25 +22,27 @@ class InAppNotificationDispatcher
      */
     public function dispatch(array $payload, ?array $recipients = null): Collection
     {
-        $severity = (string) ($payload['severity'] ?? 'info');
         $eventKey = (string) $payload['event_key'];
+        $rule = $this->rules->resolve($payload);
+        $severity = $this->rules->isCritical($rule) ? 'critical' : (string) ($payload['severity'] ?? $rule->severity);
         $module = $payload['related_module'] ?? null;
 
+        if (! $rule->is_active || ! $rule->in_app_enabled) {
+            return collect();
+        }
+
+        $payload['severity'] = $severity;
+
         return $this->recipients
-            ->resolve($eventKey, $severity, $module, $recipients)
-            ->map(fn (User $recipient): SystemNotification => SystemNotification::query()->create([
-                'recipient_user_id' => $recipient->getKey(),
-                'event_key' => $eventKey,
-                'type' => (string) ($payload['type'] ?? $eventKey),
-                'severity' => $severity,
-                'title' => (string) $payload['title'],
-                'message' => (string) $payload['message'],
-                'related_module' => $module,
-                'target_type' => $payload['target_type'] ?? null,
-                'target_id' => $payload['target_id'] ?? null,
-                'action_route' => $payload['action_route'] ?? null,
-                'action_parameters' => $payload['action_parameters'] ?? [],
-                'action_url' => null,
-            ]));
+            ->resolve($eventKey, $severity, $module, $recipients, $rule->recipient_roles ?? null)
+            ->map(function (User $recipient) use ($payload, $rule): SystemNotification {
+                $notification = $this->deduplication->createOrIncrement($recipient, $payload);
+
+                if ($this->digest->shouldDigest($rule)) {
+                    $this->digest->markPending($notification);
+                }
+
+                return $notification;
+            });
     }
 }

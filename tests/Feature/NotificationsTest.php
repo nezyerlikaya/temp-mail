@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\NotificationRule;
 use App\Models\SystemNotification;
 use App\Models\User;
+use App\Services\Notifications\NotificationRuleStore;
 use App\Services\Notifications\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -84,7 +86,7 @@ class NotificationsTest extends TestCase
             'related_module' => 'content',
         ]);
         SystemNotification::factory()->for($moderator, 'recipient')->create([
-            'title' => 'Update available',
+            'title' => 'Private system update notice',
             'event_key' => 'update_available',
             'related_module' => 'system',
         ]);
@@ -93,7 +95,7 @@ class NotificationsTest extends TestCase
             ->get(route('admin.notifications.index'))
             ->assertOk()
             ->assertSee('New pending comment')
-            ->assertDontSee('Update available');
+            ->assertDontSee('Private system update notice');
     }
 
     public function test_action_links_are_permission_aware(): void
@@ -164,5 +166,155 @@ class NotificationsTest extends TestCase
         $this->assertTrue($created->pluck('recipient_user_id')->contains($owner->id));
         $this->assertTrue($created->pluck('recipient_user_id')->contains($admin->id));
         $this->assertFalse($created->pluck('recipient_user_id')->contains($editor->id));
+    }
+
+    public function test_notification_rules_save_with_owner_admin_permission_and_audit(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $editor = User::factory()->editor()->create();
+        $payload = $this->rulesPayload([
+            'domain_health_failed' => [
+                'email_enabled' => '0',
+                'digest_mode' => 'daily',
+                'recipient_roles' => ['admin'],
+            ],
+        ]);
+
+        $this->actingAs($editor)
+            ->put(route('admin.notifications.rules.update'), ['rules' => $payload])
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->put(route('admin.notifications.rules.update'), ['rules' => $payload])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('notification_rules', [
+            'event_key' => 'domain_health_failed',
+            'email_enabled' => false,
+            'digest_mode' => 'daily',
+        ]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'notification_rule.updated', 'actor_id' => $admin->id]);
+    }
+
+    public function test_critical_events_bypass_digest_quiet_hours_and_inactive_rules(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(NotificationRuleStore::class)->ensureDefaults();
+
+        NotificationRule::query()->where('event_key', 'failed_admin_login')->update([
+            'in_app_enabled' => false,
+            'digest_mode' => 'daily',
+            'quiet_hours_enabled' => true,
+            'is_active' => false,
+        ]);
+
+        $created = app(NotificationService::class)->dispatch([
+            'event_key' => 'failed_admin_login',
+            'type' => 'security',
+            'severity' => 'critical',
+            'title' => 'Failed admin login',
+            'message' => 'An admin login attempt failed.',
+            'related_module' => 'trust',
+            'action_route' => 'admin.security-defense-center.index',
+        ], [$admin], false);
+
+        $this->assertCount(1, $created);
+        $notification = $created->first()->refresh();
+        $this->assertSame('critical', $notification->severity);
+        $this->assertNull($notification->digest_status);
+    }
+
+    public function test_deduplication_groups_repeated_events_and_preserves_window(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        app(NotificationService::class)->dispatch($this->domainFailurePayload(), [$admin], false);
+        app(NotificationService::class)->dispatch($this->domainFailurePayload(['message' => 'Domain health failed again.']), [$admin], false);
+
+        $this->assertSame(1, SystemNotification::query()->where('recipient_user_id', $admin->id)->where('event_key', 'domain_health_failed')->count());
+
+        $notification = SystemNotification::query()->where('recipient_user_id', $admin->id)->where('event_key', 'domain_health_failed')->firstOrFail();
+
+        $this->assertSame(2, $notification->occurrence_count);
+        $this->assertNotNull($notification->first_occurred_at);
+        $this->assertNotNull($notification->last_occurred_at);
+        $this->assertSame('pending', $notification->digest_status);
+    }
+
+    public function test_snooze_hides_notification_from_open_feed_until_expiry(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $notification = SystemNotification::factory()->for($admin, 'recipient')->create([
+            'title' => 'Noisy domain health warning',
+            'event_key' => 'domain_health_failed',
+            'related_module' => 'mail-infrastructure',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.notifications.snooze', $notification), ['duration' => '1_hour'])
+            ->assertRedirect();
+
+        $this->assertNotNull($notification->refresh()->snoozed_until);
+
+        $this->actingAs($admin)
+            ->get(route('admin.notifications.index'))
+            ->assertOk()
+            ->assertDontSee('Noisy domain health warning');
+
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'notification.snoozed', 'actor_id' => $admin->id]);
+    }
+
+    public function test_rules_screen_shows_dependency_and_digest_readiness(): void
+    {
+        config(['mail.default' => '', 'mail.from.address' => '']);
+
+        $admin = User::factory()->admin()->create();
+        app(NotificationRuleStore::class)->ensureDefaults();
+
+        NotificationRule::query()->where('event_key', 'domain_health_failed')->update(['email_enabled' => true]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.notifications.index'))
+            ->assertOk()
+            ->assertSee('Notification rules')
+            ->assertSee('Digest readiness')
+            ->assertSee('Email channel is enabled, but mail delivery is not fully configured.');
+    }
+
+    /** @param array<string, array<string, mixed>> $overrides */
+    private function rulesPayload(array $overrides = []): array
+    {
+        return app(NotificationRuleStore::class)->all()
+            ->values()
+            ->map(function (NotificationRule $rule) use ($overrides): array {
+                $base = [
+                    'event_key' => $rule->event_key,
+                    'in_app_enabled' => $rule->in_app_enabled ? '1' : '0',
+                    'email_enabled' => $rule->email_enabled ? '1' : '0',
+                    'recipient_roles' => $rule->recipient_roles ?? [],
+                    'digest_mode' => $rule->digest_mode,
+                    'quiet_hours_enabled' => $rule->quiet_hours_enabled ? '1' : '0',
+                    'quiet_hours_start' => $rule->quiet_hours_start,
+                    'quiet_hours_end' => $rule->quiet_hours_end,
+                    'is_active' => $rule->is_active ? '1' : '0',
+                ];
+
+                return [...$base, ...($overrides[$rule->event_key] ?? [])];
+            })->all();
+    }
+
+    /** @param array<string, mixed> $overrides */
+    private function domainFailurePayload(array $overrides = []): array
+    {
+        return [
+            'event_key' => 'domain_health_failed',
+            'type' => 'infrastructure',
+            'severity' => 'warning',
+            'title' => 'Domain health failed',
+            'message' => 'Domain health failed.',
+            'related_module' => 'mail-infrastructure',
+            'action_route' => 'admin.domains.index',
+            ...$overrides,
+        ];
     }
 }

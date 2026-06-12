@@ -17,6 +17,8 @@ class NotificationService
         private readonly NotificationActionLinkResolver $links,
         private readonly InAppNotificationDispatcher $inApp,
         private readonly EmailNotificationDispatcher $email,
+        private readonly NotificationRuleResolver $rules,
+        private readonly NotificationDigestService $digest,
     ) {}
 
     /**
@@ -28,7 +30,9 @@ class NotificationService
     {
         $notifications = $this->inApp->dispatch($payload, $recipients);
 
-        if ($sendEmail) {
+        $rule = $this->rules->resolve($payload);
+
+        if ($sendEmail && $rule->email_enabled && ! $this->digest->shouldDigest($rule)) {
             $notifications->each(fn (SystemNotification $notification): bool => $this->email->dispatch($notification));
         }
 
@@ -44,6 +48,7 @@ class NotificationService
             ->when(($filters['status'] ?? 'open') === 'read', fn (Builder $query) => $query->whereNotNull('read_at')->whereNull('archived_at'))
             ->when(($filters['status'] ?? 'open') === 'archived', fn (Builder $query) => $query->whereNotNull('archived_at'))
             ->when(($filters['status'] ?? 'open') === 'open', fn (Builder $query) => $query->whereNull('archived_at'))
+            ->where(fn (Builder $query) => $query->whereNull('snoozed_until')->orWhere('snoozed_until', '<=', now()))
             ->when(($filters['severity'] ?? 'all') !== 'all', fn (Builder $query) => $query->where('severity', $filters['severity']))
             ->when(($filters['module'] ?? 'all') !== 'all', fn (Builder $query) => $query->where('related_module', $filters['module']))
             ->latest()

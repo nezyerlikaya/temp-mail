@@ -123,9 +123,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('send test email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.send-test'));
         Gate::define('reset email template readiness', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.reset'));
         Gate::define('view notifications', fn (User $user): bool => $permissions->allows($user, 'admin.notifications.view'));
+        Gate::define('view notification rules', fn (User $user): bool => $permissions->allows($user, 'admin.notifications.view'));
+        Gate::define('update notification rules', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('view notification', fn (User $user, SystemNotification $notification): bool => app(NotificationService::class)->visibleTo($notification, $user));
         Gate::define('mark notification', fn (User $user, ?SystemNotification $notification = null): bool => $permissions->allows($user, 'admin.notifications.view')
             && ($notification === null || app(NotificationService::class)->visibleTo($notification, $user)));
+        Gate::define('snooze notifications', fn (User $user, SystemNotification $notification): bool => $permissions->allows($user, 'admin.notifications.view')
+            && app(NotificationService::class)->visibleTo($notification, $user));
         Gate::define('archive notification', fn (User $user, SystemNotification $notification): bool => $permissions->allows($user, 'admin.notifications.view')
             && app(NotificationService::class)->visibleTo($notification, $user));
 
