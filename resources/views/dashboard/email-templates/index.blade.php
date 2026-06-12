@@ -25,6 +25,10 @@
         <x-seo.metric-card label="Missing" :value="$summary['missing']" description="Template gaps" />
     </section>
 
+    <div class="mb-6">
+        <x-emails.readiness-summary :readiness="$readiness" />
+    </div>
+
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <main class="min-w-0 space-y-6">
             <x-emails.template-filter-bar :filters="$filters" :locales="$locales" :template-keys="$templateKeys" :statuses="$statuses" />
@@ -43,6 +47,7 @@
 
         <aside class="min-w-0 space-y-6">
             <x-emails.language-status :locales="$locales" :missing-queue="$missingQueue" />
+            <x-emails.missing-template-list :missing="$missingQueue" />
 
             <x-admin.card title="Template groups" description="Initial system notification coverage.">
                 <div class="space-y-2">

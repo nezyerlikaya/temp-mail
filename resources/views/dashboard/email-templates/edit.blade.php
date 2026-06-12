@@ -15,4 +15,17 @@
 
     <x-emails.validation-summary />
     <x-emails.template-editor :template="$template" :editor="$editor" :action="route('admin.email-templates.update', $template)" method="PUT" />
+
+    <div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <main class="min-w-0 space-y-6">
+            <x-emails.preview-panel :preview="$preview" :template="$template" />
+        </main>
+        <aside class="min-w-0 space-y-6">
+            <x-emails.send-test-panel :template="$template" :deliverability="$deliverability" :can-send="$canSendTest" />
+            <x-emails.test-status :status="session('test_status')" />
+            <x-emails.deliverability-warning :deliverability="$deliverability" :readiness="$readiness" />
+            <x-emails.brand-layout-preview :layout="$layoutReadiness" />
+            <x-emails.reset-warning :template="$template" :can-reset="$canResetTemplate" />
+        </aside>
+    </div>
 </x-admin.layout>

@@ -162,6 +162,12 @@ Route::prefix('dashboard')
         Route::put('email-templates/{emailTemplate}', [EmailTemplateController::class, 'update'])
             ->middleware('can:admin.email-templates.update')
             ->name('admin.email-templates.update');
+        Route::post('email-templates/{emailTemplate}/send-test', [EmailTemplateController::class, 'sendTest'])
+            ->middleware('can:admin.email-templates.send-test')
+            ->name('admin.email-templates.send-test');
+        Route::post('email-templates/{emailTemplate}/status', [EmailTemplateController::class, 'status'])
+            ->middleware('can:admin.email-templates.activate')
+            ->name('admin.email-templates.status');
         Route::post('email-templates/{emailTemplate}/reset-readiness', [EmailTemplateController::class, 'reset'])
             ->middleware('can:admin.email-templates.reset')
             ->name('admin.email-templates.reset');

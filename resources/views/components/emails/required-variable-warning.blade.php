@@ -5,7 +5,8 @@
     <p class="mt-1 text-sm text-amber-800">Critical active templates are checked server-side for their required variables.</p>
     <div class="mt-3 max-h-40 space-y-1 overflow-y-auto pr-1">
         @foreach ($required as $key => $variables)
-            <p class="text-xs font-bold text-amber-900">{{ str($key)->replace('_', ' ')->headline() }}: {{ collect($variables)->map(fn ($variable) => '{{ '.$variable.' }}')->join(', ') }}</p>
+            @php($placeholders = collect($variables)->map(fn ($variable) => '{'.'{ '.$variable.' }'.'}')->join(', '))
+            <p class="text-xs font-bold text-amber-900">{{ str($key)->replace('_', ' ')->headline() }}: {{ $placeholders }}</p>
         @endforeach
     </div>
 </div>

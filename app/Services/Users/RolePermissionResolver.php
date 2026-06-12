@@ -124,6 +124,8 @@ class RolePermissionResolver
                 'admin.email-templates.create' => 'Create email templates',
                 'admin.email-templates.update' => 'Update email templates',
                 'admin.email-templates.activate' => 'Activate or hide email templates',
+                'admin.email-templates.preview' => 'Preview email templates',
+                'admin.email-templates.send-test' => 'Send email template tests',
                 'admin.email-templates.reset' => 'Reset email template readiness',
                 'admin.backups-health.view' => 'Backups & Health',
                 'admin.backups-health.create' => 'Create backups',
@@ -229,7 +231,7 @@ class RolePermissionResolver
                 'admin.author-profiles.view', 'admin.notifications.view',
                 'admin.email-templates.view', 'admin.email-templates.create',
                 'admin.email-templates.update', 'admin.email-templates.activate',
-                'admin.email-templates.reset',
+                'admin.email-templates.preview',
             ],
             UserRole::Moderator->value => [
                 'admin.operations.view', 'admin.mailbox-operations.view',

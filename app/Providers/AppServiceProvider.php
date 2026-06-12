@@ -117,6 +117,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('create email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.create'));
         Gate::define('update email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.update'));
         Gate::define('activate hide email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.activate'));
+        Gate::define('preview email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.preview'));
+        Gate::define('send test email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.send-test'));
         Gate::define('reset email template readiness', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.reset'));
 
         Gate::policy(User::class, UserPolicy::class);

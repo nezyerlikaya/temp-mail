@@ -6,7 +6,10 @@ use App\Models\EmailTemplate;
 
 class EmailTemplateRenderer
 {
-    public function __construct(private readonly EmailTemplateVariableRegistry $variables) {}
+    public function __construct(
+        private readonly EmailTemplateVariableRegistry $variables,
+        private readonly SystemEmailLayoutResolver $layout,
+    ) {}
 
     /** @param array<string, string> $values */
     public function renderHtml(EmailTemplate $template, array $values): string
@@ -22,7 +25,7 @@ class EmailTemplateRenderer
 
     private function layout(EmailTemplate $template): string
     {
-        return '<div data-email-layout="system"><header><strong>{{ app_name }}</strong></header>'.$template->html_body.'</div>';
+        return $this->layout->wrap($template->html_body, $template->preheader);
     }
 
     /** @param array<string, string> $values */

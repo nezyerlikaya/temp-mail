@@ -2,6 +2,8 @@
 
 @php
     $selectedKey = old('template_key', $template->template_key ?? array_key_first($editor['templateKeys']));
+    $defaultHtmlBody = '<p>Hello {{ user_name }},</p><p>{{ app_name }} has an update for you.</p>';
+    $defaultPlainBody = 'Hello {{ user_name }}, {{ app_name }} has an update for you.';
 @endphp
 
 <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -59,12 +61,12 @@
                 </label>
                 <label class="block text-sm font-bold text-stone-700">
                     <span>HTML body</span>
-                    <textarea name="html_body" rows="14" class="mt-2 w-full rounded-lg border border-stone-300 px-3 py-3 font-mono text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20" @error('html_body') aria-invalid="true" aria-describedby="email-html-error" @enderror>{{ old('html_body', $template->html_body ?? '<p>Hello {{ user_name }},</p><p>{{ app_name }} has an update for you.</p>') }}</textarea>
+                    <textarea name="html_body" rows="14" class="mt-2 w-full rounded-lg border border-stone-300 px-3 py-3 font-mono text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20" @error('html_body') aria-invalid="true" aria-describedby="email-html-error" @enderror>{{ old('html_body', $template->html_body ?? $defaultHtmlBody) }}</textarea>
                     @error('html_body') <span id="email-html-error" class="mt-2 block text-sm font-bold text-red-700" role="alert">{{ $message }}</span> @enderror
                 </label>
                 <label class="block text-sm font-bold text-stone-700">
                     <span>Plain text body</span>
-                    <textarea name="plain_text_body" rows="8" class="mt-2 w-full rounded-lg border border-stone-300 px-3 py-3 font-mono text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20" @error('plain_text_body') aria-invalid="true" aria-describedby="email-plain-error" @enderror>{{ old('plain_text_body', $template->plain_text_body ?? 'Hello {{ user_name }}, {{ app_name }} has an update for you.') }}</textarea>
+                    <textarea name="plain_text_body" rows="8" class="mt-2 w-full rounded-lg border border-stone-300 px-3 py-3 font-mono text-sm focus:border-teal-600 focus:outline-none focus:ring-4 focus:ring-teal-600/20" @error('plain_text_body') aria-invalid="true" aria-describedby="email-plain-error" @enderror>{{ old('plain_text_body', $template->plain_text_body ?? $defaultPlainBody) }}</textarea>
                     @error('plain_text_body') <span id="email-plain-error" class="mt-2 block text-sm font-bold text-red-700" role="alert">{{ $message }}</span> @enderror
                 </label>
             </div>
@@ -74,11 +76,6 @@
             <button type="submit" x-bind:disabled="submitting" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 text-sm font-extrabold text-white focus:outline-none focus:ring-4 focus:ring-teal-600/20 disabled:opacity-60">
                 <span x-text="submitting ? 'Saving...' : 'Save email template'"></span>
             </button>
-            @if ($template)
-                <button type="submit" formaction="{{ route('admin.email-templates.reset', $template) }}" formmethod="POST" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-stone-300 px-4 text-sm font-extrabold text-stone-800 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
-                    Reset readiness
-                </button>
-            @endif
         </div>
     </form>
 
