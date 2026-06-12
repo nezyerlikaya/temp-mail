@@ -170,6 +170,24 @@ Route::prefix('dashboard')
         Route::put('page-studio/{page}', [PageStudioController::class, 'update'])
             ->middleware('can:admin.page-studio.update')
             ->name('admin.page-studio.update');
+        Route::get('page-studio/{page}/preview', [PageStudioController::class, 'preview'])
+            ->middleware(['can:admin.page-studio.preview', 'signed'])
+            ->name('admin.page-studio.preview');
+        Route::post('page-studio/{page}/publish', [PageStudioController::class, 'publish'])
+            ->middleware('can:admin.page-studio.publish')
+            ->name('admin.page-studio.publish');
+        Route::post('page-studio/{page}/hide', [PageStudioController::class, 'hide'])
+            ->middleware('can:admin.page-studio.hide')
+            ->name('admin.page-studio.hide');
+        Route::post('page-studio/{page}/trash', [PageStudioController::class, 'trash'])
+            ->middleware('can:admin.page-studio.trash')
+            ->name('admin.page-studio.trash');
+        Route::post('page-studio/{page}/restore', [PageStudioController::class, 'restore'])
+            ->middleware('can:admin.page-studio.restore')
+            ->name('admin.page-studio.restore');
+        Route::delete('page-studio/{page}', [PageStudioController::class, 'destroy'])
+            ->middleware('can:admin.page-studio.delete')
+            ->name('admin.page-studio.destroy');
 
         Route::get('media-library', [MediaLibraryController::class, 'index'])
             ->middleware('can:admin.media-library.view')

@@ -47,6 +47,13 @@ class UpdatePageAction
                     'page_id' => $page->id,
                     'changed_keys' => $changed,
                 ], ['module' => 'pages', 'action' => 'Update page', 'target' => $page]);
+
+                if (($before['status'] ?? null) !== $page->status && in_array($page->status, ['published', 'hidden'], true)) {
+                    $this->audit->record('page.'.$page->status, $actor, null, [
+                        'page_id' => $page->id,
+                        'slug' => $page->slug,
+                    ], ['module' => 'pages', 'action' => str($page->status)->headline().' page', 'target' => $page]);
+                }
             }
 
             return $page;

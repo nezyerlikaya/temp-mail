@@ -1,4 +1,4 @@
-@props(['page', 'pageTypes' => []])
+@props(['page', 'pageTypes' => [], 'previewUrl' => null, 'legalReadiness' => null, 'canPreview' => false])
 
 <article class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
     <a href="{{ route('admin.page-studio.edit', $page) }}" class="block focus:outline-none focus:ring-4 focus:ring-teal-600/20">
@@ -15,6 +15,7 @@
         <div class="mt-4 flex flex-wrap items-center gap-2">
             <x-pages.language-badge :locale="$page->locale" />
             <span class="inline-flex rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-extrabold text-stone-700">{{ $pageTypes[$page->page_type] ?? str($page->page_type)->headline() }}</span>
+            <x-pages.legal-page-badge :readiness="$legalReadiness" />
         </div>
 
         <div class="mt-4 flex items-center justify-between text-xs text-stone-500">
@@ -22,4 +23,7 @@
             <span>{{ $page->created_at?->format('M j, Y') }}</span>
         </div>
     </a>
+    <div class="mt-4">
+        <x-pages.preview-button :url="$previewUrl" :enabled="$canPreview && $previewUrl !== null" label="Preview" class="w-full" />
+    </div>
 </article>

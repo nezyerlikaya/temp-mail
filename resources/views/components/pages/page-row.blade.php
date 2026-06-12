@@ -1,4 +1,4 @@
-@props(['page', 'pageTypes' => []])
+@props(['page', 'pageTypes' => [], 'previewUrl' => null, 'legalReadiness' => null, 'canPreview' => false])
 
 <tr class="border-b border-stone-200 last:border-0">
     <td class="px-4 py-3">
@@ -8,6 +8,12 @@
     <td class="px-4 py-3"><x-pages.language-badge :locale="$page->locale" /></td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ $pageTypes[$page->page_type] ?? str($page->page_type)->headline() }}</td>
     <td class="px-4 py-3"><x-pages.status-badge :status="$page->status" /></td>
+    <td class="px-4 py-3">
+        <div class="flex flex-wrap gap-2">
+            <x-pages.legal-page-badge :readiness="$legalReadiness" />
+            <x-pages.preview-button :url="$previewUrl" :enabled="$canPreview && $previewUrl !== null" label="Preview" />
+        </div>
+    </td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ $page->author?->name ?? 'System' }}</td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ $page->created_at?->format('M j, Y') }}</td>
 </tr>

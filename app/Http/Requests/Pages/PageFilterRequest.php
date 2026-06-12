@@ -4,7 +4,9 @@ namespace App\Http\Requests\Pages;
 
 use App\Models\Locale;
 use App\Models\User;
+use App\Services\Pages\PageStore;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PageFilterRequest extends FormRequest
 {
@@ -28,7 +30,7 @@ class PageFilterRequest extends FormRequest
                 }
             }],
             'page_type' => ['nullable', 'string', 'max:48'],
-            'status' => ['nullable', 'string', 'max:32'],
+            'status' => ['nullable', Rule::in(['all', ...array_keys(app(PageStore::class)->statuses())])],
             'author_id' => ['nullable', function (string $attribute, mixed $value, \Closure $fail): void {
                 if ($value === 'all' || $value === null || $value === '') {
                     return;

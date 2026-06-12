@@ -6,9 +6,12 @@
     >
         <x-slot:actions>
             @if ($canCreatePage)
+                <x-pages.trash-filter :active="($filters['status'] ?? 'all') === 'trashed'" />
                 <a href="{{ route('admin.page-studio.create') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 py-2 text-sm font-extrabold text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-teal-600/25">
                     Create page
                 </a>
+            @else
+                <x-pages.trash-filter :active="($filters['status'] ?? 'all') === 'trashed'" />
             @endif
         </x-slot:actions>
     </x-admin.page-header>
@@ -25,7 +28,7 @@
                 'Pages' => $summary['total'] ?? 0,
                 'Draft' => $summary['draft'] ?? 0,
                 'Published' => $summary['published'] ?? 0,
-                'Ready' => $summary['ready'] ?? 0,
+                'Trashed' => $summary['trashed'] ?? 0,
                 'Legal' => $summary['legal'] ?? 0,
             ] as $label => $value)
                 <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
@@ -51,7 +54,7 @@
 
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             @foreach ($pages as $page)
-                                <x-pages.page-card :page="$page" :page-types="$pageTypes" />
+                                <x-pages.page-card :page="$page" :page-types="$pageTypes" :preview-url="$previewUrls[$page->id] ?? null" :legal-readiness="$legalReadiness[$page->id] ?? null" :can-preview="$canPreviewPage" />
                             @endforeach
                         </div>
 
@@ -64,13 +67,14 @@
                                             <th scope="col" class="px-4 py-3">Language</th>
                                             <th scope="col" class="px-4 py-3">Type</th>
                                             <th scope="col" class="px-4 py-3">Status</th>
+                                            <th scope="col" class="px-4 py-3">Readiness</th>
                                             <th scope="col" class="px-4 py-3">Author</th>
                                             <th scope="col" class="px-4 py-3">Created</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($pages as $page)
-                                            <x-pages.page-row :page="$page" :page-types="$pageTypes" />
+                                            <x-pages.page-row :page="$page" :page-types="$pageTypes" :preview-url="$previewUrls[$page->id] ?? null" :legal-readiness="$legalReadiness[$page->id] ?? null" :can-preview="$canPreviewPage" />
                                         @endforeach
                                     </tbody>
                                 </table>
@@ -85,7 +89,7 @@
             </main>
 
             <aside class="min-w-0 space-y-6">
-                <x-admin.card title="Publishing readiness" description="Foundation only. Editor, preview, SEO, and trash workflow arrive in later Page Studio parts.">
+                <x-admin.card title="Publishing readiness" description="Lifecycle, preview, and legal mapping hooks stay in Page Studio while public theme rendering remains separate.">
                     <div class="space-y-3 text-sm">
                         <div class="rounded-lg border border-stone-200 p-3">
                             <p class="font-extrabold text-stone-950">Language-specific records</p>
@@ -93,11 +97,11 @@
                         </div>
                         <div class="rounded-lg border border-stone-200 p-3">
                             <p class="font-extrabold text-stone-950">Legal page readiness</p>
-                            <p class="mt-1 text-stone-600">Settings can map legal records later without owning page content.</p>
+                            <p class="mt-1 text-stone-600">Settings maps legal records; Page Studio owns the language-specific page content.</p>
                         </div>
                         <div class="rounded-lg border border-stone-200 p-3">
-                            <p class="font-extrabold text-stone-950">Media reference hook</p>
-                            <p class="mt-1 text-stone-600">Featured image IDs are tracked through Media Library usage records.</p>
+                            <p class="font-extrabold text-stone-950">Signed preview</p>
+                            <p class="mt-1 text-stone-600">Preview links are temporary and signed so unpublished pages stay protected.</p>
                         </div>
                     </div>
                 </x-admin.card>

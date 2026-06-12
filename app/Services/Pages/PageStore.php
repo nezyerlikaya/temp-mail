@@ -36,7 +36,16 @@ class PageStore
             'draft' => 'Draft',
             'hidden' => 'Hidden',
             'published' => 'Published',
+            'trashed' => 'Trashed',
         ];
+    }
+
+    /** @return array<string, string> */
+    public function editorStatuses(): array
+    {
+        return collect($this->statuses())
+            ->only(['draft', 'published', 'hidden'])
+            ->all();
     }
 
     /** @return array<string, string> */
@@ -65,15 +74,16 @@ class PageStore
             ->get();
     }
 
-    /** @return array{total: int, draft: int, published: int, ready: int, legal: int} */
+    /** @return array{total: int, draft: int, published: int, trashed: int, ready: int, legal: int} */
     public function summary(): array
     {
         return [
             'total' => Page::query()->count(),
             'draft' => Page::query()->where('status', 'draft')->count(),
             'published' => Page::query()->where('status', 'published')->count(),
+            'trashed' => Page::query()->where('status', 'trashed')->count(),
             'ready' => Page::query()->where('content_readiness', 'ready')->count(),
-            'legal' => Page::query()->whereIn('page_type', ['privacy_policy', 'terms_of_service', 'cookie_policy', 'dmca'])->count(),
+            'legal' => Page::query()->whereIn('page_type', ['privacy_policy', 'terms_of_service', 'cookie_policy', 'abuse', 'dmca', 'contact'])->count(),
         ];
     }
 

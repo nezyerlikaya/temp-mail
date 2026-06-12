@@ -7,6 +7,9 @@ use App\Models\MediaAsset;
 use App\Models\Page;
 use App\Models\User;
 use App\Services\Localization\LocaleSettingsStore;
+use App\Services\Pages\PagePreviewService;
+use App\Services\Pages\PageSearchService;
+use App\Services\Settings\SettingsStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
@@ -312,6 +315,162 @@ class PageStudioTest extends TestCase
             ->assertSee('1 records');
     }
 
+    public function test_page_lifecycle_trash_restore_and_delete_are_audited(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $asset = $this->seedAsset($admin);
+        $page = Page::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'featured_media_id' => $asset->id,
+            'status' => 'published',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.page-studio.trash', $page), ['confirm_trash' => '1'])
+            ->assertRedirect(route('admin.page-studio.index', ['status' => 'trashed']));
+
+        $this->assertDatabaseHas('pages', ['id' => $page->id, 'status' => 'trashed']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'page.trashed', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.page-studio.restore', $page))
+            ->assertRedirect(route('admin.page-studio.edit', $page));
+
+        $this->assertDatabaseHas('pages', ['id' => $page->id, 'status' => 'draft', 'trashed_at' => null]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'page.restored', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.page-studio.trash', $page), ['confirm_trash' => '1'])
+            ->assertRedirect();
+
+        $this->actingAs($admin)
+            ->delete(route('admin.page-studio.destroy', $page), ['confirm_delete' => '1'])
+            ->assertRedirect(route('admin.page-studio.index', ['status' => 'trashed']));
+
+        $this->assertDatabaseMissing('pages', ['id' => $page->id]);
+        $this->assertDatabaseMissing('media_usages', [
+            'usable_type' => Page::class,
+            'usable_id' => (string) $page->id,
+            'slot' => 'featured_media_id',
+        ]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'page.permanently_deleted', 'actor_id' => $admin->id]);
+    }
+
+    public function test_trash_filter_hides_trashed_pages_until_requested(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+
+        Page::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'title' => 'Visible Policy',
+            'slug' => 'visible-policy',
+            'status' => 'draft',
+        ]);
+        Page::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'title' => 'Trashed Policy',
+            'slug' => 'trashed-policy',
+            'status' => 'trashed',
+            'trashed_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.page-studio.index'))
+            ->assertOk()
+            ->assertSee('Visible Policy')
+            ->assertDontSee('Trashed Policy');
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.page-studio.index').'?status=trashed');
+
+        $trashedPages = app(PageSearchService::class)->search(['status' => 'trashed']);
+
+        $this->assertTrue($trashedPages->getCollection()->contains('title', 'Trashed Policy'));
+
+        $response->assertOk()
+            ->assertViewHas('filters', fn (array $filters): bool => ($filters['status'] ?? null) === 'trashed')
+            ->assertSee('Viewing trash');
+    }
+
+    public function test_signed_preview_requires_signature_and_renders_page_safely(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $page = Page::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'title' => 'Draft Preview',
+            'slug' => 'draft-preview',
+            'status' => 'draft',
+            'content' => 'Private preview content.',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.page-studio.preview', $page))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->get(app(PagePreviewService::class)->previewUrl($page))
+            ->assertOk()
+            ->assertSee('Signed preview')
+            ->assertSee('Private preview content.')
+            ->assertSee('Temporary Page Studio preview');
+    }
+
+    public function test_legal_page_readiness_uses_settings_mapping_without_owning_settings_ui(): void
+    {
+        $owner = User::factory()->owner()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $page = Page::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $owner->id,
+            'title' => 'Privacy Policy',
+            'slug' => 'privacy-policy',
+            'page_type' => 'privacy_policy',
+            'status' => 'published',
+        ]);
+
+        app(SettingsStore::class)->put('legal', ['privacy_page_id' => $page->id], $owner);
+
+        $this->actingAs($owner)
+            ->get(route('admin.page-studio.edit', $page))
+            ->assertOk()
+            ->assertSee('Legal mapping readiness')
+            ->assertSee('Privacy Policy mapped')
+            ->assertSee(route('admin.settings.index', ['group' => 'legal']), false)
+            ->assertDontSee('SEO title');
+    }
+
+    public function test_author_cannot_preview_or_delete_pages(): void
+    {
+        $author = User::factory()->author()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $page = Page::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $author->id,
+            'status' => 'trashed',
+            'trashed_at' => now(),
+        ]);
+
+        $this->actingAs($author)
+            ->get(app(PagePreviewService::class)->previewUrl($page))
+            ->assertForbidden();
+
+        $this->actingAs($author)
+            ->delete(route('admin.page-studio.destroy', $page), ['confirm_delete' => '1'])
+            ->assertForbidden();
+    }
+
     public function test_no_page_translation_tables_or_relationships_are_created(): void
     {
         $this->assertFalse(Schema::hasTable('page_translations'));
@@ -338,6 +497,9 @@ class PageStudioTest extends TestCase
             resource_path('views/components/pages/page-editor.blade.php'),
             resource_path('views/components/pages/publish-panel.blade.php'),
             resource_path('views/components/pages/featured-media-field.blade.php'),
+            resource_path('views/components/pages/lifecycle-actions.blade.php'),
+            resource_path('views/components/pages/page-url-panel.blade.php'),
+            resource_path('views/dashboard/page-studio/preview.blade.php'),
         ];
 
         foreach ($files as $file) {

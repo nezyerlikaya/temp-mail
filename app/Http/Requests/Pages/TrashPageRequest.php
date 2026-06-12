@@ -3,20 +3,19 @@
 namespace App\Http\Requests\Pages;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class PublishPageRequest extends FormRequest
+class TrashPageRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('admin.page-studio.publish') ?? false;
+        return $this->user()?->can('admin.page-studio.trash') ?? false;
     }
 
     /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
         return [
-            'confirm_publish' => ['nullable', Rule::in(['1'])],
+            'confirm_trash' => ['accepted'],
         ];
     }
 }

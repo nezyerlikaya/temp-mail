@@ -30,8 +30,12 @@ class PageSearchService
             $query->where('page_type', $filters['page_type']);
         }
 
-        if (($filters['status'] ?? 'all') !== 'all') {
-            $query->where('status', $filters['status']);
+        $status = (string) ($filters['status'] ?? 'all');
+
+        if ($status !== 'all' && $status !== '') {
+            $query->where('status', $status);
+        } else {
+            $query->where('status', '!=', 'trashed');
         }
 
         if (($filters['author_id'] ?? 'all') !== 'all') {
@@ -47,5 +51,21 @@ class PageSearchService
         }
 
         return $query->paginate(12)->withQueryString();
+    }
+
+    /** @return array<int, string> */
+    public function previewUrls(LengthAwarePaginator $pages, PagePreviewService $preview): array
+    {
+        return $pages->getCollection()
+            ->mapWithKeys(fn (Page $page): array => [$page->id => $preview->previewUrl($page)])
+            ->all();
+    }
+
+    /** @return array<int, array{is_legal: bool, label: string|null, mapped: bool, setting_key: string|null}> */
+    public function legalReadiness(LengthAwarePaginator $pages, PageLegalResolver $legal): array
+    {
+        return $pages->getCollection()
+            ->mapWithKeys(fn (Page $page): array => [$page->id => $legal->readiness($page)])
+            ->all();
     }
 }

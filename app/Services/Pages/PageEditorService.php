@@ -24,7 +24,7 @@ class PageEditorService
         return [
             'locales' => $this->store->locales(),
             'pageTypes' => $this->store->pageTypes(),
-            'statuses' => $this->store->statuses(),
+            'statuses' => $this->store->editorStatuses(),
             'readinessOptions' => $this->store->contentReadinessOptions(),
             'mediaLibraryReady' => $mediaLibraryReady,
             'mediaAssets' => $mediaLibraryReady ? $this->media->options(['type' => 'image'], 18) : [],
@@ -33,6 +33,10 @@ class PageEditorService
             'canUploadMedia' => $mediaLibraryReady && ($actor?->can('admin.media-library.upload-through-picker') ?? false),
             'canPublish' => $actor?->can('admin.page-studio.publish') ?? false,
             'canHide' => $actor?->can('admin.page-studio.hide') ?? false,
+            'canTrash' => $actor?->can('admin.page-studio.trash') ?? false,
+            'canRestore' => $actor?->can('admin.page-studio.restore') ?? false,
+            'canDelete' => $actor?->can('admin.page-studio.delete') ?? false,
+            'canPreview' => $actor?->can('admin.page-studio.preview') ?? false,
         ];
     }
 

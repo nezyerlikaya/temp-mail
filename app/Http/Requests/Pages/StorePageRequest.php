@@ -51,7 +51,7 @@ class StorePageRequest extends FormRequest
             'content_readiness' => ['required', Rule::in(array_keys($store->contentReadinessOptions()))],
             'featured_media_id' => ['nullable', 'integer', 'exists:media_assets,id'],
             'page_type' => ['required', Rule::in(array_keys($store->pageTypes()))],
-            'status' => ['required', Rule::in(array_keys($store->statuses()))],
+            'status' => ['required', Rule::in(array_keys($store->editorStatuses()))],
             'intent' => ['nullable', Rule::in(['save_draft', 'publish', 'hide'])],
             'published_at' => ['nullable', 'date'],
         ];
