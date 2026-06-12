@@ -193,9 +193,15 @@ Route::prefix('dashboard')
         Route::get('blog-studio', [BlogStudioController::class, 'index'])
             ->middleware('can:admin.blog-studio.view')
             ->name('admin.blog-studio.index');
+        Route::get('blog-studio/create', [BlogStudioController::class, 'create'])
+            ->middleware('can:admin.blog-studio.create')
+            ->name('admin.blog-studio.create');
         Route::post('blog-studio', [BlogStudioController::class, 'store'])
             ->middleware('can:admin.blog-studio.create')
             ->name('admin.blog-studio.store');
+        Route::get('blog-studio/{blogPost}/edit', [BlogStudioController::class, 'edit'])
+            ->middleware('can:admin.blog-studio.update')
+            ->name('admin.blog-studio.edit');
         Route::put('blog-studio/{blogPost}', [BlogStudioController::class, 'update'])
             ->middleware('can:admin.blog-studio.update')
             ->name('admin.blog-studio.update');

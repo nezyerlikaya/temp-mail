@@ -23,6 +23,16 @@ class BlogPostStore
     }
 
     /** @return array<string, string> */
+    public function editorStatuses(): array
+    {
+        return [
+            'draft' => 'Draft',
+            'published' => 'Published',
+            'hidden' => 'Hidden',
+        ];
+    }
+
+    /** @return array<string, string> */
     public function contentReadinessOptions(): array
     {
         return [

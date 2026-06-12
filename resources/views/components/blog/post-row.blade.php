@@ -2,7 +2,7 @@
 
 <tr class="border-b border-stone-200 last:border-0">
     <td class="px-4 py-3">
-        <p class="font-extrabold text-stone-950">{{ $post->title }}</p>
+        <a href="{{ route('admin.blog-studio.edit', $post) }}" class="font-extrabold text-stone-950 hover:text-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">{{ $post->title }}</a>
         <p class="mt-1 font-mono text-xs text-stone-500">/{{ $post->slug }}</p>
     </td>
     <td class="px-4 py-3"><x-blog.language-badge :locale="$post->locale" /></td>

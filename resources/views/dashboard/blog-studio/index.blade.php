@@ -6,7 +6,9 @@
     >
         <x-slot:actions>
             @if ($canCreatePost)
-                <span class="inline-flex min-h-10 items-center rounded-lg border border-stone-300 px-3 py-2 text-sm font-extrabold text-stone-700">Editor UI next</span>
+                <a href="{{ route('admin.blog-studio.create') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-950 px-4 py-2 text-sm font-extrabold text-white shadow-sm transition hover:bg-stone-800 focus:outline-none focus:ring-4 focus:ring-teal-600/25">
+                    Create post
+                </a>
             @endif
         </x-slot:actions>
     </x-admin.page-header>
@@ -105,7 +107,7 @@
                     @if ($recent->count() > 0)
                         <div class="space-y-3">
                             @foreach ($recent as $post)
-                                <div class="rounded-lg border border-stone-200 p-3">
+                                <a href="{{ route('admin.blog-studio.edit', $post) }}" class="block rounded-lg border border-stone-200 p-3 hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
                                             <p class="truncate text-sm font-extrabold text-stone-950">{{ $post->title }}</p>
@@ -113,7 +115,7 @@
                                         </div>
                                         <x-blog.status-badge :status="$post->status" />
                                     </div>
-                                </div>
+                                </a>
                             @endforeach
                         </div>
                     @else

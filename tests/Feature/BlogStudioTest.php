@@ -6,11 +6,13 @@ use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\BlogTag;
 use App\Models\Locale;
+use App\Models\MediaAsset;
 use App\Models\User;
 use App\Services\Blog\BlogPostSearchService;
 use App\Services\Localization\LocaleSettingsStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class BlogStudioTest extends TestCase
@@ -22,6 +24,35 @@ class BlogStudioTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
+        Storage::fake('public');
+    }
+
+    public function test_blog_post_create_and_edit_editor_render_inside_admin_shell(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $post = BlogPost::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'title' => 'Inbox privacy editorial',
+            'slug' => 'inbox-privacy-editorial',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.blog-studio.create'))
+            ->assertOk()
+            ->assertSee('Create post')
+            ->assertSee('Editorial workspace')
+            ->assertSee('Featured image')
+            ->assertSee('Publish panel');
+
+        $this->actingAs($admin)
+            ->get(route('admin.blog-studio.edit', $post))
+            ->assertOk()
+            ->assertSee('Inbox privacy editorial')
+            ->assertSee('Content editor')
+            ->assertSee('Unsaved changes');
     }
 
     public function test_blog_studio_renders_inside_admin_shell_and_replaces_placeholder(): void
@@ -120,7 +151,7 @@ class BlogStudioTest extends TestCase
                 ...$payload,
                 'locale_id' => $english->id,
             ])
-            ->assertRedirect(route('admin.blog-studio.index'));
+            ->assertRedirect();
 
         $this->assertDatabaseHas('blog_posts', [
             'locale_id' => $english->id,
@@ -128,6 +159,131 @@ class BlogStudioTest extends TestCase
             'slug' => 'temp-mail-product-playbook',
         ]);
         $this->assertDatabaseHas('user_audit_events', ['event' => 'blog_post.created', 'actor_id' => $admin->id]);
+    }
+
+    public function test_blog_post_editor_shows_accessible_validation_errors(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->from(route('admin.blog-studio.create'))
+            ->post(route('admin.blog-studio.store'), [
+                'locale_id' => '',
+                'title' => '',
+                'slug' => 'unsafe/slug',
+                'content_readiness' => 'outline',
+                'status' => 'draft',
+            ])
+            ->assertRedirect(route('admin.blog-studio.create'))
+            ->assertSessionHasErrors(['locale_id', 'title', 'slug']);
+
+        $content = $this->followingRedirects()
+            ->actingAs($admin)
+            ->from(route('admin.blog-studio.create'))
+            ->post(route('admin.blog-studio.store'), [
+                'locale_id' => '',
+                'title' => '',
+                'slug' => 'unsafe/slug',
+                'content_readiness' => 'outline',
+                'status' => 'draft',
+            ])
+            ->assertOk()
+            ->getContent();
+
+        $this->assertIsString($content);
+        $this->assertStringContainsString('Please fix the highlighted fields.', $content);
+        $this->assertStringContainsString('aria-invalid="true"', $content);
+        $this->assertStringContainsString('blog-title-error', $content);
+    }
+
+    public function test_blog_post_save_persists_language_content_publish_intent_and_media_usage(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $category = BlogCategory::factory()->create(['locale_id' => $english->id, 'name' => 'Privacy', 'slug' => 'privacy']);
+        $tag = BlogTag::factory()->create(['locale_id' => $english->id, 'name' => 'Product', 'slug' => 'product']);
+        $asset = $this->seedAsset($admin);
+
+        $response = $this->actingAs($admin)
+            ->post(route('admin.blog-studio.store'), [
+                'locale_id' => $english->id,
+                'title' => 'English mailbox privacy guide',
+                'slug' => '',
+                'excerpt' => 'Privacy tips for disposable inbox users.',
+                'content' => 'Use this post for mailbox privacy education.',
+                'content_readiness' => 'ready',
+                'featured_media_id' => $asset->id,
+                'blog_category_id' => $category->id,
+                'tag_ids' => [$tag->id],
+                'status' => 'draft',
+                'intent' => 'publish',
+            ]);
+
+        $post = BlogPost::query()->where('slug', 'english-mailbox-privacy-guide')->firstOrFail();
+
+        $response->assertRedirect(route('admin.blog-studio.edit', $post));
+        $this->assertSame('published', $post->status);
+        $this->assertNotNull($post->published_at);
+        $this->assertSame('Use this post for mailbox privacy education.', $post->content);
+        $this->assertTrue($post->tags()->whereKey($tag->id)->exists());
+        $this->assertDatabaseHas('media_usages', [
+            'media_asset_id' => $asset->id,
+            'module' => 'blog',
+            'usage_context' => 'blog_studio',
+            'slot' => 'featured_media_id',
+            'usable_type' => BlogPost::class,
+            'usable_id' => (string) $post->id,
+        ]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'blog_post.published', 'actor_id' => $admin->id]);
+    }
+
+    public function test_blog_post_edit_updates_media_usage_safely(): void
+    {
+        $admin = User::factory()->admin()->create();
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $english = Locale::query()->where('locale', 'en')->firstOrFail();
+        $firstAsset = $this->seedAsset($admin, 'first.jpg');
+        $secondAsset = $this->seedAsset($admin, 'second.jpg');
+        $post = BlogPost::factory()->create([
+            'locale_id' => $english->id,
+            'author_id' => $admin->id,
+            'title' => 'Media update post',
+            'slug' => 'media-update-post',
+            'featured_media_id' => $firstAsset->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.blog-studio.update', $post), [
+                'locale_id' => $english->id,
+                'title' => 'Media update post revised',
+                'slug' => 'media-update-post',
+                'excerpt' => 'Updated excerpt.',
+                'content' => 'Updated content.',
+                'content_readiness' => 'needs_review',
+                'featured_media_id' => $secondAsset->id,
+                'blog_category_id' => '',
+                'status' => 'draft',
+                'intent' => 'save_draft',
+            ])
+            ->assertRedirect(route('admin.blog-studio.edit', $post));
+
+        $this->assertDatabaseMissing('media_usages', [
+            'media_asset_id' => $firstAsset->id,
+            'module' => 'blog',
+            'usage_context' => 'blog_studio',
+            'slot' => 'featured_media_id',
+            'usable_type' => BlogPost::class,
+            'usable_id' => (string) $post->id,
+        ]);
+        $this->assertDatabaseHas('media_usages', [
+            'media_asset_id' => $secondAsset->id,
+            'module' => 'blog',
+            'usage_context' => 'blog_studio',
+            'slot' => 'featured_media_id',
+            'usable_type' => BlogPost::class,
+            'usable_id' => (string) $post->id,
+        ]);
     }
 
     public function test_blog_slug_is_unique_per_language_not_translation_linked(): void
@@ -225,6 +381,10 @@ class BlogStudioTest extends TestCase
             resource_path('views/components/blog/filter-bar.blade.php'),
             resource_path('views/components/blog/post-card.blade.php'),
             resource_path('views/components/blog/post-row.blade.php'),
+            resource_path('views/components/blog/post-editor.blade.php'),
+            resource_path('views/components/blog/publish-panel.blade.php'),
+            resource_path('views/dashboard/blog-studio/create.blade.php'),
+            resource_path('views/dashboard/blog-studio/edit.blade.php'),
         ];
 
         foreach ($files as $file) {
@@ -237,5 +397,25 @@ class BlogStudioTest extends TestCase
             $this->assertStringNotContainsString('127.0.0.1', $contents, $file);
             $this->assertStringNotContainsString('post_translations', $contents, $file);
         }
+    }
+
+    private function seedAsset(User $admin, string $name = 'hero.jpg'): MediaAsset
+    {
+        return MediaAsset::query()->create([
+            'uuid' => (string) str()->uuid(),
+            'disk' => 'public',
+            'path' => 'media/'.$name,
+            'directory' => 'media',
+            'file_name' => $name,
+            'original_name' => $name,
+            'mime_type' => 'image/jpeg',
+            'extension' => 'jpg',
+            'size_bytes' => 1200,
+            'type' => 'image',
+            'title' => str($name)->before('.')->headline()->toString(),
+            'alt_text' => 'Blog featured image',
+            'status' => 'active',
+            'uploaded_by' => $admin->id,
+        ]);
     }
 }

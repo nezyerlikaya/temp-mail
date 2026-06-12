@@ -18,7 +18,14 @@ class StoreBlogPostRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('admin.blog-studio.create') ?? false;
+        if (! ($this->user()?->can('admin.blog-studio.create') ?? false)) {
+            return false;
+        }
+
+        return match ($this->input('intent')) {
+            'publish', 'hide' => $this->user()?->can('admin.blog-studio.publish') ?? false,
+            default => true,
+        };
     }
 
     /** @return array<string, array<int, mixed>> */
@@ -44,7 +51,8 @@ class StoreBlogPostRequest extends FormRequest
             'blog_category_id' => ['nullable', 'integer', Rule::exists('blog_categories', 'id')->where('locale_id', $localeId)],
             'tag_ids' => ['nullable', 'array'],
             'tag_ids.*' => ['integer', Rule::exists('blog_tags', 'id')->where('locale_id', $localeId)],
-            'status' => ['required', Rule::in(array_keys($store->statuses()))],
+            'status' => ['required', Rule::in(array_keys($store->editorStatuses()))],
+            'intent' => ['nullable', Rule::in(['save_draft', 'publish', 'hide'])],
             'author_id' => ['nullable', 'integer', 'exists:users,id'],
             'published_at' => ['nullable', 'date'],
         ];
