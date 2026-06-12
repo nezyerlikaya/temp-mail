@@ -1,4 +1,4 @@
-@props(['section', 'types' => [], 'placements' => []])
+@props(['section', 'types' => [], 'placements' => [], 'previewUrl' => null, 'canPreview' => false])
 
 <tr class="border-b border-stone-200 last:border-0">
     <td class="px-4 py-3">
@@ -12,6 +12,9 @@
     <td class="px-4 py-3 text-sm text-stone-600">{{ str($section->visibility)->headline() }}</td>
     <td class="px-4 py-3 text-sm text-stone-600">{{ $section->items_count }}</td>
     <td class="px-4 py-3">
-        <a href="{{ route('admin.sections-studio.edit', $section) }}" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-stone-300 px-3 text-xs font-extrabold text-stone-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">Edit</a>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.sections-studio.edit', $section) }}" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-stone-300 px-3 text-xs font-extrabold text-stone-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">Edit</a>
+            <x-sections.preview-button :url="$previewUrl" :enabled="$canPreview" />
+        </div>
     </td>
 </tr>

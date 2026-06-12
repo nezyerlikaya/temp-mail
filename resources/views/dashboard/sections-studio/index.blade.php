@@ -35,6 +35,7 @@
 
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
             <main class="min-w-0 space-y-6">
+                <x-sections.trash-filter :filters="$filters" :summary="$summary" />
                 <x-sections.filter-bar :filters="$filters" :locales="$locales" :types="$types" :placements="$placements" :statuses="$statuses" />
 
                 @if ($canReorderSection && ($filters['locale_id'] ?? 'all') !== 'all' && ($filters['placement'] ?? 'all') !== 'all' && $sections->count() > 1)
@@ -86,7 +87,13 @@
 
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             @foreach ($sections as $section)
-                                <x-sections.section-card :section="$section" :types="$types" :placements="$placements" />
+                                <x-sections.section-card
+                                    :section="$section"
+                                    :types="$types"
+                                    :placements="$placements"
+                                    :preview-url="$previewUrls[$section->id] ?? null"
+                                    :can-preview="$canPreviewSection"
+                                />
                             @endforeach
                         </div>
 
@@ -107,7 +114,13 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($sections as $section)
-                                            <x-sections.section-row :section="$section" :types="$types" :placements="$placements" />
+                                            <x-sections.section-row
+                                                :section="$section"
+                                                :types="$types"
+                                                :placements="$placements"
+                                                :preview-url="$previewUrls[$section->id] ?? null"
+                                                :can-preview="$canPreviewSection"
+                                            />
                                         @endforeach
                                     </tbody>
                                 </table>
@@ -129,8 +142,8 @@
                             <p class="mt-1 text-stone-600">Header and Footer are not editable section types.</p>
                         </div>
                         <div class="rounded-lg border border-stone-200 p-3">
-                            <p class="font-extrabold text-stone-950">Rendering later</p>
-                            <p class="mt-1 text-stone-600">Public theme placement and drag/drop ordering are intentionally deferred.</p>
+                            <p class="font-extrabold text-stone-950">Theme rendering contract</p>
+                            <p class="mt-1 text-stone-600">Active sections are now resolved by language and placement without empty placeholders.</p>
                         </div>
                     </div>
                 </x-admin.card>

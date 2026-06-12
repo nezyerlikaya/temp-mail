@@ -84,7 +84,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('reorder section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.reorder'));
         Gate::define('update section items', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.items.update'));
         Gate::define('publish section readiness', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.publish'));
+        Gate::define('activate section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.activate'));
+        Gate::define('hide section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.hide'));
+        Gate::define('preview section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.preview'));
+        Gate::define('restore section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.restore'));
         Gate::define('trash section readiness', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.trash'));
+        Gate::define('trash section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.trash'));
+        Gate::define('permanently delete section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.delete'));
         Gate::define('view media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.view'));
         Gate::define('view media picker', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.picker'));
         Gate::define('select media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.select'));

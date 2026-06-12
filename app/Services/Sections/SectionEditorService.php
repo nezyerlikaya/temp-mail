@@ -37,6 +37,12 @@ class SectionEditorService
                 : collect(),
             'canUpdateItems' => $actor?->can('admin.sections-studio.items.update') ?? false,
             'canReorder' => $actor?->can('admin.sections-studio.reorder') ?? false,
+            'canActivate' => $actor?->can('admin.sections-studio.activate') ?? false,
+            'canHide' => $actor?->can('admin.sections-studio.hide') ?? false,
+            'canTrash' => $actor?->can('admin.sections-studio.trash') ?? false,
+            'canRestore' => $actor?->can('admin.sections-studio.restore') ?? false,
+            'canDelete' => $actor?->can('admin.sections-studio.delete') ?? false,
+            'canPreview' => $actor?->can('admin.sections-studio.preview') ?? false,
         ];
     }
 }

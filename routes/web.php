@@ -260,6 +260,24 @@ Route::prefix('dashboard')
         Route::put('sections-studio/{section}', [SectionsStudioController::class, 'update'])
             ->middleware('can:admin.sections-studio.update')
             ->name('admin.sections-studio.update');
+        Route::get('sections-studio/{section}/preview', [SectionsStudioController::class, 'preview'])
+            ->middleware(['can:admin.sections-studio.preview', 'signed'])
+            ->name('admin.sections-studio.preview');
+        Route::post('sections-studio/{section}/activate', [SectionsStudioController::class, 'activate'])
+            ->middleware('can:admin.sections-studio.activate')
+            ->name('admin.sections-studio.activate');
+        Route::post('sections-studio/{section}/hide', [SectionsStudioController::class, 'hide'])
+            ->middleware('can:admin.sections-studio.hide')
+            ->name('admin.sections-studio.hide');
+        Route::post('sections-studio/{section}/trash', [SectionsStudioController::class, 'trash'])
+            ->middleware('can:admin.sections-studio.trash')
+            ->name('admin.sections-studio.trash');
+        Route::post('sections-studio/{section}/restore', [SectionsStudioController::class, 'restore'])
+            ->middleware('can:admin.sections-studio.restore')
+            ->name('admin.sections-studio.restore');
+        Route::delete('sections-studio/{section}', [SectionsStudioController::class, 'destroy'])
+            ->middleware('can:admin.sections-studio.delete')
+            ->name('admin.sections-studio.destroy');
         Route::post('sections-studio/{section}/items', [SectionsStudioController::class, 'storeItem'])
             ->middleware('can:admin.sections-studio.items.update')
             ->name('admin.sections-studio.items.store');

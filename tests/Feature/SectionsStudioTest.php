@@ -2,15 +2,20 @@
 
 namespace Tests\Feature;
 
+use App\Models\BlogPost;
 use App\Models\Locale;
 use App\Models\Section;
 use App\Models\SectionItem;
 use App\Models\User;
 use App\Services\Localization\LocaleSettingsStore;
+use App\Services\Sections\SectionCollectionResolver;
+use App\Services\Sections\SectionRenderService;
 use App\Services\Sections\SectionSearchService;
+use App\Services\Sections\SectionSeoReadinessService;
 use App\Services\Sections\SectionTypeRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class SectionsStudioTest extends TestCase
@@ -355,22 +360,256 @@ class SectionsStudioTest extends TestCase
             ->assertSessionHasErrors(['status', 'device_visibility']);
     }
 
+    public function test_section_lifecycle_trash_restore_and_permanent_delete_are_audited(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $english = $this->locale('en');
+        $section = Section::factory()->create([
+            'locale_id' => $english->id,
+            'status' => 'draft',
+            'title' => 'Lifecycle CTA',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.sections-studio.activate', $section))
+            ->assertRedirect(route('admin.sections-studio.edit', $section));
+
+        $this->assertDatabaseHas('sections', ['id' => $section->id, 'status' => 'active']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'section.activated', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.sections-studio.hide', $section))
+            ->assertRedirect(route('admin.sections-studio.edit', $section));
+
+        $this->assertDatabaseHas('sections', ['id' => $section->id, 'status' => 'hidden']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.sections-studio.trash', $section), ['confirm_trash' => '1'])
+            ->assertRedirect(route('admin.sections-studio.index', ['status' => 'trashed']));
+
+        $this->assertDatabaseHas('sections', ['id' => $section->id, 'status' => 'trashed']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'section.trashed', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.sections-studio.restore', $section))
+            ->assertRedirect(route('admin.sections-studio.edit', $section));
+
+        $this->assertDatabaseHas('sections', ['id' => $section->id, 'status' => 'draft']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'section.restored', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.sections-studio.trash', $section), ['confirm_trash' => '1'])
+            ->assertRedirect(route('admin.sections-studio.index', ['status' => 'trashed']));
+
+        $this->actingAs($admin)
+            ->delete(route('admin.sections-studio.destroy', $section), ['confirm_delete' => '1'])
+            ->assertRedirect(route('admin.sections-studio.index', ['status' => 'trashed']));
+
+        $this->assertDatabaseMissing('sections', ['id' => $section->id]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'section.permanently_deleted', 'actor_id' => $admin->id]);
+    }
+
+    public function test_editor_can_trash_but_cannot_permanently_delete_sections(): void
+    {
+        $editor = User::factory()->editor()->create();
+        $section = Section::factory()->create([
+            'locale_id' => $this->locale('en')->id,
+            'status' => 'trashed',
+        ]);
+
+        $this->actingAs($editor)
+            ->delete(route('admin.sections-studio.destroy', $section), ['confirm_delete' => '1'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('sections', ['id' => $section->id]);
+    }
+
+    public function test_trash_filter_shows_trashed_sections_only_when_requested(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $active = Section::factory()->create([
+            'locale_id' => $this->locale('en')->id,
+            'title' => 'Visible CTA',
+            'status' => 'active',
+        ]);
+        $trashed = Section::factory()->create([
+            'locale_id' => $this->locale('en')->id,
+            'title' => 'Archived FAQ',
+            'status' => 'trashed',
+            'trashed_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.sections-studio.index'))
+            ->assertOk()
+            ->assertSee($active->title)
+            ->assertDontSee($trashed->title);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.sections-studio.index', ['status' => 'trashed']));
+
+        $response->assertOk()
+            ->assertViewHas('sections', fn ($sections): bool => $sections->getCollection()->contains('title', 'Archived FAQ')
+                && ! $sections->getCollection()->contains('title', 'Visible CTA'))
+            ->assertSee('Archived FAQ');
+    }
+
+    public function test_render_resolver_is_language_placement_device_scoped_and_ignores_hidden_or_trashed_records(): void
+    {
+        $english = $this->locale('en');
+        $german = $this->locale('de');
+        $active = Section::factory()->create([
+            'locale_id' => $english->id,
+            'placement' => 'home.primary',
+            'section_type' => 'cta',
+            'title' => 'English CTA',
+            'status' => 'active',
+            'device_visibility' => 'all',
+            'settings' => ['button_label' => 'Create inbox'],
+        ]);
+        Section::factory()->create(['locale_id' => $english->id, 'placement' => 'home.primary', 'status' => 'hidden']);
+        Section::factory()->create(['locale_id' => $english->id, 'placement' => 'home.primary', 'status' => 'trashed']);
+        Section::factory()->create(['locale_id' => $german->id, 'placement' => 'home.primary', 'status' => 'active']);
+        Section::factory()->create(['locale_id' => $english->id, 'placement' => 'home.secondary', 'status' => 'active']);
+
+        $resolved = app(SectionCollectionResolver::class)->resolve($english, 'home.primary');
+        $renderable = app(SectionRenderService::class)->renderableCollection($resolved);
+
+        $this->assertSame([$active->id], $resolved->pluck('id')->all());
+        $this->assertSame('English CTA', $renderable->first()['title']);
+    }
+
+    public function test_missing_or_unready_faq_cta_and_blog_teaser_render_no_placeholder(): void
+    {
+        $english = $this->locale('en');
+        $render = app(SectionRenderService::class);
+        $faq = Section::factory()->create([
+            'locale_id' => $english->id,
+            'section_type' => 'faq',
+            'status' => 'active',
+        ]);
+        $cta = Section::factory()->create([
+            'locale_id' => $english->id,
+            'section_type' => 'cta',
+            'title' => '',
+            'status' => 'active',
+            'settings' => [],
+        ]);
+        $teaser = Section::factory()->create([
+            'locale_id' => $english->id,
+            'section_type' => 'blog_teaser',
+            'status' => 'active',
+        ]);
+
+        $this->assertNull($render->renderable($faq));
+        $this->assertNull($render->renderable($cta));
+        $this->assertNull($render->renderable($teaser));
+
+        BlogPost::factory()->create([
+            'locale_id' => $english->id,
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $this->assertSame('blog_teaser', $render->renderable($teaser)['type']);
+    }
+
+    public function test_faq_schema_readiness_follows_count_rules(): void
+    {
+        $section = Section::factory()->create([
+            'locale_id' => $this->locale('en')->id,
+            'section_type' => 'faq',
+            'status' => 'active',
+        ]);
+
+        foreach (range(1, 3) as $index) {
+            SectionItem::factory()->create(['section_id' => $section->id, 'title' => 'Question '.$index, 'status' => 'active']);
+        }
+
+        $readiness = app(SectionSeoReadinessService::class)->forSection($section->fresh('items'));
+        $this->assertFalse($readiness['schema_allowed']);
+        $this->assertSame(3, $readiness['active_count']);
+
+        SectionItem::factory()->create(['section_id' => $section->id, 'title' => 'Question 4', 'status' => 'active']);
+        $readiness = app(SectionSeoReadinessService::class)->forSection($section->fresh('items'));
+        $this->assertTrue($readiness['schema_allowed']);
+        $this->assertFalse($readiness['ideal']);
+
+        foreach (range(5, 6) as $index) {
+            SectionItem::factory()->create(['section_id' => $section->id, 'title' => 'Question '.$index, 'status' => 'active']);
+        }
+
+        $readiness = app(SectionSeoReadinessService::class)->forSection($section->fresh('items'));
+        $this->assertTrue($readiness['schema_allowed']);
+        $this->assertTrue($readiness['ideal']);
+
+        foreach (range(7, 13) as $index) {
+            SectionItem::factory()->create(['section_id' => $section->id, 'title' => 'Question '.$index, 'status' => 'active']);
+        }
+
+        $readiness = app(SectionSeoReadinessService::class)->forSection($section->fresh('items'));
+        $this->assertTrue($readiness['schema_allowed']);
+        $this->assertContains('Maximum recommended FAQ schema coverage is 12 active questions.', $readiness['warnings']);
+    }
+
+    public function test_signed_section_preview_requires_signature_and_renders_readiness_panels(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $section = Section::factory()->create([
+            'locale_id' => $this->locale('en')->id,
+            'section_type' => 'cta',
+            'status' => 'active',
+            'settings' => ['button_label' => 'Create inbox'],
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.sections-studio.preview', $section))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->get(URL::temporarySignedRoute('admin.sections-studio.preview', now()->addMinutes(5), $section))
+            ->assertOk()
+            ->assertSee('Signed preview')
+            ->assertSee('Render readiness')
+            ->assertSee('Theme contract');
+    }
+
     public function test_sections_studio_sources_do_not_use_forbidden_patterns(): void
     {
         $files = [
             app_path('Http/Controllers/Admin/SectionsStudioController.php'),
             app_path('Models/Section.php'),
             app_path('Models/SectionItem.php'),
+            app_path('Services/Sections/SectionLifecycleService.php'),
+            app_path('Services/Sections/SectionRenderService.php'),
+            app_path('Services/Sections/SectionCollectionResolver.php'),
+            app_path('Services/Sections/SectionSeoReadinessService.php'),
+            app_path('Services/Sections/SectionThemeContractService.php'),
+            app_path('Services/Sections/SectionAuditLogger.php'),
             app_path('Services/Sections/SectionStore.php'),
             app_path('Services/Sections/SectionSearchService.php'),
             app_path('Services/Sections/SectionTypeRegistry.php'),
             app_path('Services/Sections/SectionPlacementRegistry.php'),
+            app_path('Actions/Sections/ActivateSectionAction.php'),
             app_path('Actions/Sections/CreateSectionAction.php'),
+            app_path('Actions/Sections/DeleteSectionAction.php'),
+            app_path('Actions/Sections/HideSectionAction.php'),
+            app_path('Actions/Sections/RestoreSectionAction.php'),
+            app_path('Actions/Sections/TrashSectionAction.php'),
             app_path('Actions/Sections/UpdateSectionAction.php'),
             resource_path('views/dashboard/sections-studio/index.blade.php'),
+            resource_path('views/dashboard/sections-studio/preview.blade.php'),
             resource_path('views/components/sections/filter-bar.blade.php'),
             resource_path('views/components/sections/section-card.blade.php'),
             resource_path('views/components/sections/section-row.blade.php'),
+            resource_path('views/components/sections/lifecycle-actions.blade.php'),
+            resource_path('views/components/sections/preview-button.blade.php'),
+            resource_path('views/components/sections/delete-warning.blade.php'),
+            resource_path('views/components/sections/render-readiness.blade.php'),
+            resource_path('views/components/sections/seo-readiness.blade.php'),
+            resource_path('views/components/sections/theme-contract.blade.php'),
+            resource_path('views/components/sections/trash-filter.blade.php'),
+            resource_path('views/components/sections/status-badge.blade.php'),
             resource_path('views/components/sections/section-editor.blade.php'),
             resource_path('views/components/sections/faq-item-editor.blade.php'),
             resource_path('views/components/sections/item-list.blade.php'),
