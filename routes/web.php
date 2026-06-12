@@ -80,6 +80,19 @@ Route::prefix('dashboard')
         Route::get('mailbox-operations/{mailbox}', [MailboxOperationsController::class, 'show'])
             ->middleware('can:view mailbox')
             ->name('admin.mailbox-operations.show');
+        Route::get('mailbox-operations/{mailbox}/messages/{message}', [MailboxOperationsController::class, 'message'])
+            ->middleware('can:view message content')
+            ->name('admin.mailbox-operations.messages.show');
+        Route::post('mailbox-operations/{mailbox}/expire', [MailboxOperationsController::class, 'expire'])
+            ->middleware('can:expire mailbox')->name('admin.mailbox-operations.expire');
+        Route::post('mailbox-operations/{mailbox}/lock', [MailboxOperationsController::class, 'lock'])
+            ->middleware('can:lock unlock mailbox')->name('admin.mailbox-operations.lock');
+        Route::post('mailbox-operations/{mailbox}/unlock', [MailboxOperationsController::class, 'unlock'])
+            ->middleware('can:lock unlock mailbox')->name('admin.mailbox-operations.unlock');
+        Route::post('mailbox-operations/{mailbox}/empty', [MailboxOperationsController::class, 'empty'])
+            ->middleware('can:empty mailbox')->name('admin.mailbox-operations.empty');
+        Route::post('mailbox-operations/{mailbox}/messages/{message}', [MailboxOperationsController::class, 'messageAction'])
+            ->middleware('can:manage message state')->name('admin.mailbox-operations.messages.action');
 
         Route::get('people-identity', [UserController::class, 'index'])
             ->middleware('can:viewAny,'.User::class)

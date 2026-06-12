@@ -23,6 +23,16 @@ class MailboxLifecycleService
         return $mailbox->activity_timeline ?? [];
     }
 
+    public function record(Mailbox $mailbox, string $event, string $label, string $detail): Mailbox
+    {
+        $timeline = $this->timeline($mailbox);
+        $timeline[] = compact('event', 'label', 'detail') + ['occurred_at' => now()->toIso8601String()];
+
+        $mailbox->forceFill(['activity_timeline' => $timeline, 'last_activity_at' => now()])->save();
+
+        return $mailbox->refresh();
+    }
+
     /** @return array<string, string> */
     public function statuses(): array
     {

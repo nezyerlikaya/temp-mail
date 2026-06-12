@@ -18,6 +18,11 @@ class RolePermissionResolver
                 'admin.mailbox-operations.view' => 'Mailbox Operations',
                 'admin.mailbox-operations.create' => 'Create mailbox readiness',
                 'admin.mailbox-operations.manage' => 'Manage mailbox readiness',
+                'admin.mailbox-operations.message-content' => 'View mailbox message content',
+                'admin.mailbox-operations.expire' => 'Expire mailboxes',
+                'admin.mailbox-operations.lock' => 'Lock and unlock mailboxes',
+                'admin.mailbox-operations.empty' => 'Empty mailboxes',
+                'admin.mailbox-operations.message-state' => 'Manage mailbox message state',
                 'admin.product-analytics.view' => 'Product Analytics',
             ],
             'Markets' => [
