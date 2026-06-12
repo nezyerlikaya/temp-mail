@@ -113,6 +113,7 @@ class AdminCommandRegistry
             'Theme Launch Center',
             'Typography Center',
             'Update Center',
+            'Email Templates',
             'Backups & Health',
             'Settings',
         ];
@@ -127,6 +128,7 @@ class AdminCommandRegistry
             'Locale Launch Center' => ['language', 'locale', 'market', 'region', 'translation'],
             'SEO Growth Center' => ['seo', 'search', 'metadata', 'sitemap'],
             'Backups & Health' => ['backup', 'restore', 'health', 'database'],
+            'Email Templates' => ['email', 'mail', 'template', 'notification', 'system'],
             'Mailbox Operations' => ['mail', 'inbox', 'message', 'mailbox'],
             'Security Defense Center' => ['security', 'defense', 'captcha', 'abuse'],
             'Theme Launch Center' => ['theme', 'design', 'horizon', 'atlas', 'legacy'],

@@ -113,6 +113,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage redirects', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.redirects'));
         Gate::define('manage sitemap robots readiness', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.readiness'));
         Gate::define('rollback SEO version', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.rollback'));
+        Gate::define('view email templates', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.view'));
+        Gate::define('create email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.create'));
+        Gate::define('update email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.update'));
+        Gate::define('activate hide email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.activate'));
+        Gate::define('reset email template readiness', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.reset'));
 
         Gate::policy(User::class, UserPolicy::class);
 

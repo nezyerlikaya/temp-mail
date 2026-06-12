@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BlogStudioController;
 use App\Http\Controllers\Admin\BlogTaxonomyController;
+use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
@@ -145,6 +146,25 @@ Route::prefix('dashboard')
         Route::post('update-center/rollback-readiness', [UpdateCenterController::class, 'rollback'])
             ->middleware('can:admin.update-center.rollback')
             ->name('admin.update-center.rollback-readiness');
+
+        Route::get('email-templates', [EmailTemplateController::class, 'index'])
+            ->middleware('can:admin.email-templates.view')
+            ->name('admin.email-templates.index');
+        Route::get('email-templates/create', [EmailTemplateController::class, 'create'])
+            ->middleware('can:admin.email-templates.create')
+            ->name('admin.email-templates.create');
+        Route::post('email-templates', [EmailTemplateController::class, 'store'])
+            ->middleware('can:admin.email-templates.create')
+            ->name('admin.email-templates.store');
+        Route::get('email-templates/{emailTemplate}/edit', [EmailTemplateController::class, 'edit'])
+            ->middleware('can:admin.email-templates.update')
+            ->name('admin.email-templates.edit');
+        Route::put('email-templates/{emailTemplate}', [EmailTemplateController::class, 'update'])
+            ->middleware('can:admin.email-templates.update')
+            ->name('admin.email-templates.update');
+        Route::post('email-templates/{emailTemplate}/reset-readiness', [EmailTemplateController::class, 'reset'])
+            ->middleware('can:admin.email-templates.reset')
+            ->name('admin.email-templates.reset');
 
         Route::get('locale-launch-center', [LocaleLaunchController::class, 'index'])
             ->middleware('can:admin.locale-launch-center.view')
@@ -362,7 +382,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 
