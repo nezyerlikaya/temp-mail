@@ -16,6 +16,8 @@ class RolePermissionResolver
             'Workspace' => [
                 'admin.operations.view' => 'Operations Overview',
                 'admin.mailbox-operations.view' => 'Mailbox Operations',
+                'admin.mailbox-operations.create' => 'Create mailbox readiness',
+                'admin.mailbox-operations.manage' => 'Manage mailbox readiness',
                 'admin.product-analytics.view' => 'Product Analytics',
             ],
             'Markets' => [

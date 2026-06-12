@@ -1,0 +1,7 @@
+@props(['mailbox'])
+<div class="grid gap-4 border-b border-stone-200 px-5 py-4 last:border-b-0 lg:grid-cols-[minmax(0,1.4fr)_1fr_1fr_auto] lg:items-center">
+    <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><a href="{{ route('admin.mailbox-operations.show', $mailbox) }}" class="truncate text-sm font-extrabold text-stone-950 underline-offset-4 hover:underline focus:outline-none focus:ring-4 focus:ring-teal-600/20">{{ $mailbox->address }}</a><x-mailbox.status-badge :status="$mailbox->status" /><x-mailbox.type-badge :type="$mailbox->mailbox_type" /></div><p class="mt-1 text-xs font-semibold text-stone-500">{{ $mailbox->user?->email ?? 'Guest ownership' }}</p></div>
+    <div class="text-sm"><p class="font-extrabold text-stone-900">{{ $mailbox->domain->domain_name }}</p><p class="text-xs text-stone-500">{{ $mailbox->locale?->locale ?? 'Locale not assigned' }}</p></div>
+    <div class="grid grid-cols-2 gap-3 text-xs"><div><p class="font-bold text-stone-500">Messages</p><p class="mt-1 font-extrabold text-stone-900">{{ $mailbox->message_count }}</p></div><div><p class="font-bold text-stone-500">Last activity</p><p class="mt-1 font-extrabold text-stone-900">{{ $mailbox->last_activity_at?->diffForHumans() ?? 'No activity' }}</p></div></div>
+    <a href="{{ route('admin.mailbox-operations.show', $mailbox) }}" class="inline-flex min-h-9 items-center justify-center rounded-md border border-stone-300 bg-white px-3 text-xs font-extrabold text-stone-800">View details</a>
+</div>

@@ -142,6 +142,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('set default SMTP connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.smtp.default'));
         Gate::define('activate deactivate SMTP connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.smtp.status'));
         Gate::define('run infrastructure health checks', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.health.run'));
+        Gate::define('view mailboxes', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-operations.view'));
+        Gate::define('view mailbox', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-operations.view'));
+        Gate::define('create mailbox readiness', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-operations.create'));
+        Gate::define('manage mailbox readiness', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-operations.manage'));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');
