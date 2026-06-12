@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BlogStudioController;
 use App\Http\Controllers\Admin\BlogTaxonomyController;
+use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MediaLibraryController;
@@ -116,6 +117,31 @@ Route::prefix('dashboard')
         Route::put('activity-audit-logs/retention', [AuditLogController::class, 'updateRetention'])
             ->middleware('can:admin.activity-audit-logs.manage-retention')
             ->name('admin.activity-audit-logs.retention.update');
+
+        Route::get('domains', [DomainController::class, 'index'])
+            ->middleware('can:view domains')
+            ->name('admin.domains.index');
+        Route::get('domains/create', [DomainController::class, 'create'])
+            ->middleware('can:create domain')
+            ->name('admin.domains.create');
+        Route::post('domains', [DomainController::class, 'store'])
+            ->middleware('can:create domain')
+            ->name('admin.domains.store');
+        Route::get('domains/{domain}/edit', [DomainController::class, 'edit'])
+            ->middleware('can:update domain')
+            ->name('admin.domains.edit');
+        Route::put('domains/{domain}', [DomainController::class, 'update'])
+            ->middleware('can:update domain')
+            ->name('admin.domains.update');
+        Route::patch('domains/{domain}/status', [DomainController::class, 'status'])
+            ->middleware('can:activate deactivate domain')
+            ->name('admin.domains.status');
+        Route::post('domains/{domain}/default', [DomainController::class, 'default'])
+            ->middleware('can:set default domain')
+            ->name('admin.domains.default');
+        Route::post('domains/{domain}/dns-check', [DomainController::class, 'runDnsCheck'])
+            ->middleware('can:run DNS checks')
+            ->name('admin.domains.dns-check');
 
         Route::get('security-defense-center', [SecurityDefenseController::class, 'index'])
             ->middleware('can:admin.security-defense-center.view')
@@ -442,7 +468,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 

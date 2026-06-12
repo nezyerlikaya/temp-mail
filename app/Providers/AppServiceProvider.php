@@ -120,6 +120,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage redirects', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.redirects'));
         Gate::define('manage sitemap robots readiness', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.readiness'));
         Gate::define('rollback SEO version', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.rollback'));
+        Gate::define('view domains', fn (User $user): bool => $permissions->allows($user, 'admin.domains.view'));
+        Gate::define('create domain', fn (User $user): bool => $permissions->allows($user, 'admin.domains.create'));
+        Gate::define('update domain', fn (User $user): bool => $permissions->allows($user, 'admin.domains.update'));
+        Gate::define('activate deactivate domain', fn (User $user): bool => $permissions->allows($user, 'admin.domains.status'));
+        Gate::define('set default domain', fn (User $user): bool => $permissions->allows($user, 'admin.domains.default'));
+        Gate::define('run DNS checks', fn (User $user): bool => $permissions->allows($user, 'admin.domains.dns-check'));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

@@ -86,6 +86,11 @@ class RolePermissionResolver
             ],
             'Mail Infrastructure' => [
                 'admin.domains.view' => 'Domains',
+                'admin.domains.create' => 'Create domains',
+                'admin.domains.update' => 'Update domains',
+                'admin.domains.status' => 'Activate or deactivate domains',
+                'admin.domains.default' => 'Set default domain',
+                'admin.domains.dns-check' => 'Run DNS readiness checks',
                 'admin.imap-smtp.view' => 'IMAP/SMTP',
                 'admin.mailbox-rules.view' => 'Mailbox Rules',
                 'admin.blocked-lists.view' => 'Blocked Lists',
@@ -246,7 +251,7 @@ class RolePermissionResolver
             ],
             UserRole::Moderator->value => [
                 'admin.operations.view', 'admin.mailbox-operations.view',
-                'admin.comment-moderation.view', 'admin.blocked-lists.view',
+                'admin.comment-moderation.view', 'admin.blocked-lists.view', 'admin.domains.view',
                 'admin.people-identity.view', 'admin.abuse-reports.view',
                 'admin.activity-audit-logs.view', 'admin.notifications.view',
                 'admin.security-defense-center.view', 'admin.security-defense-center.operations',
