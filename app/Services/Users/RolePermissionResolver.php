@@ -109,6 +109,10 @@ class RolePermissionResolver
             'Trust' => [
                 'admin.security-defense-center.view' => 'Security Defense Center',
                 'admin.security-defense-center.manage' => 'Update security defense settings',
+                'admin.security-defense-center.manage-rate-limits' => 'Manage rate limit policies',
+                'admin.security-defense-center.manage-admin-security' => 'Manage admin access security',
+                'admin.security-defense-center.force-logout' => 'Force logout sessions',
+                'admin.security-defense-center.failed-logins' => 'View failed login history',
                 'admin.security-defense-center.reveal-secret' => 'Reveal security secrets',
                 'admin.security-defense-center.test' => 'Test security providers',
                 'admin.abuse-reports.view' => 'Abuse Reports',

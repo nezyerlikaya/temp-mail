@@ -2,7 +2,7 @@
     <x-admin.page-header
         eyebrow="Trust"
         title="Security Defense Center"
-        description="Configure bot providers and comment spam protection without risking admin lockout."
+        description="Configure bot providers, rate limits, and administrator access safeguards without risking admin lockout."
     />
 
     @if (session('status'))
@@ -22,7 +22,7 @@
     @endif
 
     <div class="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        @foreach ([['label' => 'Bot provider', 'status' => $botReadiness['status'], 'message' => $botReadiness['message']], ['label' => 'Akismet', 'status' => $akismetReadiness['status'], 'message' => $akismetReadiness['message']], ['label' => 'Bot last test', 'status' => $botSettings['last_test_status'] ?? 'passive', 'message' => $botSettings['last_tested_at'] ? $botSettings['last_tested_at']->diffForHumans() : 'Not tested'], ['label' => 'Akismet last test', 'status' => $akismetSettings['last_test_status'] ?? 'passive', 'message' => $akismetSettings['last_tested_at'] ? $akismetSettings['last_tested_at']->diffForHumans() : 'Not tested']] as $item)
+        @foreach ([['label' => 'Bot provider', 'status' => $botReadiness['status'], 'message' => $botReadiness['message']], ['label' => 'Akismet', 'status' => $akismetReadiness['status'], 'message' => $akismetReadiness['message']], ['label' => 'Rate limits', 'status' => $rateLimitStatus, 'message' => 'Laravel limiters use configured safe policies.'], ['label' => 'Admin access', 'status' => $adminAccessReadiness['owner_last_admin_protection'], 'message' => 'Owner and last admin protections remain enforced.']] as $item)
             <div class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
                 <div class="flex items-center justify-between gap-3">
                     <p class="text-xs font-extrabold uppercase text-stone-500">{{ $item['label'] }}</p>
@@ -35,6 +35,20 @@
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div class="min-w-0 space-y-6">
+            <x-security.rate-limit-panel
+                :policies="$rateLimitPolicies"
+                :strategies="$rateLimitStrategies"
+                :readiness="$rateLimitReadiness"
+                :status="$rateLimitStatus"
+                :can-update="$canManageRateLimits"
+            />
+
+            <x-security.admin-access-card
+                :settings="$adminAccess"
+                :readiness="$adminAccessReadiness"
+                :can-update="$canManageAdminSecurity"
+            />
+
             <x-security.provider-card
                 :settings="$botSettings"
                 :providers="$providers"
@@ -52,6 +66,19 @@
         </div>
 
         <aside class="min-w-0 space-y-6">
+            <x-security.ip-list-panel
+                :settings="$ipAccess"
+                :readiness="$ipAccessReadiness"
+                :can-update="$canManageAdminSecurity"
+            />
+
+            <x-security.failed-login-summary
+                :summary="$failedLoginSummary"
+                :can-view="$canViewFailedLogins"
+            />
+
+            <x-security.force-logout-warning :can-force="$canForceLogout" />
+
             <x-security.test-connection-panel
                 target="bot_protection"
                 :status="$botReadiness['status']"
@@ -73,6 +100,7 @@
                     <p>Deactivating a provider keeps its configuration so recovery does not require retyping keys.</p>
                     <p>Fail mode can be set to log only while validating production traffic.</p>
                     <p>Secret values remain encrypted at rest and masked by default.</p>
+                    <p>Suspended users and normal users cannot enter the admin shell.</p>
                 </div>
             </x-admin.card>
         </aside>

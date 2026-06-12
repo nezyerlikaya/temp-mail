@@ -8,9 +8,10 @@ use App\Policies\UserPolicy;
 use App\Services\Admin\AdminCommandRegistry;
 use App\Services\Admin\AdminNavigationRegistry;
 use App\Services\Notifications\NotificationService;
+use App\Services\Security\RateLimitPolicyStore;
+use App\Services\Security\RateLimitResolver;
 use App\Services\Settings\SettingsResolver;
 use App\Services\Users\RolePermissionResolver;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -39,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
         try {
             if (Schema::hasTable('system_settings')) {
                 app(SettingsResolver::class)->applyRuntime();
+            }
+
+            if (Schema::hasTable('security_settings')) {
+                config(['session.lifetime' => app(RateLimitPolicyStore::class)->adminAccess()['admin_session_lifetime']]);
             }
         } catch (Throwable) {
             // Installer and database recovery must render before settings storage exists.
@@ -119,6 +124,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');
         Gate::define('test security provider', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('manage rate limits', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('manage admin security', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('force logout sessions', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('view failed login history', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('view email templates', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.view'));
         Gate::define('create email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.create'));
         Gate::define('update email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.update'));
@@ -165,8 +174,8 @@ class AppServiceProvider extends ServiceProvider
             $view->with('notificationUnreadCount', $user ? app(NotificationService::class)->unreadCount($user) : 0);
         });
 
-        RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip());
-        });
+        foreach (['login', 'register', 'forgot_password', 'mailbox_creation', 'inbox_refresh', 'comments', 'contact_form', 'api_requests'] as $limiter) {
+            RateLimiter::for($limiter, fn (Request $request) => app(RateLimitResolver::class)->for($limiter, $request));
+        }
     }
 }

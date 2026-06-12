@@ -126,6 +126,18 @@ Route::prefix('dashboard')
         Route::put('security-defense-center/akismet', [SecurityDefenseController::class, 'updateAkismet'])
             ->middleware('can:update security settings')
             ->name('admin.security-defense-center.akismet.update');
+        Route::put('security-defense-center/rate-limits', [SecurityDefenseController::class, 'updateRateLimits'])
+            ->middleware('can:manage rate limits')
+            ->name('admin.security-defense-center.rate-limits.update');
+        Route::put('security-defense-center/ip-access', [SecurityDefenseController::class, 'updateIpAccess'])
+            ->middleware('can:manage admin security')
+            ->name('admin.security-defense-center.ip-access.update');
+        Route::put('security-defense-center/admin-access', [SecurityDefenseController::class, 'updateAdminSecurity'])
+            ->middleware('can:manage admin security')
+            ->name('admin.security-defense-center.admin-access.update');
+        Route::post('security-defense-center/force-logout', [SecurityDefenseController::class, 'forceLogout'])
+            ->middleware('can:force logout sessions')
+            ->name('admin.security-defense-center.force-logout');
         Route::post('security-defense-center/test', [SecurityDefenseController::class, 'test'])
             ->middleware('can:test security provider')
             ->name('admin.security-defense-center.test');

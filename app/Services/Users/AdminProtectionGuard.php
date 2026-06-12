@@ -8,6 +8,13 @@ use Illuminate\Validation\ValidationException;
 
 class AdminProtectionGuard
 {
+    public function readinessStatus(): string
+    {
+        return $this->countRole(UserRole::Owner) >= 1 && $this->criticalAccountCount() >= 1
+            ? 'ready'
+            : 'failed';
+    }
+
     public function assertRoleChangeAllowed(User $actor, User $subject, UserRole $newRole): void
     {
         $actorRole = UserRole::tryFrom((string) $actor->role) ?? UserRole::Member;

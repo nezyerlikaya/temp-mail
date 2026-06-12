@@ -8,6 +8,8 @@ use App\Models\UserAuditEvent;
 use App\Services\Security\SecuritySettingsStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class SecurityDefenseCenterTest extends TestCase
@@ -161,6 +163,168 @@ class SecurityDefenseCenterTest extends TestCase
 
         $auditPayloads = UserAuditEvent::query()->where('event', 'security.akismet_updated')->pluck('metadata')->map(fn ($metadata) => json_encode($metadata))->join("\n");
         $this->assertStringNotContainsString('akismet-secret-key', $auditPayloads);
+    }
+
+    public function test_rate_limits_render_save_and_drive_laravel_limiters(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.security-defense-center.index'))
+            ->assertOk()
+            ->assertSee('Rate limit policies')
+            ->assertSee('Login attempts')
+            ->assertSee('Admin access security');
+
+        $this->actingAs($admin)
+            ->put(route('admin.security-defense-center.rate-limits.update'), [
+                'policies' => [
+                    'login' => [
+                        'key' => 'login',
+                        'max_attempts' => 2,
+                        'window_minutes' => 3,
+                        'cooldown_minutes' => 3,
+                        'strategy' => 'per_ip',
+                        'is_active' => '1',
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('admin.security-defense-center.index'));
+
+        $limit = RateLimiter::limiter('login')(request()->merge(['email' => 'rate@example.test']));
+
+        $this->assertSame(2, $limit->maxAttempts);
+        $this->assertSame(180, $limit->decaySeconds);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'security.rate_limits_updated', 'actor_id' => $admin->id]);
+    }
+
+    public function test_invalid_zero_rate_limits_are_rejected(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->from(route('admin.security-defense-center.index'))
+            ->put(route('admin.security-defense-center.rate-limits.update'), [
+                'policies' => [
+                    'login' => [
+                        'key' => 'login',
+                        'max_attempts' => 0,
+                        'window_minutes' => 0,
+                        'cooldown_minutes' => 0,
+                        'strategy' => 'per_ip',
+                        'is_active' => '1',
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('admin.security-defense-center.index'))
+            ->assertSessionHasErrors([
+                'policies.login.max_attempts',
+                'policies.login.window_minutes',
+                'policies.login.cooldown_minutes',
+            ]);
+    }
+
+    public function test_ip_access_and_admin_security_are_audited_without_session_tokens(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->put(route('admin.security-defense-center.ip-access.update'), [
+                'allowlist' => "203.0.113.10\n203.0.113.11",
+                'blocklist' => '198.51.100.4',
+                'temporary_block_ready' => '1',
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($admin)
+            ->put(route('admin.security-defense-center.admin-access.update'), [
+                'password_min_length' => 14,
+                'password_letters' => '1',
+                'password_numbers' => '1',
+                'password_symbols' => '1',
+                'require_email_verification' => '1',
+                'admin_session_lifetime' => 90,
+                'login_alerts' => '1',
+                'admin_ip_allowlist_ready' => '1',
+                'require_2fa_readiness' => '1',
+                'critical_notifications_ready' => '1',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('security_settings', ['group' => 'ip_access']);
+        $this->assertDatabaseHas('security_settings', ['group' => 'admin_access']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'security.ip_access_updated']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'security.admin_access_updated']);
+
+        $auditPayloads = UserAuditEvent::query()
+            ->whereIn('event', ['security.ip_access_updated', 'security.admin_access_updated'])
+            ->pluck('metadata')
+            ->map(fn ($metadata) => json_encode($metadata))
+            ->join("\n");
+
+        $this->assertStringNotContainsString('other-session-id', strtolower($auditPayloads));
+        $this->assertStringNotContainsString('token', strtolower($auditPayloads));
+    }
+
+    public function test_force_logout_requires_permission_confirmation_and_does_not_render_session_tokens(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $editor = User::factory()->editor()->create();
+        $member = User::factory()->create();
+
+        DB::table('sessions')->insert([
+            'id' => 'other-session-id',
+            'user_id' => $member->id,
+            'ip_address' => '203.0.113.12',
+            'user_agent' => 'Feature test',
+            'payload' => 'encrypted-payload',
+            'last_activity' => now()->timestamp,
+        ]);
+
+        $this->actingAs($editor)
+            ->post(route('admin.security-defense-center.force-logout'), ['confirmation' => 'LOG OUT SESSIONS'])
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->post(route('admin.security-defense-center.force-logout'), ['confirmation' => 'wrong'])
+            ->assertSessionHasErrors('confirmation');
+
+        $this->actingAs($admin)
+            ->post(route('admin.security-defense-center.force-logout'), ['confirmation' => 'LOG OUT SESSIONS'])
+            ->assertRedirect(route('admin.security-defense-center.index'));
+
+        $this->assertDatabaseMissing('sessions', ['id' => 'other-session-id']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'security.sessions_force_logged_out', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.security-defense-center.index'))
+            ->assertOk()
+            ->assertSee('Force logout sessions')
+            ->assertDontSee('other-session-id')
+            ->assertDontSee('encrypted-payload');
+    }
+
+    public function test_normal_users_cannot_access_admin_and_suspended_users_cannot_login(): void
+    {
+        $member = User::factory()->create();
+        $suspended = User::factory()->suspended()->create([
+            'email' => 'blocked@example.test',
+            'password' => 'Secure123!',
+        ]);
+
+        $this->actingAs($member)
+            ->get(route('admin.security-defense-center.index'))
+            ->assertForbidden();
+
+        auth()->logout();
+
+        $this->post(route('login.store'), [
+            'email' => $suspended->email,
+            'password' => 'Secure123!',
+        ])
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
     }
 
     /** @param array<string, mixed> $overrides */

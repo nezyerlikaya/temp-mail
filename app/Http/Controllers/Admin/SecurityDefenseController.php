@@ -2,17 +2,30 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Security\ForceLogoutAllSessionsAction;
 use App\Actions\Security\TestAkismetAction;
 use App\Actions\Security\TestBotProviderAction;
+use App\Actions\Security\UpdateAdminSecurityAction;
 use App\Actions\Security\UpdateAkismetSettingsAction;
 use App\Actions\Security\UpdateBotProtectionAction;
+use App\Actions\Security\UpdateIpAccessAction;
+use App\Actions\Security\UpdateRateLimitsAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Security\ForceLogoutSessionsRequest;
 use App\Http\Requests\Security\TestSecurityProviderRequest;
+use App\Http\Requests\Security\UpdateAdminSecurityRequest;
 use App\Http\Requests\Security\UpdateAkismetRequest;
 use App\Http\Requests\Security\UpdateBotProtectionRequest;
+use App\Http\Requests\Security\UpdateIpAccessRequest;
+use App\Http\Requests\Security\UpdateRateLimitsRequest;
+use App\Services\Security\AdminAccessGuard;
 use App\Services\Security\AkismetSpamService;
 use App\Services\Security\BotProtectionService;
 use App\Services\Security\BotProviderRegistry;
+use App\Services\Security\FailedLoginService;
+use App\Services\Security\IpAccessService;
+use App\Services\Security\RateLimitPolicyService;
+use App\Services\Security\RateLimitPolicyStore;
 use App\Services\Security\SecuritySettingsStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,13 +41,30 @@ class SecurityDefenseController extends Controller
         BotProviderRegistry $registry,
         BotProtectionService $botProtection,
         AkismetSpamService $akismet,
+        RateLimitPolicyStore $rateLimitStore,
+        RateLimitPolicyService $rateLimitPolicy,
+        IpAccessService $ipAccessService,
+        AdminAccessGuard $adminAccessGuard,
+        FailedLoginService $failedLogins,
     ): View {
         Gate::authorize('view security settings');
+
+        $ipAccess = $rateLimitStore->ipAccess();
+        $adminAccess = $rateLimitStore->adminAccess();
 
         return view('dashboard.security-defense-center.index', [
             'adminUser' => $request->user(),
             'botSettings' => $settings->bot(),
             'akismetSettings' => $settings->akismet(),
+            'rateLimitPolicies' => $rateLimitStore->policies(),
+            'rateLimitStrategies' => $rateLimitStore->strategies(),
+            'rateLimitReadiness' => $rateLimitPolicy->readiness(),
+            'rateLimitStatus' => $rateLimitPolicy->summaryStatus(),
+            'ipAccess' => $ipAccess,
+            'ipAccessReadiness' => $ipAccessService->readiness(),
+            'adminAccess' => $adminAccess,
+            'adminAccessReadiness' => $adminAccessGuard->readiness($adminAccess, $ipAccess),
+            'failedLoginSummary' => $failedLogins->summary(),
             'providers' => $registry->providers(),
             'protectedForms' => $registry->protectedForms(),
             'failModes' => $registry->failModes(),
@@ -42,6 +72,10 @@ class SecurityDefenseController extends Controller
             'akismetReadiness' => $akismet->readiness(),
             'canUpdateSecurity' => $request->user()?->can('update security settings') ?? false,
             'canRevealSecrets' => $request->user()?->can('reveal security secret') ?? false,
+            'canManageRateLimits' => $request->user()?->can('manage rate limits') ?? false,
+            'canManageAdminSecurity' => $request->user()?->can('manage admin security') ?? false,
+            'canForceLogout' => $request->user()?->can('force logout sessions') ?? false,
+            'canViewFailedLogins' => $request->user()?->can('view failed login history') ?? false,
         ]);
     }
 
@@ -57,6 +91,34 @@ class SecurityDefenseController extends Controller
         $action->handle($request->user(), $request->validated());
 
         return redirect()->route('admin.security-defense-center.index')->with('status', 'Akismet settings saved.');
+    }
+
+    public function updateRateLimits(UpdateRateLimitsRequest $request, UpdateRateLimitsAction $action): RedirectResponse
+    {
+        $action->handle($request->user(), $request->validated());
+
+        return redirect()->route('admin.security-defense-center.index')->with('status', 'Rate limit policies saved.');
+    }
+
+    public function updateIpAccess(UpdateIpAccessRequest $request, UpdateIpAccessAction $action): RedirectResponse
+    {
+        $action->handle($request->user(), $request->validated());
+
+        return redirect()->route('admin.security-defense-center.index')->with('status', 'IP access settings saved.');
+    }
+
+    public function updateAdminSecurity(UpdateAdminSecurityRequest $request, UpdateAdminSecurityAction $action): RedirectResponse
+    {
+        $action->handle($request->user(), $request->validated());
+
+        return redirect()->route('admin.security-defense-center.index')->with('status', 'Admin access security saved.');
+    }
+
+    public function forceLogout(ForceLogoutSessionsRequest $request, ForceLogoutAllSessionsAction $action): RedirectResponse
+    {
+        $count = $action->handle($request->user(), $request->session()->getId());
+
+        return redirect()->route('admin.security-defense-center.index')->with('status', "{$count} authenticated sessions were logged out.");
     }
 
     public function test(TestSecurityProviderRequest $request, TestBotProviderAction $bot, TestAkismetAction $akismet): RedirectResponse
