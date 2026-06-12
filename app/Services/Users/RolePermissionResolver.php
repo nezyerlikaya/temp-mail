@@ -109,6 +109,9 @@ class RolePermissionResolver
                 'admin.imap-smtp.smtp.status' => 'Activate or deactivate SMTP connections',
                 'admin.imap-smtp.health.run' => 'Run mail infrastructure health checks',
                 'admin.mailbox-rules.view' => 'Mailbox Rules',
+                'admin.mailbox-rules.update' => 'Update mailbox rules',
+                'admin.mailbox-rules.cleanup' => 'Run expired mailbox cleanup',
+                'admin.mailbox-rules.health' => 'Run mailbox delivery health checks',
                 'admin.blocked-lists.view' => 'Blocked Lists',
             ],
             'Growth' => [

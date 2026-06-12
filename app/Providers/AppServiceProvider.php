@@ -151,6 +151,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('lock unlock mailbox', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-operations.lock'));
         Gate::define('empty mailbox', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-operations.empty'));
         Gate::define('manage message state', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-operations.message-state'));
+        Gate::define('view mailbox rules', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-rules.view'));
+        Gate::define('update mailbox rules', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-rules.update'));
+        Gate::define('run mailbox cleanup', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-rules.cleanup'));
+        Gate::define('run mailbox delivery health checks', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-rules.health'));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

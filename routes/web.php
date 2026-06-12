@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\InboundMailConnectionController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MailboxOperationsController;
+use App\Http\Controllers\Admin\MailboxRulesController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
@@ -93,6 +94,15 @@ Route::prefix('dashboard')
             ->middleware('can:empty mailbox')->name('admin.mailbox-operations.empty');
         Route::post('mailbox-operations/{mailbox}/messages/{message}', [MailboxOperationsController::class, 'messageAction'])
             ->middleware('can:manage message state')->name('admin.mailbox-operations.messages.action');
+
+        Route::get('mailbox-rules', [MailboxRulesController::class, 'index'])
+            ->middleware('can:view mailbox rules')->name('admin.mailbox-rules.index');
+        Route::put('mailbox-rules', [MailboxRulesController::class, 'update'])
+            ->middleware('can:update mailbox rules')->name('admin.mailbox-rules.update');
+        Route::post('mailbox-rules/cleanup', [MailboxRulesController::class, 'cleanup'])
+            ->middleware('can:run mailbox cleanup')->name('admin.mailbox-rules.cleanup');
+        Route::post('mailbox-rules/health', [MailboxRulesController::class, 'health'])
+            ->middleware('can:run mailbox delivery health checks')->name('admin.mailbox-rules.health');
 
         Route::get('people-identity', [UserController::class, 'index'])
             ->middleware('can:viewAny,'.User::class)
@@ -546,7 +556,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.mailbox-rules.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 

@@ -1,0 +1,6 @@
+@props(['health', 'latestHealth' => null, 'history', 'canRun' => false])
+<section aria-labelledby="delivery-health-title" class="space-y-4">
+    <div class="flex flex-wrap items-end justify-between gap-4"><div><div class="flex items-center gap-2"><h2 id="delivery-health-title" class="text-base font-extrabold text-stone-950">Delivery health</h2><x-mailbox.health-status-badge :status="$health['status']" /></div><p class="mt-1 text-sm text-stone-600">Last checked: {{ $latestHealth?->checked_at?->diffForHumans() ?? 'Not recorded yet' }}</p></div><form method="POST" action="{{ route('admin.mailbox-rules.health') }}" x-data="{ submitting: false }" x-on:submit="submitting = true">@csrf<button type="submit" @disabled(! $canRun) x-bind:disabled="submitting || {{ $canRun ? 'false' : 'true' }}" class="inline-flex min-h-10 items-center rounded-md bg-stone-950 px-4 text-sm font-extrabold text-white focus:outline-none focus:ring-4 focus:ring-teal-600/20 disabled:bg-stone-400">Run health check</button></form></div>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">@foreach($health['cards'] as $card)<x-mailbox.health-card :card="$card" />@endforeach</div>
+    @if($history->isNotEmpty())<p class="text-xs font-bold text-stone-500">Health history ready: {{ $history->count() }} recent check(s) retained.</p>@endif
+</section>

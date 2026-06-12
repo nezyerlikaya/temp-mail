@@ -1,0 +1,6 @@
+@props(['rules', 'canCleanup' => false])
+<x-admin.card title="Expired mailbox cleanup" description="Run a controlled cleanup using the saved grace period.">
+    <form method="POST" action="{{ route('admin.mailbox-rules.cleanup') }}" x-data="{ confirmation: '', submitting: false }" x-on:submit="if (submitting || confirmation !== 'CLEAN EXPIRED') { $event.preventDefault(); return; } submitting = true" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px_auto] lg:items-end">
+        @csrf<div><p class="text-sm font-bold text-stone-700">Only mailboxes already marked Expired and older than {{ $rules->expired_cleanup_delay_hours }} hour(s) will be removed. Active mailboxes are never selected.</p></div><label class="grid gap-2 text-sm font-extrabold text-stone-950">Type CLEAN EXPIRED<input name="confirmation" x-model="confirmation" autocomplete="off" class="min-h-11 rounded-md border border-red-300 px-3 focus:outline-none focus:ring-4 focus:ring-red-600/20"></label><button type="submit" x-bind:disabled="confirmation !== 'CLEAN EXPIRED' || submitting || {{ $canCleanup ? 'false' : 'true' }}" class="min-h-11 rounded-md bg-red-700 px-4 text-sm font-extrabold text-white disabled:bg-stone-400">Run cleanup</button>
+    </form>
+</x-admin.card>

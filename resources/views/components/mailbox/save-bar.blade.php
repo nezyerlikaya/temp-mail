@@ -1,0 +1,2 @@
+@props(['canUpdate' => false])
+<div class="sticky bottom-4 z-10 flex items-center justify-between gap-4 rounded-lg border border-stone-300 bg-white/95 p-4 shadow-lg backdrop-blur"><p class="text-sm font-bold text-stone-600">Changes affect future mailbox and inbound processing decisions.</p><button type="submit" @disabled(! $canUpdate) class="inline-flex min-h-11 shrink-0 items-center rounded-md bg-teal-700 px-5 text-sm font-extrabold text-white hover:bg-teal-800 focus:outline-none focus:ring-4 focus:ring-teal-600/20 disabled:bg-stone-400">Save rules</button></div>
