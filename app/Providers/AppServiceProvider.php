@@ -108,6 +108,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('preview SEO', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.preview'));
         Gate::define('update schema', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.schema'));
         Gate::define('select SEO media', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.media'));
+        Gate::define('run diagnostics', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.diagnostics'));
+        Gate::define('manage SEO templates', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.templates'));
+        Gate::define('manage redirects', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.redirects'));
+        Gate::define('manage sitemap robots readiness', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.readiness'));
+        Gate::define('rollback SEO version', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.rollback'));
 
         Gate::policy(User::class, UserPolicy::class);
 

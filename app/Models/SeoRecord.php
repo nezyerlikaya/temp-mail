@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'locale_id',
@@ -68,6 +69,12 @@ class SeoRecord extends Model
     public function twitterImage(): BelongsTo
     {
         return $this->belongsTo(MediaAsset::class, 'twitter_image_media_id');
+    }
+
+    /** @return HasMany<SeoVersion, $this> */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(SeoVersion::class);
     }
 
     /** @return BelongsTo<User, $this> */

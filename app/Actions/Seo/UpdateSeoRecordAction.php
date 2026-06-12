@@ -6,6 +6,7 @@ use App\Models\SeoRecord;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Seo\SeoMediaService;
+use App\Services\Seo\SeoVersionService;
 use Illuminate\Support\Facades\DB;
 
 class UpdateSeoRecordAction
@@ -13,6 +14,7 @@ class UpdateSeoRecordAction
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly SeoMediaService $media,
+        private readonly SeoVersionService $versions,
     ) {}
 
     /** @param array<string, mixed> $payload */
@@ -21,6 +23,7 @@ class UpdateSeoRecordAction
         return DB::transaction(function () use ($actor, $record, $payload): SeoRecord {
             $previousOgImageId = $record->og_image_media_id;
             $previousTwitterImageId = $record->twitter_image_media_id;
+            $this->versions->capture($record, $actor);
 
             $payload['updated_by'] = $actor->id;
             $record->update($payload);

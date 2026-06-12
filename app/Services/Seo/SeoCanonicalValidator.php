@@ -6,6 +6,17 @@ use Illuminate\Validation\ValidationException;
 
 class SeoCanonicalValidator
 {
+    public function message(?string $url): ?string
+    {
+        try {
+            $this->validate($url);
+        } catch (ValidationException $exception) {
+            return collect($exception->errors())->flatten()->first();
+        }
+
+        return null;
+    }
+
     public function validate(?string $url): void
     {
         if (blank($url)) {

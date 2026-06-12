@@ -329,6 +329,21 @@ Route::prefix('dashboard')
         Route::get('seo-growth-center', [SeoGrowthCenterController::class, 'index'])
             ->middleware('can:admin.seo-growth-center.view')
             ->name('admin.seo-growth-center.index');
+        Route::post('seo-growth-center/diagnostics', [SeoGrowthCenterController::class, 'runDiagnostics'])
+            ->middleware('can:admin.seo-growth-center.diagnostics')
+            ->name('admin.seo-growth-center.diagnostics.run');
+        Route::post('seo-growth-center/templates', [SeoGrowthCenterController::class, 'saveTemplate'])
+            ->middleware('can:admin.seo-growth-center.templates')
+            ->name('admin.seo-growth-center.templates.save');
+        Route::post('seo-growth-center/redirects', [SeoGrowthCenterController::class, 'storeRedirect'])
+            ->middleware('can:admin.seo-growth-center.redirects')
+            ->name('admin.seo-growth-center.redirects.store');
+        Route::put('seo-growth-center/redirects/{seoRedirect}', [SeoGrowthCenterController::class, 'updateRedirect'])
+            ->middleware('can:admin.seo-growth-center.redirects')
+            ->name('admin.seo-growth-center.redirects.update');
+        Route::post('seo-growth-center/versions/{seoVersion}/rollback', [SeoGrowthCenterController::class, 'rollback'])
+            ->middleware('can:admin.seo-growth-center.rollback')
+            ->name('admin.seo-growth-center.versions.rollback');
         Route::get('seo-growth-center/create', [SeoGrowthCenterController::class, 'create'])
             ->middleware('can:admin.seo-growth-center.update')
             ->name('admin.seo-growth-center.records.create');

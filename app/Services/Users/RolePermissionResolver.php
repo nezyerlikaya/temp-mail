@@ -78,6 +78,11 @@ class RolePermissionResolver
                 'admin.seo-growth-center.preview' => 'Preview SEO records',
                 'admin.seo-growth-center.schema' => 'Update SEO schema',
                 'admin.seo-growth-center.media' => 'Select SEO media',
+                'admin.seo-growth-center.diagnostics' => 'Run SEO diagnostics',
+                'admin.seo-growth-center.templates' => 'Manage SEO templates',
+                'admin.seo-growth-center.redirects' => 'Manage SEO redirects',
+                'admin.seo-growth-center.readiness' => 'Manage sitemap and robots readiness',
+                'admin.seo-growth-center.rollback' => 'Rollback SEO versions',
             ],
             'Mail Infrastructure' => [
                 'admin.domains.view' => 'Domains',
@@ -215,6 +220,8 @@ class RolePermissionResolver
                 'admin.seo-growth-center.view', 'admin.seo-growth-center.update',
                 'admin.seo-growth-center.preview', 'admin.seo-growth-center.schema',
                 'admin.seo-growth-center.media',
+                'admin.seo-growth-center.diagnostics', 'admin.seo-growth-center.templates',
+                'admin.seo-growth-center.redirects', 'admin.seo-growth-center.readiness',
                 'admin.author-profiles.view', 'admin.notifications.view',
             ],
             UserRole::Moderator->value => [

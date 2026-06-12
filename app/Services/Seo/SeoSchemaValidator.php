@@ -6,6 +6,17 @@ use Illuminate\Validation\ValidationException;
 
 class SeoSchemaValidator
 {
+    public function message(?string $json): ?string
+    {
+        try {
+            $this->sanitize($json);
+        } catch (ValidationException $exception) {
+            return collect($exception->errors())->flatten()->first();
+        }
+
+        return null;
+    }
+
     /** @return array<string, mixed>|null */
     public function sanitize(?string $json): ?array
     {

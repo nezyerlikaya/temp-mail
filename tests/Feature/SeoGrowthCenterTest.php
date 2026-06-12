@@ -9,10 +9,15 @@ use App\Models\MediaAsset;
 use App\Models\MediaUsage;
 use App\Models\Page;
 use App\Models\SeoRecord;
+use App\Models\SeoRedirect;
+use App\Models\SeoVersion;
 use App\Models\User;
 use App\Services\Localization\LocaleSettingsStore;
+use App\Services\Seo\HreflangReadinessService;
+use App\Services\Seo\RobotsSafetyService;
 use App\Services\Seo\SeoRecordResolver;
 use App\Services\Seo\SeoTargetRegistry;
+use App\Services\Seo\SeoTemplateService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -344,6 +349,171 @@ class SeoGrowthCenterTest extends TestCase
         $this->assertDatabaseHas('seo_records', ['id' => $record->id, 'meta_title' => 'Old title']);
     }
 
+    public function test_seo_diagnostics_surface_duplicate_missing_metadata_and_readiness_panels(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $english = $this->locale('en');
+        $german = $this->locale('de');
+
+        $this->seoRecord([
+            'locale_id' => $english->id,
+            'target_type' => 'homepage',
+            'target_key' => 'home',
+            'meta_title' => 'Duplicate temp mail title',
+            'meta_description' => null,
+            'robots_index' => false,
+            'canonical_url' => url('/de/conflict'),
+            'schema_type' => null,
+        ]);
+        $this->seoRecord([
+            'locale_id' => $german->id,
+            'target_type' => 'homepage',
+            'target_key' => 'home',
+            'meta_title' => 'Duplicate temp mail title',
+            'meta_description' => 'German temp mail metadata description.',
+            'canonical_url' => url('/de'),
+            'schema_type' => 'WebSite',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.seo-growth-center.index'))
+            ->assertOk()
+            ->assertSee('SEO diagnostics')
+            ->assertSee('Duplicate meta title')
+            ->assertSee('Missing metadata')
+            ->assertSee('Missing OG image')
+            ->assertSee('Hreflang readiness')
+            ->assertSee('Sitemap readiness')
+            ->assertSee('Robots safety')
+            ->assertSee('Redirect manager')
+            ->assertSee('Version history');
+    }
+
+    public function test_seo_template_variables_are_allowlisted_and_manual_values_override_defaults(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $record = $this->seoRecord([
+            'target_type' => 'blog_post',
+            'target_key' => 'blog-post:1',
+            'meta_title' => 'Manual title',
+            'meta_description' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.seo-growth-center.templates.save'), [
+                'target_type' => 'blog_post',
+                'name' => 'Blog default',
+                'meta_title_template' => '{post_title} | {unsupported}',
+                'meta_description_template' => 'Read {post_title} in {locale_name}.',
+                'is_active' => '1',
+            ])
+            ->assertSessionHasErrors('meta_title_template');
+
+        $this->actingAs($admin)
+            ->post(route('admin.seo-growth-center.templates.save'), [
+                'target_type' => 'blog_post',
+                'name' => 'Blog default',
+                'meta_title_template' => '{post_title} | {site_name}',
+                'meta_description_template' => 'Read {post_title} in {locale_name}.',
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.seo-growth-center.index'));
+
+        $defaults = app(SeoTemplateService::class)->defaultsFor($record, [
+            'post_title' => 'Disposable email guide',
+            'locale_name' => 'English',
+            'site_name' => 'Temp Mail Cloud',
+        ]);
+
+        $this->assertSame('Manual title', $defaults['meta_title']);
+        $this->assertSame('Read Disposable email guide in English.', $defaults['meta_description']);
+        $this->assertDatabaseHas('seo_templates', ['target_type' => 'blog_post', 'name' => 'Blog default']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'seo.template_saved', 'actor_id' => $admin->id]);
+    }
+
+    public function test_redirect_manager_rejects_loops_and_source_conflicts(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.seo-growth-center.redirects.store'), [
+                'source_path' => '/old',
+                'target_url' => '/new',
+                'status_code' => 301,
+                'is_active' => '1',
+            ])
+            ->assertRedirect(route('admin.seo-growth-center.index'));
+
+        $this->actingAs($admin)
+            ->post(route('admin.seo-growth-center.redirects.store'), [
+                'source_path' => '/old',
+                'target_url' => '/newer',
+                'status_code' => 302,
+                'is_active' => '1',
+            ])
+            ->assertSessionHasErrors('source_path');
+
+        $this->actingAs($admin)
+            ->post(route('admin.seo-growth-center.redirects.store'), [
+                'source_path' => '/new',
+                'target_url' => '/old',
+                'status_code' => 301,
+                'is_active' => '1',
+            ])
+            ->assertSessionHasErrors('target_url');
+
+        $this->assertDatabaseHas('seo_redirects', ['source_path' => '/old', 'target_url' => '/new']);
+        $this->assertSame(1, SeoRedirect::query()->count());
+    }
+
+    public function test_robots_safety_warns_when_every_record_is_noindex(): void
+    {
+        $this->seoRecord(['target_key' => 'home', 'robots_index' => false]);
+        $this->seoRecord(['target_type' => 'pricing', 'target_key' => 'pricing', 'robots_index' => false]);
+
+        $readiness = app(RobotsSafetyService::class)->readiness();
+
+        $this->assertSame('warning', $readiness['state']);
+        $this->assertStringContainsString('Every SEO record is marked noindex', $readiness['warnings'][0]);
+    }
+
+    public function test_hreflang_readiness_is_language_aware_and_detects_canonical_conflicts(): void
+    {
+        $english = $this->locale('en');
+        $german = $this->locale('de');
+
+        $this->seoRecord(['locale_id' => $english->id, 'target_type' => 'homepage', 'target_key' => 'home', 'canonical_url' => url('/de')]);
+        $this->seoRecord(['locale_id' => $german->id, 'target_type' => 'homepage', 'target_key' => 'home', 'canonical_url' => url('/de')]);
+
+        $matrix = app(HreflangReadinessService::class)->matrix();
+
+        $this->assertTrue($matrix['locales']->contains('locale', 'en'));
+        $this->assertTrue($matrix['locales']->contains('locale', 'de'));
+        $this->assertNotEmpty($matrix['conflicts']);
+    }
+
+    public function test_seo_updates_create_version_history_and_owner_can_rollback(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $record = $this->seoRecord(['meta_title' => 'Before title']);
+
+        $this->actingAs($owner)
+            ->put(route('admin.seo-growth-center.records.update', $record), [
+                ...$this->validSeoPayload(),
+                'meta_title' => 'After title',
+            ])
+            ->assertRedirect(route('admin.seo-growth-center.records.edit', $record));
+
+        $version = SeoVersion::query()->where('seo_record_id', $record->id)->firstOrFail();
+
+        $this->actingAs($owner)
+            ->post(route('admin.seo-growth-center.versions.rollback', $version))
+            ->assertRedirect(route('admin.seo-growth-center.records.edit', $record));
+
+        $this->assertDatabaseHas('seo_records', ['id' => $record->id, 'meta_title' => 'Before title']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'seo.version_rollback_ready', 'actor_id' => $owner->id]);
+    }
+
     public function test_editor_can_update_seo_but_member_cannot_view_center(): void
     {
         $editor = User::factory()->editor()->create();
@@ -378,6 +548,22 @@ class SeoGrowthCenterTest extends TestCase
             app_path('Services/Seo/SeoCanonicalValidator.php'),
             app_path('Services/Seo/SeoSchemaValidator.php'),
             app_path('Services/Seo/SeoMediaService.php'),
+            app_path('Services/Seo/SeoDiagnosticsService.php'),
+            app_path('Services/Seo/SeoDuplicateDetector.php'),
+            app_path('Services/Seo/SeoCanonicalAuditService.php'),
+            app_path('Services/Seo/SeoSchemaAuditService.php'),
+            app_path('Services/Seo/HreflangReadinessService.php'),
+            app_path('Services/Seo/SeoTemplateService.php'),
+            app_path('Services/Seo/SeoTemplateVariableRegistry.php'),
+            app_path('Services/Seo/SitemapReadinessService.php'),
+            app_path('Services/Seo/RobotsSafetyService.php'),
+            app_path('Services/Seo/RedirectService.php'),
+            app_path('Services/Seo/SeoVersionService.php'),
+            app_path('Http/Requests/Seo/RunSeoDiagnosticsRequest.php'),
+            app_path('Http/Requests/Seo/UpdateSeoTemplateRequest.php'),
+            app_path('Http/Requests/Seo/StoreRedirectRequest.php'),
+            app_path('Http/Requests/Seo/UpdateRedirectRequest.php'),
+            app_path('Http/Requests/Seo/RollbackSeoVersionRequest.php'),
             resource_path('views/dashboard/seo-growth-center/index.blade.php'),
             resource_path('views/dashboard/seo-growth-center/create.blade.php'),
             resource_path('views/dashboard/seo-growth-center/edit.blade.php'),
@@ -392,6 +578,17 @@ class SeoGrowthCenterTest extends TestCase
             resource_path('views/components/seo/media-picker-field.blade.php'),
             resource_path('views/components/seo/character-guidance.blade.php'),
             resource_path('views/components/seo/validation-summary.blade.php'),
+            resource_path('views/components/seo/health-dashboard.blade.php'),
+            resource_path('views/components/seo/coverage-card.blade.php'),
+            resource_path('views/components/seo/issue-queue.blade.php'),
+            resource_path('views/components/seo/issue-row.blade.php'),
+            resource_path('views/components/seo/hreflang-matrix.blade.php'),
+            resource_path('views/components/seo/template-editor.blade.php'),
+            resource_path('views/components/seo/redirect-row.blade.php'),
+            resource_path('views/components/seo/sitemap-status.blade.php'),
+            resource_path('views/components/seo/robots-safety-panel.blade.php'),
+            resource_path('views/components/seo/version-history.blade.php'),
+            resource_path('views/components/seo/severity-badge.blade.php'),
             resource_path('views/components/seo/metric-card.blade.php'),
             resource_path('views/components/seo/target-row.blade.php'),
             resource_path('views/components/seo/target-card.blade.php'),
