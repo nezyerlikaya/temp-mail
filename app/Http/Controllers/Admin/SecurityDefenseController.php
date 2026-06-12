@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Security\ForceLogoutAllSessionsAction;
 use App\Actions\Security\TestAkismetAction;
 use App\Actions\Security\TestBotProviderAction;
+use App\Actions\Security\UpdateAbuseSignalStatusAction;
 use App\Actions\Security\UpdateAdminSecurityAction;
 use App\Actions\Security\UpdateAkismetSettingsAction;
 use App\Actions\Security\UpdateBotProtectionAction;
@@ -12,12 +13,17 @@ use App\Actions\Security\UpdateIpAccessAction;
 use App\Actions\Security\UpdateRateLimitsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Security\ForceLogoutSessionsRequest;
+use App\Http\Requests\Security\SecuritySignalFilterRequest;
 use App\Http\Requests\Security\TestSecurityProviderRequest;
+use App\Http\Requests\Security\UpdateAbuseSignalStatusRequest;
 use App\Http\Requests\Security\UpdateAdminSecurityRequest;
 use App\Http\Requests\Security\UpdateAkismetRequest;
 use App\Http\Requests\Security\UpdateBotProtectionRequest;
 use App\Http\Requests\Security\UpdateIpAccessRequest;
 use App\Http\Requests\Security\UpdateRateLimitsRequest;
+use App\Models\AbuseSignal;
+use App\Services\Security\AbuseSignalAggregator;
+use App\Services\Security\AbuseSignalService;
 use App\Services\Security\AdminAccessGuard;
 use App\Services\Security\AkismetSpamService;
 use App\Services\Security\BotProtectionService;
@@ -27,6 +33,7 @@ use App\Services\Security\IpAccessService;
 use App\Services\Security\RateLimitPolicyService;
 use App\Services\Security\RateLimitPolicyStore;
 use App\Services\Security\SecuritySettingsStore;
+use App\Services\Security\SecuritySummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +43,7 @@ use Illuminate\View\View;
 class SecurityDefenseController extends Controller
 {
     public function index(
-        Request $request,
+        SecuritySignalFilterRequest $request,
         SecuritySettingsStore $settings,
         BotProviderRegistry $registry,
         BotProtectionService $botProtection,
@@ -46,11 +53,16 @@ class SecurityDefenseController extends Controller
         IpAccessService $ipAccessService,
         AdminAccessGuard $adminAccessGuard,
         FailedLoginService $failedLogins,
+        AbuseSignalAggregator $signalAggregator,
+        AbuseSignalService $abuseSignals,
+        SecuritySummaryService $securitySummary,
     ): View {
         Gate::authorize('view security settings');
 
+        $signalAggregator->aggregateRecent();
         $ipAccess = $rateLimitStore->ipAccess();
         $adminAccess = $rateLimitStore->adminAccess();
+        $signalFilters = $request->validated();
 
         return view('dashboard.security-defense-center.index', [
             'adminUser' => $request->user(),
@@ -65,6 +77,10 @@ class SecurityDefenseController extends Controller
             'adminAccess' => $adminAccess,
             'adminAccessReadiness' => $adminAccessGuard->readiness($adminAccess, $ipAccess),
             'failedLoginSummary' => $failedLogins->summary(),
+            'securityMetrics' => $securitySummary->metrics(),
+            'abuseSignalFeed' => $abuseSignals->feed($request->user(), $signalFilters),
+            'signalFilters' => $signalFilters,
+            'signalFilterOptions' => $abuseSignals->filterOptions(),
             'providers' => $registry->providers(),
             'protectedForms' => $registry->protectedForms(),
             'failModes' => $registry->failModes(),
@@ -76,6 +92,8 @@ class SecurityDefenseController extends Controller
             'canManageAdminSecurity' => $request->user()?->can('manage admin security') ?? false,
             'canForceLogout' => $request->user()?->can('force logout sessions') ?? false,
             'canViewFailedLogins' => $request->user()?->can('view failed login history') ?? false,
+            'canReviewSignals' => $request->user()?->can('review abuse signal') ?? false,
+            'canResolveSignals' => $request->user()?->can('resolve abuse signal') ?? false,
         ]);
     }
 
@@ -119,6 +137,16 @@ class SecurityDefenseController extends Controller
         $count = $action->handle($request->user(), $request->session()->getId());
 
         return redirect()->route('admin.security-defense-center.index')->with('status', "{$count} authenticated sessions were logged out.");
+    }
+
+    public function updateSignalStatus(
+        UpdateAbuseSignalStatusRequest $request,
+        AbuseSignal $abuseSignal,
+        UpdateAbuseSignalStatusAction $action,
+    ): RedirectResponse {
+        $action->handle($request->user(), $abuseSignal, $request->validated('status'));
+
+        return redirect()->route('admin.security-defense-center.index')->with('status', 'Security signal status updated.');
     }
 
     public function test(TestSecurityProviderRequest $request, TestBotProviderAction $bot, TestAkismetAction $akismet): RedirectResponse

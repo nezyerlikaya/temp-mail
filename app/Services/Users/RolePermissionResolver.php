@@ -113,6 +113,9 @@ class RolePermissionResolver
                 'admin.security-defense-center.manage-admin-security' => 'Manage admin access security',
                 'admin.security-defense-center.force-logout' => 'Force logout sessions',
                 'admin.security-defense-center.failed-logins' => 'View failed login history',
+                'admin.security-defense-center.operations' => 'View security operations',
+                'admin.security-defense-center.review-signals' => 'Review abuse signals',
+                'admin.security-defense-center.resolve-signals' => 'Resolve or ignore abuse signals',
                 'admin.security-defense-center.reveal-secret' => 'Reveal security secrets',
                 'admin.security-defense-center.test' => 'Test security providers',
                 'admin.abuse-reports.view' => 'Abuse Reports',
@@ -246,6 +249,8 @@ class RolePermissionResolver
                 'admin.comment-moderation.view', 'admin.blocked-lists.view',
                 'admin.people-identity.view', 'admin.abuse-reports.view',
                 'admin.activity-audit-logs.view', 'admin.notifications.view',
+                'admin.security-defense-center.view', 'admin.security-defense-center.operations',
+                'admin.security-defense-center.review-signals', 'admin.security-defense-center.resolve-signals',
             ],
             UserRole::Author->value => [
                 'admin.operations.view', 'admin.blog-studio.view', 'admin.blog-studio.create',

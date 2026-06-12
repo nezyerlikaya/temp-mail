@@ -128,6 +128,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage admin security', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('force logout sessions', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('view failed login history', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('view security operations', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin', 'moderator'], true));
+        Gate::define('review abuse signal', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin', 'moderator'], true));
+        Gate::define('resolve abuse signal', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin', 'moderator'], true));
         Gate::define('view email templates', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.view'));
         Gate::define('create email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.create'));
         Gate::define('update email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.update'));

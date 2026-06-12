@@ -138,6 +138,8 @@ Route::prefix('dashboard')
         Route::post('security-defense-center/force-logout', [SecurityDefenseController::class, 'forceLogout'])
             ->middleware('can:force logout sessions')
             ->name('admin.security-defense-center.force-logout');
+        Route::patch('security-defense-center/signals/{abuseSignal}', [SecurityDefenseController::class, 'updateSignalStatus'])
+            ->name('admin.security-defense-center.signals.status');
         Route::post('security-defense-center/test', [SecurityDefenseController::class, 'test'])
             ->middleware('can:test security provider')
             ->name('admin.security-defense-center.test');

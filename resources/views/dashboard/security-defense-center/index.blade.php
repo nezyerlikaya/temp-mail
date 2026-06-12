@@ -2,7 +2,7 @@
     <x-admin.page-header
         eyebrow="Trust"
         title="Security Defense Center"
-        description="Configure bot providers, rate limits, and administrator access safeguards without risking admin lockout."
+        description="Monitor abuse signals and configure bot, rate-limit, and administrator access safeguards from one focused workspace."
     />
 
     @if (session('status'))
@@ -17,9 +17,19 @@
 
     @if ($errors->any())
         <x-admin.alert variant="danger" class="mb-6" title="Security settings need attention">
-            Review the highlighted provider fields and try again.
+            Review the highlighted fields and try again.
         </x-admin.alert>
     @endif
+
+    <div class="mb-8 space-y-5">
+        <x-security.operations-summary :metrics="$securityMetrics" />
+        <x-security.signal-filter-bar :filters="$signalFilters" :options="$signalFilterOptions" />
+        <x-security.abuse-signal-feed
+            :signals="$abuseSignalFeed"
+            :can-review="$canReviewSignals"
+            :can-resolve="$canResolveSignals"
+        />
+    </div>
 
     <div class="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         @foreach ([['label' => 'Bot provider', 'status' => $botReadiness['status'], 'message' => $botReadiness['message']], ['label' => 'Akismet', 'status' => $akismetReadiness['status'], 'message' => $akismetReadiness['message']], ['label' => 'Rate limits', 'status' => $rateLimitStatus, 'message' => 'Laravel limiters use configured safe policies.'], ['label' => 'Admin access', 'status' => $adminAccessReadiness['owner_last_admin_protection'], 'message' => 'Owner and last admin protections remain enforced.']] as $item)

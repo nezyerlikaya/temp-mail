@@ -2,9 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\AbuseSignal;
 use App\Models\SecuritySetting;
+use App\Models\SystemNotification;
 use App\Models\User;
 use App\Models\UserAuditEvent;
+use App\Services\Audit\AuditLogger;
+use App\Services\Security\AbuseSignalAggregator;
+use App\Services\Security\AbuseSignalService;
 use App\Services\Security\SecuritySettingsStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
@@ -325,6 +330,165 @@ class SecurityDefenseCenterTest extends TestCase
             ->assertSessionHasErrors('email');
 
         $this->assertGuest();
+    }
+
+    public function test_security_operations_renders_inside_admin_shell(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.security-defense-center.index'))
+            ->assertOk()
+            ->assertSee('Abuse monitoring overview')
+            ->assertSee('Open alerts')
+            ->assertSee('Critical alerts')
+            ->assertSee('Abuse signal queue')
+            ->assertSee('Rate limit policies');
+    }
+
+    public function test_repeated_signals_are_grouped_and_private_content_is_removed(): void
+    {
+        $service = app(AbuseSignalService::class);
+
+        $first = $service->record([
+            'signal_type' => 'rate_limited_request',
+            'source_module' => 'security',
+            'target_reference' => 'login',
+            'ip' => '203.0.113.55',
+            'metadata' => [
+                'route' => 'login.store',
+                'message_body' => 'private mailbox message',
+                'password' => 'secret-password',
+                'token' => 'secret-token',
+                'nested' => [
+                    'content' => 'nested private content',
+                    'safe_count' => 4,
+                ],
+            ],
+        ]);
+
+        $second = $service->record([
+            'signal_type' => 'rate_limited_request',
+            'source_module' => 'security',
+            'target_reference' => 'login',
+            'ip' => '203.0.113.55',
+            'metadata' => ['route' => 'login.store'],
+        ]);
+
+        $this->assertTrue($first->is($second));
+        $this->assertSame(2, $second->refresh()->occurrence_count);
+        $this->assertNotSame('203.0.113.55', $second->ip_hash);
+        $this->assertSame(64, strlen($second->ip_hash));
+        $this->assertArrayNotHasKey('message_body', $second->metadata);
+        $this->assertArrayNotHasKey('password', $second->metadata);
+        $this->assertArrayNotHasKey('token', $second->metadata);
+        $this->assertStringNotContainsString('private mailbox message', json_encode($second->metadata));
+        $this->assertStringNotContainsString('nested private content', json_encode($second->metadata));
+        $this->assertSame(4, $second->metadata['nested']['safe_count']);
+
+        $emailTarget = $service->record([
+            'signal_type' => 'unusual_api_failure',
+            'target_reference' => 'private@example.test',
+        ]);
+
+        $this->assertStringStartsWith('ref:', $emailTarget->target_reference);
+        $this->assertStringNotContainsString('private@example.test', $emailTarget->target_reference);
+    }
+
+    public function test_signal_filters_and_status_actions_are_permission_protected_and_audited(): void
+    {
+        $moderator = User::factory()->create(['role' => 'moderator', 'is_admin' => true]);
+        $member = User::factory()->create();
+        $signal = app(AbuseSignalService::class)->record([
+            'signal_type' => 'suspicious_comment',
+            'severity' => 'high',
+            'source_module' => 'comments',
+            'target_reference' => 'comment:42',
+        ]);
+
+        $this->actingAs($moderator)
+            ->get(route('admin.security-defense-center.index', [
+                'severity' => 'high',
+                'signal_type' => 'suspicious_comment',
+                'source_module' => 'comments',
+                'status' => 'open',
+            ]))
+            ->assertOk()
+            ->assertSee('Suspicious Comment');
+
+        $this->actingAs($member)
+            ->patch(route('admin.security-defense-center.signals.status', $signal), ['status' => 'reviewing'])
+            ->assertForbidden();
+
+        $this->actingAs($moderator)
+            ->patch(route('admin.security-defense-center.signals.status', $signal), ['status' => 'reviewing'])
+            ->assertRedirect(route('admin.security-defense-center.index'));
+
+        $this->assertSame('reviewing', $signal->refresh()->status);
+        $this->assertDatabaseHas('user_audit_events', [
+            'event' => 'security.abuse_signal_status_changed',
+            'actor_id' => $moderator->id,
+            'target_type' => AbuseSignal::class,
+            'target_id' => $signal->id,
+        ]);
+    }
+
+    public function test_critical_signal_notifies_active_owner_and_admin(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $admin = User::factory()->admin()->create();
+        $moderator = User::factory()->create(['role' => 'moderator', 'is_admin' => true]);
+
+        $signal = app(AbuseSignalService::class)->record([
+            'signal_type' => 'failed_admin_login',
+            'severity' => 'critical',
+            'source_module' => 'auth',
+            'target_reference' => 'admin-login',
+            'ip' => '198.51.100.20',
+        ]);
+
+        $this->assertDatabaseHas('system_notifications', [
+            'recipient_user_id' => $owner->id,
+            'event_key' => 'critical_security_signal',
+            'severity' => 'critical',
+            'target_type' => AbuseSignal::class,
+            'target_id' => $signal->id,
+        ]);
+        $this->assertDatabaseHas('system_notifications', [
+            'recipient_user_id' => $admin->id,
+            'event_key' => 'critical_security_signal',
+        ]);
+        $this->assertDatabaseMissing('system_notifications', [
+            'recipient_user_id' => $moderator->id,
+            'event_key' => 'critical_security_signal',
+        ]);
+
+        $payload = SystemNotification::query()->where('event_key', 'critical_security_signal')->pluck('message')->join("\n");
+        $this->assertStringNotContainsString('198.51.100.20', $payload);
+    }
+
+    public function test_audit_aggregation_is_idempotent_for_the_same_source_event(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        app(AuditLogger::class)->record('auth.login_failed', $admin, $admin, [
+            'reason' => 'suspended',
+        ], [
+            'module' => 'auth',
+            'action' => 'Login failed',
+            'severity' => 'warning',
+            'ip_address' => '192.0.2.25',
+        ]);
+
+        $aggregator = app(AbuseSignalAggregator::class);
+        $aggregator->aggregateRecent();
+        $aggregator->aggregateRecent();
+
+        $signal = AbuseSignal::query()->where('signal_type', 'failed_admin_login')->firstOrFail();
+
+        $this->assertSame(1, $signal->occurrence_count);
+        $this->assertSame('critical', $signal->severity);
+        $this->assertStringNotContainsString('192.0.2.25', json_encode($signal->toArray()));
     }
 
     /** @param array<string, mixed> $overrides */
