@@ -116,6 +116,9 @@ class RolePermissionResolver
             ],
             'Growth' => [
                 'admin.plans-memberships.view' => 'Plans & Memberships',
+                'admin.plans-memberships.update' => 'Update plans',
+                'admin.plans-memberships.limits' => 'Update plan limits',
+                'admin.plans-memberships.status' => 'Activate or deactivate plans',
                 'admin.api-access.view' => 'API Access',
                 'admin.integrations.view' => 'Integrations',
             ],

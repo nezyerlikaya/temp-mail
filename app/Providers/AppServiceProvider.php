@@ -155,6 +155,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('update mailbox rules', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-rules.update'));
         Gate::define('run mailbox cleanup', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-rules.cleanup'));
         Gate::define('run mailbox delivery health checks', fn (User $user): bool => $permissions->allows($user, 'admin.mailbox-rules.health'));
+        Gate::define('view plans', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.view'));
+        Gate::define('update plans', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.update'));
+        Gate::define('update plan limits', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.limits'));
+        Gate::define('activate deactivate plans', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.status'));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

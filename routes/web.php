@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PageStudioController;
 use App\Http\Controllers\Admin\PlaceholderController;
+use App\Http\Controllers\Admin\PlanMembershipController;
 use App\Http\Controllers\Admin\SectionsStudioController;
 use App\Http\Controllers\Admin\SecurityDefenseController;
 use App\Http\Controllers\Admin\SeoGrowthCenterController;
@@ -103,6 +104,15 @@ Route::prefix('dashboard')
             ->middleware('can:run mailbox cleanup')->name('admin.mailbox-rules.cleanup');
         Route::post('mailbox-rules/health', [MailboxRulesController::class, 'health'])
             ->middleware('can:run mailbox delivery health checks')->name('admin.mailbox-rules.health');
+
+        Route::get('plans-memberships', [PlanMembershipController::class, 'index'])
+            ->middleware('can:view plans')->name('admin.plans-memberships.index');
+        Route::put('plans-memberships/{plan}', [PlanMembershipController::class, 'update'])
+            ->middleware('can:update plans')->name('admin.plans-memberships.update');
+        Route::put('plans-memberships/{plan}/limits', [PlanMembershipController::class, 'limits'])
+            ->middleware('can:update plan limits')->name('admin.plans-memberships.limits');
+        Route::post('plans-memberships/{plan}/status', [PlanMembershipController::class, 'toggle'])
+            ->middleware('can:activate deactivate plans')->name('admin.plans-memberships.status');
 
         Route::get('people-identity', [UserController::class, 'index'])
             ->middleware('can:viewAny,'.User::class)
@@ -556,7 +566,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.mailbox-rules.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 
