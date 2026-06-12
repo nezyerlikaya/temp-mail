@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PageStudioController;
 use App\Http\Controllers\Admin\PlaceholderController;
+use App\Http\Controllers\Admin\SectionsStudioController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UpdateCenterController;
 use App\Http\Controllers\Admin\Users\AuthorProfileController;
@@ -241,6 +242,16 @@ Route::prefix('dashboard')
             ->middleware('can:admin.taxonomy.update')
             ->name('admin.taxonomy.tags.update');
 
+        Route::get('sections-studio', [SectionsStudioController::class, 'index'])
+            ->middleware('can:admin.sections-studio.view')
+            ->name('admin.sections-studio.index');
+        Route::post('sections-studio', [SectionsStudioController::class, 'store'])
+            ->middleware('can:admin.sections-studio.create')
+            ->name('admin.sections-studio.store');
+        Route::put('sections-studio/{section}', [SectionsStudioController::class, 'update'])
+            ->middleware('can:admin.sections-studio.update')
+            ->name('admin.sections-studio.update');
+
         Route::get('media-library', [MediaLibraryController::class, 'index'])
             ->middleware('can:admin.media-library.view')
             ->name('admin.media-library.index');
@@ -277,7 +288,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.media-library.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index'], true)) {
                     continue;
                 }
 

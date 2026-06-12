@@ -78,6 +78,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('create taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.create'));
         Gate::define('update taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.update'));
         Gate::define('attach taxonomy to post', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.attach'));
+        Gate::define('view sections', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.view'));
+        Gate::define('create section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.create'));
+        Gate::define('update section', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.update'));
+        Gate::define('publish section readiness', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.publish'));
+        Gate::define('trash section readiness', fn (User $user): bool => $permissions->allows($user, 'admin.sections-studio.trash'));
         Gate::define('view media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.view'));
         Gate::define('view media picker', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.picker'));
         Gate::define('select media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.select'));
