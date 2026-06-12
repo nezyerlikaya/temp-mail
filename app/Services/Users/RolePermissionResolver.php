@@ -108,6 +108,9 @@ class RolePermissionResolver
             ],
             'Trust' => [
                 'admin.security-defense-center.view' => 'Security Defense Center',
+                'admin.security-defense-center.manage' => 'Update security defense settings',
+                'admin.security-defense-center.reveal-secret' => 'Reveal security secrets',
+                'admin.security-defense-center.test' => 'Test security providers',
                 'admin.abuse-reports.view' => 'Abuse Reports',
                 'admin.activity-audit-logs.view' => 'Activity & Audit Logs',
                 'admin.activity-audit-logs.export' => 'Export audit logs',

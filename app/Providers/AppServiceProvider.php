@@ -115,6 +115,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage redirects', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.redirects'));
         Gate::define('manage sitemap robots readiness', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.readiness'));
         Gate::define('rollback SEO version', fn (User $user): bool => $permissions->allows($user, 'admin.seo-growth-center.rollback'));
+        Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
+        Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');
+        Gate::define('test security provider', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('view email templates', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.view'));
         Gate::define('create email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.create'));
         Gate::define('update email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.update'));
