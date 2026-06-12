@@ -19,6 +19,8 @@ class InboundMailFilterRequest extends FormRequest
             'q' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', Rule::in(['all', 'not_tested', 'connected', 'failed', 'disabled'])],
             'domain_id' => ['nullable', Rule::when($this->input('domain_id') !== 'all', ['integer', Rule::exists('domains', 'id')])],
+            'smtp_q' => ['nullable', 'string', 'max:120'],
+            'smtp_status' => ['nullable', Rule::in(['all', 'not_tested', 'connected', 'failed', 'disabled'])],
         ];
     }
 }

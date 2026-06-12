@@ -16,6 +16,8 @@ use App\Models\Domain;
 use App\Models\InboundMailConnection;
 use App\Services\Mail\InboundMailConnectionService;
 use App\Services\Mail\InboundMailExtensionChecker;
+use App\Services\Mail\MailInfrastructureHealthService;
+use App\Services\Mail\SmtpConnectionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -24,25 +26,38 @@ class InboundMailConnectionController extends Controller
     public function index(
         InboundMailFilterRequest $request,
         InboundMailConnectionService $connections,
+        SmtpConnectionService $smtp,
+        MailInfrastructureHealthService $health,
         InboundMailExtensionChecker $extensions,
     ): View {
         $filters = [
             'q' => (string) $request->query('q', ''),
             'status' => (string) $request->query('status', 'all'),
             'domain_id' => (string) $request->query('domain_id', 'all'),
+            'smtp_q' => (string) $request->query('smtp_q', ''),
+            'smtp_status' => (string) $request->query('smtp_status', 'all'),
         ];
 
         return view('dashboard.imap-smtp.index', [
             'adminUser' => $request->user(),
             'connections' => $connections->search([...$request->validated(), ...$filters]),
+            'smtpConnections' => $smtp->search([...$request->validated(), ...$filters]),
             'summary' => $connections->summary(),
+            'smtpSummary' => $smtp->summary(),
+            'health' => $health->summary(),
             'statuses' => $connections->statuses(),
+            'smtpStatuses' => $smtp->statuses(),
             'domains' => Domain::query()->orderBy('domain_name')->get(),
             'filters' => $filters,
             'extension' => $extensions->check(),
             'canManage' => $request->user()?->can('create update inbound connection') ?? false,
             'canTest' => $request->user()?->can('test inbound connection') ?? false,
             'canToggle' => $request->user()?->can('activate deactivate inbound connection') ?? false,
+            'canManageSmtp' => $request->user()?->can('create update SMTP connection') ?? false,
+            'canTestSmtp' => $request->user()?->can('test SMTP connection') ?? false,
+            'canToggleSmtp' => $request->user()?->can('activate deactivate SMTP connection') ?? false,
+            'canSetDefaultSmtp' => $request->user()?->can('set default SMTP connection') ?? false,
+            'canRunHealthChecks' => $request->user()?->can('run infrastructure health checks') ?? false,
         ]);
     }
 

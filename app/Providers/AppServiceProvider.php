@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Policies\UserPolicy;
 use App\Services\Admin\AdminCommandRegistry;
 use App\Services\Admin\AdminNavigationRegistry;
+use App\Services\Mail\SmtpSettingsStore;
 use App\Services\Notifications\NotificationService;
 use App\Services\Security\RateLimitPolicyStore;
 use App\Services\Security\RateLimitResolver;
@@ -44,6 +45,10 @@ class AppServiceProvider extends ServiceProvider
 
             if (Schema::hasTable('security_settings')) {
                 config(['session.lifetime' => app(RateLimitPolicyStore::class)->adminAccess()['admin_session_lifetime']]);
+            }
+
+            if (Schema::hasTable('smtp_connections')) {
+                app(SmtpSettingsStore::class)->applyRuntimeConfig();
             }
         } catch (Throwable) {
             // Installer and database recovery must render before settings storage exists.
@@ -130,6 +135,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('create update inbound connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.manage'));
         Gate::define('test inbound connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.test'));
         Gate::define('activate deactivate inbound connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.status'));
+        Gate::define('view SMTP settings', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.view'));
+        Gate::define('create update SMTP connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.smtp.manage'));
+        Gate::define('test SMTP connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.smtp.test'));
+        Gate::define('send SMTP test email', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.smtp.send-test'));
+        Gate::define('set default SMTP connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.smtp.default'));
+        Gate::define('activate deactivate SMTP connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.smtp.status'));
+        Gate::define('run infrastructure health checks', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.health.run'));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

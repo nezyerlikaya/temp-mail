@@ -50,4 +50,9 @@ class Domain extends Model
     {
         return $this->hasMany(InboundMailConnection::class);
     }
+
+    public function smtpConnections(): HasMany
+    {
+        return $this->hasMany(SmtpConnection::class);
+    }
 }

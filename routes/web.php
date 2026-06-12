@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\SectionsStudioController;
 use App\Http\Controllers\Admin\SecurityDefenseController;
 use App\Http\Controllers\Admin\SeoGrowthCenterController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SmtpConnectionController;
 use App\Http\Controllers\Admin\UpdateCenterController;
 use App\Http\Controllers\Admin\Users\AuthorProfileController;
 use App\Http\Controllers\Admin\Users\RolePermissionController;
@@ -165,6 +166,33 @@ Route::prefix('dashboard')
         Route::patch('imap-smtp/{inboundMailConnection}/status', [InboundMailConnectionController::class, 'toggle'])
             ->middleware('can:activate deactivate inbound connection')
             ->name('admin.imap-smtp.status');
+        Route::post('imap-smtp/run-all-checks', [SmtpConnectionController::class, 'runAll'])
+            ->middleware('can:run infrastructure health checks')
+            ->name('admin.imap-smtp.run-all-checks');
+        Route::get('imap-smtp/smtp/create', [SmtpConnectionController::class, 'create'])
+            ->middleware('can:create update SMTP connection')
+            ->name('admin.imap-smtp.smtp.create');
+        Route::post('imap-smtp/smtp', [SmtpConnectionController::class, 'store'])
+            ->middleware('can:create update SMTP connection')
+            ->name('admin.imap-smtp.smtp.store');
+        Route::get('imap-smtp/smtp/{smtpConnection}/edit', [SmtpConnectionController::class, 'edit'])
+            ->middleware('can:create update SMTP connection')
+            ->name('admin.imap-smtp.smtp.edit');
+        Route::put('imap-smtp/smtp/{smtpConnection}', [SmtpConnectionController::class, 'update'])
+            ->middleware('can:create update SMTP connection')
+            ->name('admin.imap-smtp.smtp.update');
+        Route::post('imap-smtp/smtp/{smtpConnection}/test', [SmtpConnectionController::class, 'test'])
+            ->middleware('can:test SMTP connection')
+            ->name('admin.imap-smtp.smtp.test');
+        Route::post('imap-smtp/smtp/{smtpConnection}/send-test', [SmtpConnectionController::class, 'sendTest'])
+            ->middleware('can:send SMTP test email')
+            ->name('admin.imap-smtp.smtp.send-test');
+        Route::post('imap-smtp/smtp/{smtpConnection}/default', [SmtpConnectionController::class, 'default'])
+            ->middleware('can:set default SMTP connection')
+            ->name('admin.imap-smtp.smtp.default');
+        Route::patch('imap-smtp/smtp/{smtpConnection}/status', [SmtpConnectionController::class, 'toggle'])
+            ->middleware('can:activate deactivate SMTP connection')
+            ->name('admin.imap-smtp.smtp.status');
 
         Route::get('security-defense-center', [SecurityDefenseController::class, 'index'])
             ->middleware('can:admin.security-defense-center.view')
