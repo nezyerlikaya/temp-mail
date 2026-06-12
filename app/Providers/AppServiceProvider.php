@@ -65,6 +65,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('preview page', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.preview'));
         Gate::define('publish page readiness', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.publish'));
         Gate::define('trash page readiness', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.trash'));
+        Gate::define('view posts', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.view'));
+        Gate::define('create post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.create'));
+        Gate::define('update post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.update'));
+        Gate::define('publish post readiness', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.publish'));
+        Gate::define('trash post readiness', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.trash'));
         Gate::define('view media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.view'));
         Gate::define('view media picker', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.picker'));
         Gate::define('select media', fn (User $user): bool => $permissions->allows($user, 'admin.media-library.select'));

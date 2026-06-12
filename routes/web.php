@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\BlogStudioController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
@@ -189,6 +190,16 @@ Route::prefix('dashboard')
             ->middleware('can:admin.page-studio.delete')
             ->name('admin.page-studio.destroy');
 
+        Route::get('blog-studio', [BlogStudioController::class, 'index'])
+            ->middleware('can:admin.blog-studio.view')
+            ->name('admin.blog-studio.index');
+        Route::post('blog-studio', [BlogStudioController::class, 'store'])
+            ->middleware('can:admin.blog-studio.create')
+            ->name('admin.blog-studio.store');
+        Route::put('blog-studio/{blogPost}', [BlogStudioController::class, 'update'])
+            ->middleware('can:admin.blog-studio.update')
+            ->name('admin.blog-studio.update');
+
         Route::get('media-library', [MediaLibraryController::class, 'index'])
             ->middleware('can:admin.media-library.view')
             ->name('admin.media-library.index');
@@ -225,7 +236,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.media-library.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.media-library.index'], true)) {
                     continue;
                 }
 
