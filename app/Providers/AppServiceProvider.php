@@ -126,6 +126,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('activate deactivate domain', fn (User $user): bool => $permissions->allows($user, 'admin.domains.status'));
         Gate::define('set default domain', fn (User $user): bool => $permissions->allows($user, 'admin.domains.default'));
         Gate::define('run DNS checks', fn (User $user): bool => $permissions->allows($user, 'admin.domains.dns-check'));
+        Gate::define('view inbound mail settings', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.view'));
+        Gate::define('create update inbound connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.manage'));
+        Gate::define('test inbound connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.test'));
+        Gate::define('activate deactivate inbound connection', fn (User $user): bool => $permissions->allows($user, 'admin.imap-smtp.status'));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

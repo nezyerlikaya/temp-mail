@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'domain_name',
@@ -43,5 +44,10 @@ class Domain extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by')->withTrashed();
+    }
+
+    public function inboundMailConnections(): HasMany
+    {
+        return $this->hasMany(InboundMailConnection::class);
     }
 }

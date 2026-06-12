@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BlogStudioController;
 use App\Http\Controllers\Admin\BlogTaxonomyController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\EmailTemplateController;
+use App\Http\Controllers\Admin\InboundMailConnectionController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MediaLibraryController;
 use App\Http\Controllers\Admin\NotificationController;
@@ -142,6 +143,28 @@ Route::prefix('dashboard')
         Route::post('domains/{domain}/dns-check', [DomainController::class, 'runDnsCheck'])
             ->middleware('can:run DNS checks')
             ->name('admin.domains.dns-check');
+
+        Route::get('imap-smtp', [InboundMailConnectionController::class, 'index'])
+            ->middleware('can:view inbound mail settings')
+            ->name('admin.imap-smtp.index');
+        Route::get('imap-smtp/create', [InboundMailConnectionController::class, 'create'])
+            ->middleware('can:create update inbound connection')
+            ->name('admin.imap-smtp.create');
+        Route::post('imap-smtp', [InboundMailConnectionController::class, 'store'])
+            ->middleware('can:create update inbound connection')
+            ->name('admin.imap-smtp.store');
+        Route::get('imap-smtp/{inboundMailConnection}/edit', [InboundMailConnectionController::class, 'edit'])
+            ->middleware('can:create update inbound connection')
+            ->name('admin.imap-smtp.edit');
+        Route::put('imap-smtp/{inboundMailConnection}', [InboundMailConnectionController::class, 'update'])
+            ->middleware('can:create update inbound connection')
+            ->name('admin.imap-smtp.update');
+        Route::post('imap-smtp/{inboundMailConnection}/test', [InboundMailConnectionController::class, 'test'])
+            ->middleware('can:test inbound connection')
+            ->name('admin.imap-smtp.test');
+        Route::patch('imap-smtp/{inboundMailConnection}/status', [InboundMailConnectionController::class, 'toggle'])
+            ->middleware('can:activate deactivate inbound connection')
+            ->name('admin.imap-smtp.status');
 
         Route::get('security-defense-center', [SecurityDefenseController::class, 'index'])
             ->middleware('can:admin.security-defense-center.view')
@@ -468,7 +491,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 
