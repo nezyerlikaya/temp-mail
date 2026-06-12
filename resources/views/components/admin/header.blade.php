@@ -34,6 +34,9 @@
         >
             <i data-lucide="search" class="size-5" aria-hidden="true"></i>
         </button>
+        @can('admin.notifications.view')
+            <x-notifications.header-indicator :count="$notificationUnreadCount ?? 0" />
+        @endcan
         <div class="hidden text-right sm:block">
             <p class="max-w-48 truncate text-sm font-bold text-stone-900">{{ $user->name }}</p>
             <p class="max-w-48 truncate text-xs text-stone-500">{{ $user->email }}</p>

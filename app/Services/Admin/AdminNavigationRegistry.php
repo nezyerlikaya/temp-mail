@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\User;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Support\Facades\Gate;
 
 class AdminNavigationRegistry
@@ -76,10 +77,11 @@ class AdminNavigationRegistry
             ->map(function (array $group) use ($user, $currentRoute): array {
                 $group['items'] = collect($group['items'])
                     ->filter(fn (array $item): bool => Gate::forUser($user)->allows($item['permission']))
-                    ->map(function (array $item) use ($currentRoute): array {
+                    ->map(function (array $item) use ($user, $currentRoute): array {
                         $routePrefix = str($item['route'])->beforeLast('.index')->toString();
                         $item['active'] = $currentRoute === $item['route']
                             || ($routePrefix !== $item['route'] && str_starts_with((string) $currentRoute, $routePrefix.'.'));
+                        $item['badge'] = $this->badgeFor($item, $user);
 
                         return $item;
                     })
@@ -128,5 +130,16 @@ class AdminNavigationRegistry
         ?string $badge = null,
     ): array {
         return compact('label', 'route', 'path', 'icon', 'permission', 'badge');
+    }
+
+    private function badgeFor(array $item, User $user): ?string
+    {
+        if ($item['route'] !== 'admin.notifications.index') {
+            return $item['badge'];
+        }
+
+        $count = app(NotificationService::class)->unreadCount($user);
+
+        return $count > 0 ? (string) min($count, 99) : null;
     }
 }

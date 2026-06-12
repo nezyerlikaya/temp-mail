@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\BlogTaxonomyController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MediaLibraryController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OperationsOverviewController;
 use App\Http\Controllers\Admin\PageStudioController;
 use App\Http\Controllers\Admin\PlaceholderController;
@@ -146,6 +147,22 @@ Route::prefix('dashboard')
         Route::post('update-center/rollback-readiness', [UpdateCenterController::class, 'rollback'])
             ->middleware('can:admin.update-center.rollback')
             ->name('admin.update-center.rollback-readiness');
+
+        Route::get('notifications', [NotificationController::class, 'index'])
+            ->middleware('can:admin.notifications.view')
+            ->name('admin.notifications.index');
+        Route::get('notifications/{systemNotification}', [NotificationController::class, 'show'])
+            ->middleware('can:view notification,systemNotification')
+            ->name('admin.notifications.show');
+        Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])
+            ->middleware('can:mark notification')
+            ->name('admin.notifications.mark-all-read');
+        Route::post('notifications/{systemNotification}/mark-read', [NotificationController::class, 'markRead'])
+            ->middleware('can:mark notification,systemNotification')
+            ->name('admin.notifications.mark-read');
+        Route::post('notifications/{systemNotification}/archive', [NotificationController::class, 'archive'])
+            ->middleware('can:archive notification,systemNotification')
+            ->name('admin.notifications.archive');
 
         Route::get('email-templates', [EmailTemplateController::class, 'index'])
             ->middleware('can:admin.email-templates.view')
@@ -388,7 +405,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 

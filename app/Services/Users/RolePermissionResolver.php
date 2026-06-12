@@ -237,7 +237,7 @@ class RolePermissionResolver
                 'admin.operations.view', 'admin.mailbox-operations.view',
                 'admin.comment-moderation.view', 'admin.blocked-lists.view',
                 'admin.people-identity.view', 'admin.abuse-reports.view',
-                'admin.activity-audit-logs.view',
+                'admin.activity-audit-logs.view', 'admin.notifications.view',
             ],
             UserRole::Author->value => [
                 'admin.operations.view', 'admin.blog-studio.view', 'admin.blog-studio.create',

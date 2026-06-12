@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\SystemNotification;
 use App\Models\User;
 use App\Policies\UserPolicy;
 use App\Services\Admin\AdminCommandRegistry;
 use App\Services\Admin\AdminNavigationRegistry;
+use App\Services\Notifications\NotificationService;
 use App\Services\Settings\SettingsResolver;
 use App\Services\Users\RolePermissionResolver;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -120,6 +122,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('preview email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.preview'));
         Gate::define('send test email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.send-test'));
         Gate::define('reset email template readiness', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.reset'));
+        Gate::define('view notifications', fn (User $user): bool => $permissions->allows($user, 'admin.notifications.view'));
+        Gate::define('view notification', fn (User $user, SystemNotification $notification): bool => app(NotificationService::class)->visibleTo($notification, $user));
+        Gate::define('mark notification', fn (User $user, ?SystemNotification $notification = null): bool => $permissions->allows($user, 'admin.notifications.view')
+            && ($notification === null || app(NotificationService::class)->visibleTo($notification, $user)));
+        Gate::define('archive notification', fn (User $user, SystemNotification $notification): bool => $permissions->allows($user, 'admin.notifications.view')
+            && app(NotificationService::class)->visibleTo($notification, $user));
 
         Gate::policy(User::class, UserPolicy::class);
 
@@ -141,6 +149,12 @@ class AppServiceProvider extends ServiceProvider
                 'commands',
                 $user ? app(AdminCommandRegistry::class)->visibleFor($user) : [],
             );
+        });
+
+        View::composer('components.admin.header', function (ViewContract $view): void {
+            $user = request()->user();
+
+            $view->with('notificationUnreadCount', $user ? app(NotificationService::class)->unreadCount($user) : 0);
         });
 
         RateLimiter::for('login', function (Request $request) {
