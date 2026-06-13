@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ApiAccessController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BlogStudioController;
@@ -121,6 +122,17 @@ Route::prefix('dashboard')
             ->middleware('can:cancel downgrade membership')->name('admin.plans-memberships.memberships.cancel');
         Route::post('plans-memberships/memberships/{membership}/downgrade', [PlanMembershipController::class, 'downgrade'])
             ->middleware('can:cancel downgrade membership')->name('admin.plans-memberships.memberships.downgrade');
+
+        Route::get('api-access', [ApiAccessController::class, 'index'])
+            ->middleware('can:view API keys')->name('admin.api-access.index');
+        Route::put('api-access/settings', [ApiAccessController::class, 'settings'])
+            ->middleware('can:manage API globally')->name('admin.api-access.settings.update');
+        Route::post('api-access/keys', [ApiAccessController::class, 'store'])
+            ->name('admin.api-access.keys.store');
+        Route::post('api-access/keys/{apiKey}/revoke', [ApiAccessController::class, 'revoke'])
+            ->name('admin.api-access.keys.revoke');
+        Route::post('api-access/keys/{apiKey}/regenerate', [ApiAccessController::class, 'regenerate'])
+            ->name('admin.api-access.keys.regenerate');
 
         Route::get('people-identity', [UserController::class, 'index'])
             ->middleware('can:viewAny,'.User::class)
@@ -574,7 +586,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 

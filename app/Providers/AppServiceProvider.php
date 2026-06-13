@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\ApiKey;
 use App\Models\SystemNotification;
 use App\Models\User;
 use App\Policies\UserPolicy;
 use App\Services\Admin\AdminCommandRegistry;
 use App\Services\Admin\AdminNavigationRegistry;
+use App\Services\Api\ApiAccessPolicyService;
 use App\Services\Mail\SmtpSettingsStore;
 use App\Services\Notifications\NotificationService;
 use App\Services\Security\RateLimitPolicyStore;
@@ -163,6 +165,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('grant membership', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.memberships.grant'));
         Gate::define('extend membership', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.memberships.extend'));
         Gate::define('cancel downgrade membership', fn (User $user): bool => $permissions->allows($user, 'admin.plans-memberships.memberships.cancel'));
+        Gate::define('manage API globally', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('view API keys', fn (User $user): bool => $permissions->allows($user, 'admin.api-access.view'));
+        Gate::define('create own API key', fn (User $user): bool => app(ApiAccessPolicyService::class)->canCreateFor($user, $user));
+        Gate::define('mutate own API key', fn (User $user, ApiKey $key): bool => app(ApiAccessPolicyService::class)->canMutate($user, $key));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

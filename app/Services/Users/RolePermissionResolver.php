@@ -124,6 +124,7 @@ class RolePermissionResolver
                 'admin.plans-memberships.memberships.extend' => 'Extend memberships',
                 'admin.plans-memberships.memberships.cancel' => 'Cancel or downgrade memberships',
                 'admin.api-access.view' => 'API Access',
+                'admin.api-access.manage' => 'Manage API access settings and keys',
                 'admin.integrations.view' => 'Integrations',
             ],
             'People' => [
