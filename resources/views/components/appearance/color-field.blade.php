@@ -17,7 +17,7 @@
             class="size-11 shrink-0 rounded-md border border-stone-300 bg-white p-1 focus:outline-none focus:ring-4 focus:ring-teal-700/20"
             aria-describedby="{{ $id }}-help @error($errorKey) {{ $id }}-error @enderror"
             aria-invalid="@error($errorKey) true @else false @enderror"
-            x-on:input="dirty = true"
+            x-on:input="dirty = true; window.dispatchEvent(new CustomEvent('appearance-token-changed', { detail: { name: '{{ $name }}', value: $event.target.value } }))"
             required
         >
         <input
@@ -25,7 +25,7 @@
             value="{{ old($errorKey, $value) }}"
             pattern="^#[0-9a-fA-F]{6}$"
             class="min-w-0 flex-1 rounded-md border border-stone-300 px-3 py-2 text-sm font-bold text-stone-900 focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-700/15"
-            x-on:input="dirty = true; document.getElementById('{{ $id }}').value = $event.target.value"
+            x-on:input="dirty = true; document.getElementById('{{ $id }}').value = $event.target.value; window.dispatchEvent(new CustomEvent('appearance-token-changed', { detail: { name: '{{ $name }}', value: $event.target.value } }))"
             aria-label="{{ $label }} hex value"
         >
     </div>

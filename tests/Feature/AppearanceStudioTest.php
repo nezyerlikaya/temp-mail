@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\AppearanceSetting;
+use App\Models\AppearanceVersion;
 use App\Models\ThemeState;
 use App\Models\User;
 use App\Services\Appearance\AppearanceTokenRegistry;
 use App\Services\Appearance\AppearanceTokenResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class AppearanceStudioTest extends TestCase
@@ -153,10 +155,115 @@ class AppearanceStudioTest extends TestCase
             ->assertDontSee('--tm-brand-color');
     }
 
+    public function test_draft_preview_uses_draft_tokens_but_public_runtime_waits_for_publish(): void
+    {
+        $admin = User::factory()->admin()->create();
+        ThemeState::query()->create(['slug' => 'horizon', 'status' => 'active', 'last_activated_at' => now()]);
+
+        $this->actingAs($admin)->put(route('admin.appearance-studio.update'), [
+            'theme' => 'horizon',
+            'mode' => 'custom',
+            'tokens' => $this->tokens(['brand_color' => '#123456']),
+        ])->assertRedirect();
+
+        $this->assertSame('#0f766e', app(AppearanceTokenResolver::class)->activePublicTokens()['tokens']['brand_color']);
+
+        $previewUrl = URL::signedRoute('admin.appearance-studio.preview', ['theme' => 'horizon']);
+        $this->actingAs($admin)->get($previewUrl)
+            ->assertOk()
+            ->assertSee('Signed Appearance Preview')
+            ->assertSee('#123456');
+    }
+
+    public function test_publish_blocks_critical_contrast_failures(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->put(route('admin.appearance-studio.update'), [
+            'theme' => 'horizon',
+            'mode' => 'custom',
+            'tokens' => $this->tokens([
+                'text_color' => '#ffffff',
+                'background_color' => '#ffffff',
+                'brand_color' => '#ffffff',
+            ]),
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->post(route('admin.appearance-studio.publish'), [
+            'theme' => 'horizon',
+            'confirmation' => '1',
+        ])->assertSessionHasErrors(['publish']);
+
+        $this->assertDatabaseCount('appearance_versions', 0);
+        $this->assertNull(AppearanceSetting::query()->where('theme_slug', 'horizon')->first()->published_tokens);
+    }
+
+    public function test_publish_creates_version_and_public_tokens_then_rollback_restores_previous_version(): void
+    {
+        $admin = User::factory()->admin()->create();
+        ThemeState::query()->create(['slug' => 'horizon', 'status' => 'active', 'last_activated_at' => now()]);
+
+        $this->actingAs($admin)->put(route('admin.appearance-studio.update'), [
+            'theme' => 'horizon',
+            'mode' => 'custom',
+            'tokens' => $this->tokens(['brand_color' => '#123456', 'accent_color' => '#1d4ed8']),
+        ])->assertRedirect();
+        $this->actingAs($admin)->post(route('admin.appearance-studio.publish'), [
+            'theme' => 'horizon',
+            'confirmation' => '1',
+        ])->assertRedirect();
+
+        $versionOne = AppearanceVersion::query()->where('theme_slug', 'horizon')->firstOrFail();
+        $this->assertSame(1, $versionOne->version_number);
+        $this->assertSame('#123456', app(AppearanceTokenResolver::class)->activePublicTokens()['tokens']['brand_color']);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'appearance.published', 'actor_id' => $admin->id]);
+
+        $this->actingAs($admin)->put(route('admin.appearance-studio.update'), [
+            'theme' => 'horizon',
+            'mode' => 'custom',
+            'tokens' => $this->tokens(['brand_color' => '#0f766e', 'accent_color' => '#2563eb']),
+        ])->assertRedirect();
+        $this->actingAs($admin)->post(route('admin.appearance-studio.publish'), [
+            'theme' => 'horizon',
+            'confirmation' => '1',
+        ])->assertRedirect();
+
+        $this->assertSame('#0f766e', app(AppearanceTokenResolver::class)->activePublicTokens()['tokens']['brand_color']);
+
+        $this->actingAs($admin)->post(route('admin.appearance-studio.rollback'), [
+            'theme' => 'horizon',
+            'version_id' => $versionOne->id,
+            'confirmation' => '1',
+        ])->assertRedirect(route('admin.appearance-studio.index', ['theme' => 'horizon']));
+
+        $this->assertSame('#123456', app(AppearanceTokenResolver::class)->activePublicTokens()['tokens']['brand_color']);
+        $this->assertSame(3, AppearanceVersion::query()->where('theme_slug', 'horizon')->max('version_number'));
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'appearance.rolled_back', 'actor_id' => $admin->id]);
+    }
+
+    public function test_unsigned_preview_is_rejected_and_admin_page_shows_step_two_panels(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->get(route('admin.appearance-studio.preview', ['theme' => 'horizon']))
+            ->assertForbidden();
+
+        $this->actingAs($admin)->get(route('admin.appearance-studio.index'))
+            ->assertOk()
+            ->assertSee('Draft Preview')
+            ->assertSee('Contrast Checks')
+            ->assertSee('Palette Suggestions')
+            ->assertSee('Publish Appearance')
+            ->assertSee('Version History');
+    }
+
     public function test_routes_are_named_and_no_upload_custom_css_or_delete_route_exists(): void
     {
         $this->assertTrue(Route::has('admin.appearance-studio.index'));
+        $this->assertTrue(Route::has('admin.appearance-studio.preview'));
         $this->assertTrue(Route::has('admin.appearance-studio.update'));
+        $this->assertTrue(Route::has('admin.appearance-studio.publish'));
+        $this->assertTrue(Route::has('admin.appearance-studio.rollback'));
         $this->assertTrue(Route::has('admin.appearance-studio.reset'));
         $this->assertTrue(Route::has('admin.appearance-studio.reset-token'));
         $this->assertFalse(Route::has('admin.appearance-studio.upload'));

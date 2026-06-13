@@ -16,7 +16,7 @@
                     value="{{ $option }}"
                     class="size-4 border-stone-300 text-teal-700 focus:ring-4 focus:ring-teal-700/20"
                     @checked(old($errorKey, $value) === $option)
-                    x-on:change="dirty = true"
+                    x-on:change="dirty = true; window.dispatchEvent(new CustomEvent('appearance-token-changed', { detail: { name: '{{ $name }}', value: $event.target.value } }))"
                     required
                 >
                 <span>{{ str($option)->headline() }}</span>

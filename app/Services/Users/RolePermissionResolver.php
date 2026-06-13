@@ -140,6 +140,8 @@ class RolePermissionResolver
                 'admin.appearance-studio.view' => 'Appearance Studio',
                 'admin.appearance-studio.update' => 'Update Appearance Studio',
                 'admin.appearance-studio.reset' => 'Reset Appearance Studio',
+                'admin.appearance-studio.publish' => 'Publish Appearance Studio',
+                'admin.appearance-studio.rollback' => 'Rollback Appearance Studio',
                 'admin.typography-center.view' => 'Typography Center',
             ],
             'Trust' => [

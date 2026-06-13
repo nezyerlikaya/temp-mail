@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'draft_tokens',
     'published_tokens',
     'published_at',
+    'published_by',
     'updated_by',
 ])]
 class AppearanceSetting extends Model
@@ -22,6 +23,7 @@ class AppearanceSetting extends Model
             'draft_tokens' => 'array',
             'published_tokens' => 'array',
             'published_at' => 'datetime',
+            'published_by' => 'integer',
             'updated_by' => 'integer',
         ];
     }
@@ -29,5 +31,10 @@ class AppearanceSetting extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function publisher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'published_by');
     }
 }

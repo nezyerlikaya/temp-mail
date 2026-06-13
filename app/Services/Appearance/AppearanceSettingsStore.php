@@ -76,12 +76,38 @@ class AppearanceSettingsStore
             'draft_tokens' => $this->registry->defaultFor($theme),
             'published_tokens' => null,
             'published_at' => null,
+            'published_by' => null,
             'updated_by' => $actor->getKey(),
         ])->save();
 
         $this->forget($theme);
 
         return $setting;
+    }
+
+    /** @param array<string, string> $tokens */
+    public function publish(string $theme, array $tokens, User $actor): AppearanceSetting
+    {
+        $clean = $this->mergeWithDefaults($theme, $tokens);
+        $setting = $this->setting($theme);
+        $setting->forceFill([
+            'mode' => 'custom',
+            'draft_tokens' => $clean,
+            'published_tokens' => $clean,
+            'published_at' => now(),
+            'published_by' => $actor->getKey(),
+            'updated_by' => $actor->getKey(),
+        ])->save();
+
+        $this->forget($theme);
+
+        return $setting;
+    }
+
+    /** @param array<string, string> $tokens */
+    public function restorePublished(string $theme, array $tokens, User $actor): AppearanceSetting
+    {
+        return $this->publish($theme, $tokens, $actor);
     }
 
     public function resetToken(string $theme, string $token, User $actor): AppearanceSetting

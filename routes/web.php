@@ -88,9 +88,18 @@ Route::prefix('dashboard')
         Route::get('appearance-studio', [AppearanceStudioController::class, 'index'])
             ->middleware('can:view appearance')
             ->name('admin.appearance-studio.index');
+        Route::get('appearance-studio/preview', [AppearanceStudioController::class, 'preview'])
+            ->middleware(['signed', 'can:preview appearance'])
+            ->name('admin.appearance-studio.preview');
         Route::put('appearance-studio', [AppearanceStudioController::class, 'update'])
             ->middleware('can:update appearance')
             ->name('admin.appearance-studio.update');
+        Route::post('appearance-studio/publish', [AppearanceStudioController::class, 'publish'])
+            ->middleware('can:publish appearance')
+            ->name('admin.appearance-studio.publish');
+        Route::post('appearance-studio/rollback', [AppearanceStudioController::class, 'rollback'])
+            ->middleware('can:rollback appearance')
+            ->name('admin.appearance-studio.rollback');
         Route::post('appearance-studio/reset', [AppearanceStudioController::class, 'reset'])
             ->middleware('can:reset appearance')
             ->name('admin.appearance-studio.reset');

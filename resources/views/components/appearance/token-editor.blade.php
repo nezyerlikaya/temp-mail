@@ -22,7 +22,7 @@
                 <h2 class="text-xl font-extrabold text-stone-950">{{ str($selectedTheme)->headline() }} tokens</h2>
                 <x-appearance.status-badge :mode="$setting->mode" />
             </div>
-            <p class="mt-1 text-sm leading-6 text-stone-600">Draft values are safe public CSS variables. Publishing preview is intentionally reserved for the next Appearance step.</p>
+            <p class="mt-1 text-sm leading-6 text-stone-600">Draft values update the admin-only preview. Public visitors only receive published tokens.</p>
         </div>
     </div>
 

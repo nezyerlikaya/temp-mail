@@ -73,6 +73,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view appearance', fn (User $user): bool => $permissions->allows($user, 'admin.appearance-studio.view'));
         Gate::define('update appearance', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reset appearance', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('preview appearance', fn (User $user): bool => $permissions->allows($user, 'admin.appearance-studio.view'));
+        Gate::define('publish appearance', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('rollback appearance', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('preview-locale-readiness', fn (User $user): bool => $permissions->allows($user, 'admin.locale-launch-center.preview'));
         Gate::define('view pages', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.view'));
         Gate::define('create page', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.create'));

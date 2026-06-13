@@ -38,9 +38,31 @@
                 :can-update="$canUpdateAppearance"
                 :can-reset="$canResetAppearance"
             />
+
+            <x-appearance.preview-frame
+                :preview="$preview"
+                :radius-options="$radiusOptions"
+                :shadow-options="$shadowOptions"
+                :motion-options="$motionOptions"
+                :signed-url="$signedPreviewUrl"
+                :can-preview="$canPreviewAppearance"
+            />
+
+            <x-appearance.contrast-report :report="$contrastReport" />
         </div>
 
         <aside class="space-y-6">
+            <x-appearance.theme-switch-warning :selected-theme="$selectedTheme" :active-theme="$activeTheme" />
+
+            <x-appearance.publish-bar
+                :selected-theme="$selectedTheme"
+                :setting="$setting"
+                :report="$contrastReport"
+                :can-publish="$canPublishAppearance"
+            />
+
+            <x-appearance.palette-suggestions :suggestions="$paletteSuggestions" />
+
             <x-appearance.theme-default-card
                 :selected-theme="$selectedTheme"
                 :active-theme="$activeTheme"
@@ -51,6 +73,12 @@
             <x-appearance.reset-warning
                 :selected-theme="$selectedTheme"
                 :can-reset="$canResetAppearance"
+            />
+
+            <x-appearance.version-history
+                :versions="$versions"
+                :selected-theme="$selectedTheme"
+                :can-rollback="$canRollbackAppearance"
             />
 
             <x-admin.card title="Scope Guard" description="Appearance Studio stores safe token values per fixed public theme. Admin layout, Typography Center, theme layouts, uploads, and arbitrary CSS are untouched.">
