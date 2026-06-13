@@ -213,6 +213,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');
         Gate::define('test security provider', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('view blocked lists', fn (User $user): bool => $permissions->allows($user, 'admin.blocked-lists.view'));
+        Gate::define('create blocked entry', fn (User $user): bool => $permissions->allows($user, 'admin.blocked-lists.create'));
+        Gate::define('update blocked entry', fn (User $user): bool => $permissions->allows($user, 'admin.blocked-lists.update'));
+        Gate::define('activate deactivate blocked entry', fn (User $user): bool => $permissions->allows($user, 'admin.blocked-lists.toggle'));
+        Gate::define('view related blocked list abuse case', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.view'));
+        Gate::define('view sensitive blocked list values', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('manage rate limits', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('manage admin security', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('force logout sessions', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));

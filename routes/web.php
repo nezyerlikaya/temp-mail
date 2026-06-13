@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ApiAccessController;
 use App\Http\Controllers\Admin\AppearanceStudioController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\BlockedListController;
 use App\Http\Controllers\Admin\BlogStudioController;
 use App\Http\Controllers\Admin\BlogTaxonomyController;
 use App\Http\Controllers\Admin\CommentModerationController;
@@ -275,6 +276,21 @@ Route::prefix('dashboard')
         Route::get('activity-audit-logs', [AuditLogController::class, 'index'])
             ->middleware('can:admin.activity-audit-logs.view')
             ->name('admin.activity-audit-logs.index');
+        Route::get('blocked-lists', [BlockedListController::class, 'index'])
+            ->middleware('can:view blocked lists')
+            ->name('admin.blocked-lists.index');
+        Route::post('blocked-lists', [BlockedListController::class, 'store'])
+            ->middleware('can:create blocked entry')
+            ->name('admin.blocked-lists.store');
+        Route::put('blocked-lists/{blockedListEntry}', [BlockedListController::class, 'update'])
+            ->middleware('can:update blocked entry')
+            ->name('admin.blocked-lists.update');
+        Route::post('blocked-lists/{blockedListEntry}/activate', [BlockedListController::class, 'activate'])
+            ->middleware('can:activate deactivate blocked entry')
+            ->name('admin.blocked-lists.activate');
+        Route::post('blocked-lists/{blockedListEntry}/deactivate', [BlockedListController::class, 'deactivate'])
+            ->middleware('can:activate deactivate blocked entry')
+            ->name('admin.blocked-lists.deactivate');
         Route::get('abuse-reports', [AbuseReportController::class, 'index'])
             ->middleware('can:view abuse reports')
             ->name('admin.abuse-reports.index');
@@ -759,7 +775,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.abuse-reports.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.translation-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.comment-moderation.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.blocked-lists.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.abuse-reports.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.translation-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.comment-moderation.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 
