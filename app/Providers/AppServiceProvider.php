@@ -68,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Gate::define('manage-localization', fn (User $user): bool => $permissions->allows($user, 'admin.locale-launch-center.manage'));
+        Gate::define('view live metrics', fn (User $user): bool => $permissions->allows($user, 'admin.operations.view'));
         Gate::define('view analytics', fn (User $user): bool => $permissions->allows($user, 'admin.product-analytics.view'));
         Gate::define('export analytics', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('activate theme', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));

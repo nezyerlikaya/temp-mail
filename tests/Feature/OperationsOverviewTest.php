@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AbuseSignal;
 use App\Models\Domain;
+use App\Models\InboundMailConnection;
 use App\Models\Locale;
 use App\Models\Mailbox;
 use App\Models\MailboxMessage;
@@ -106,7 +107,8 @@ class OperationsOverviewTest extends TestCase
             ->assertSee('Active Premium')
             ->assertSee('Recent activity')
             ->assertSee('Domain updated')
-            ->assertSee('Last calculated');
+            ->assertSee('Live')
+            ->assertSee('30s interval');
 
         $this->assertTrue(Cache::has('dashboard.operations.summary.admin'));
     }
@@ -175,5 +177,119 @@ class OperationsOverviewTest extends TestCase
         $this->assertStringNotContainsString('cdn.tailwindcss', $source);
         $this->assertStringNotContainsString('127.0.0.1', $source);
         $this->assertStringNotContainsString('/build/assets', $source);
+    }
+
+    public function test_live_metrics_endpoint_is_authorized_cached_and_sanitized_by_role(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $editor = User::factory()->editor()->create();
+        $member = User::factory()->create();
+
+        AbuseSignal::query()->create([
+            'signal_type' => 'suspicious_comment',
+            'severity' => 'critical',
+            'source_module' => 'comments',
+            'first_seen_at' => now(),
+            'last_seen_at' => now(),
+            'status' => 'open',
+            'deduplication_key' => Str::random(40),
+        ]);
+        UserAuditEvent::query()->create(['event' => 'failed_admin_login', 'module' => 'trust', 'action' => 'Failed admin login', 'severity' => 'warning']);
+
+        $this->actingAs($member)->getJson(route('admin.dashboard.live-metrics'))->assertForbidden();
+
+        $adminResponse = $this->actingAs($admin)->getJson(route('admin.dashboard.live-metrics'))
+            ->assertOk()
+            ->assertJsonStructure([
+                'metrics' => [['key', 'label', 'value', 'detail', 'icon', 'tone']],
+                'alerts' => [['key', 'title', 'message', 'severity', 'route', 'url']],
+                'last_updated',
+                'cache_seconds',
+                'stale_after_seconds',
+                'allowed_intervals',
+                'default_interval',
+            ])
+            ->json();
+
+        $this->assertContains('abuse_alerts', collect($adminResponse['metrics'])->pluck('key')->all());
+        $this->assertContains('failed_admin_logins', collect($adminResponse['metrics'])->pluck('key')->all());
+        $this->assertSame([15, 30, 60], $adminResponse['allowed_intervals']);
+        $this->assertSame(30, $adminResponse['default_interval']);
+        $this->assertSame(120, $adminResponse['stale_after_seconds']);
+        $this->assertTrue(Cache::has('dashboard.operations.summary.admin'));
+
+        $editorResponse = $this->actingAs($editor)->getJson(route('admin.dashboard.live-metrics'))
+            ->assertOk()
+            ->json();
+
+        $this->assertNotContains('abuse_alerts', collect($editorResponse['metrics'])->pluck('key')->all());
+        $this->assertNotContains('failed_admin_logins', collect($editorResponse['metrics'])->pluck('key')->all());
+    }
+
+    public function test_live_payload_deduplicates_critical_alerts_and_keeps_links_permission_aware(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $editor = User::factory()->editor()->create();
+        $domain = Domain::query()->create([
+            'domain_name' => 'offline.example.test',
+            'display_name' => 'Offline Example',
+            'status' => 'offline',
+        ]);
+        InboundMailConnection::query()->create([
+            'domain_id' => $domain->id,
+            'name' => 'Primary IMAP',
+            'host' => 'imap.example.test',
+            'username' => 'inbox@example.test',
+            'encrypted_password' => 'secret',
+            'status' => 'failed',
+        ]);
+        SystemBackup::query()->create(['uuid' => (string) Str::uuid(), 'type' => 'database', 'status' => 'failed']);
+        SystemHealthCheck::query()->create(['uuid' => (string) Str::uuid(), 'overall_status' => 'critical', 'summary' => [], 'results' => [], 'checked_at' => now()]);
+        UpdateCheck::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'channel' => 'stable',
+            'current_version' => '1.0.0',
+            'status' => 'failed',
+            'endpoint' => 'https://www.doic.net/update',
+            'checked_at' => now(),
+        ]);
+
+        $payload = $this->actingAs($admin)->getJson(route('admin.dashboard.live-metrics'))->assertOk()->json();
+        $keys = collect($payload['alerts'])->pluck('key')->all();
+
+        $this->assertContains('domain_offline', $keys);
+        $this->assertContains('mail_connection_failed', $keys);
+        $this->assertContains('backup_failed', $keys);
+        $this->assertContains('critical_system_health', $keys);
+        $this->assertContains('update_failed', $keys);
+        $this->assertCount(count(array_unique($keys)), $keys);
+        $this->assertNotNull(collect($payload['alerts'])->firstWhere('key', 'domain_offline')['url']);
+
+        $editorPayload = $this->actingAs($editor)->getJson(route('admin.dashboard.live-metrics'))->assertOk()->json();
+        $this->assertNull(collect($editorPayload['alerts'])->firstWhere('key', 'domain_offline')['url'] ?? null);
+    }
+
+    public function test_operations_overview_renders_live_controls_and_keeps_initial_blade_fallback(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('dashboardLive', false)
+            ->assertSee('live-metrics')
+            ->assertSee('Auto-refresh on')
+            ->assertSee('30s interval')
+            ->assertSee('Refresh')
+            ->assertSee('Active inboxes')
+            ->assertSee('Data may be stale')
+            ->assertSee('Connection unavailable');
+
+        $script = File::get(resource_path('js/app.js'));
+
+        $this->assertStringContainsString('fetch(this.endpoint', $script);
+        $this->assertStringContainsString('visibilitychange', $script);
+        $this->assertStringContainsString('dashboard-refresh-interval', $script);
+        $this->assertStringContainsString('Dashboard refresh failed', $script);
+        $this->assertStringContainsString('changedMetricKeys', $script);
     }
 }

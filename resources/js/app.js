@@ -15,6 +15,7 @@ import {
     Languages,
     LayoutDashboard,
     ListFilter,
+    LoaderCircle,
     LogOut,
     Mail,
     Menu,
@@ -43,6 +44,7 @@ import {
     UserRoundPen,
     Users,
     Wrench,
+    WifiOff,
     X,
     CornerDownLeft,
     FilePlus,
@@ -69,6 +71,7 @@ const adminIcons = {
     Languages,
     LayoutDashboard,
     ListFilter,
+    LoaderCircle,
     LogOut,
     Mail,
     Menu,
@@ -97,6 +100,7 @@ const adminIcons = {
     UserRoundPen,
     Users,
     Wrench,
+    WifiOff,
     X,
 };
 
@@ -328,6 +332,177 @@ Alpine.data('commandPalette', (commands) => ({
         } else if (! event.shiftKey && document.activeElement === last) {
             event.preventDefault();
             first.focus();
+        }
+    },
+}));
+
+Alpine.data('dashboardLive', (config) => ({
+    endpoint: config.endpoint,
+    payload: config.initial,
+    intervalSeconds: Number(config.initial.default_interval ?? 30),
+    allowedIntervals: config.initial.allowed_intervals ?? [15, 30, 60],
+    autoRefresh: true,
+    refreshing: false,
+    connectionUnavailable: false,
+    pausedByVisibility: false,
+    changedKeys: [],
+    timer: null,
+    statusMessage: 'Live',
+
+    init() {
+        try {
+            const storedInterval = Number(window.localStorage.getItem('dashboard-refresh-interval'));
+            const storedAutoRefresh = window.localStorage.getItem('dashboard-auto-refresh');
+
+            if (this.allowedIntervals.includes(storedInterval)) {
+                this.intervalSeconds = storedInterval;
+            }
+
+            if (storedAutoRefresh !== null) {
+                this.autoRefresh = storedAutoRefresh === 'true';
+            }
+        } catch {
+            this.intervalSeconds = Number(config.initial.default_interval ?? 30);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            this.pausedByVisibility = document.hidden;
+
+            if (document.hidden) {
+                this.clearTimer();
+                this.statusMessage = 'Paused';
+            } else {
+                this.statusMessage = this.autoRefresh ? 'Live' : 'Paused';
+                this.refresh();
+                this.schedule();
+            }
+        });
+
+        this.schedule();
+    },
+
+    get metrics() {
+        return this.payload.metrics ?? [];
+    },
+
+    get criticalAlerts() {
+        return this.payload.alerts ?? [];
+    },
+
+    get stale() {
+        const updated = Date.parse(this.payload.last_updated);
+
+        if (! updated) {
+            return true;
+        }
+
+        return (Date.now() - updated) > Number(this.payload.stale_after_seconds ?? 120) * 1000;
+    },
+
+    metric(key) {
+        return this.metrics.find((metric) => metric.key === key) ?? {};
+    },
+
+    metricValue(key) {
+        return this.metric(key).value ?? '';
+    },
+
+    metricTone(key) {
+        return this.metric(key).tone ?? 'neutral';
+    },
+
+    metricChanged(key) {
+        return this.changedKeys.includes(key);
+    },
+
+    setAutoRefresh(value) {
+        this.autoRefresh = value;
+        this.statusMessage = value ? 'Live' : 'Paused';
+
+        try {
+            window.localStorage.setItem('dashboard-auto-refresh', String(value));
+        } catch {
+            // Dashboard refresh preferences are optional.
+        }
+
+        this.schedule();
+    },
+
+    setIntervalSeconds(value) {
+        this.intervalSeconds = Number(value);
+
+        try {
+            window.localStorage.setItem('dashboard-refresh-interval', String(this.intervalSeconds));
+        } catch {
+            // Dashboard refresh preferences are optional.
+        }
+
+        this.schedule();
+    },
+
+    async refresh() {
+        if (this.refreshing) {
+            return;
+        }
+
+        this.refreshing = true;
+        this.statusMessage = 'Refreshing';
+
+        try {
+            const response = await fetch(this.endpoint, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (! response.ok) {
+                throw new Error('Dashboard refresh failed.');
+            }
+
+            const next = await response.json();
+            this.changedKeys = this.changedMetricKeys(this.payload.metrics ?? [], next.metrics ?? []);
+            this.payload = next;
+            this.connectionUnavailable = false;
+            this.statusMessage = this.autoRefresh && ! this.pausedByVisibility ? 'Live' : 'Paused';
+
+            window.setTimeout(() => {
+                this.changedKeys = [];
+            }, 1800);
+        } catch {
+            this.connectionUnavailable = true;
+            this.statusMessage = 'Connection unavailable';
+        } finally {
+            this.refreshing = false;
+            this.schedule();
+            this.$nextTick(() => window.renderAdminIcons());
+        }
+    },
+
+    changedMetricKeys(previous, next) {
+        return next
+            .filter((metric) => {
+                const oldMetric = previous.find((candidate) => candidate.key === metric.key);
+
+                return oldMetric && String(oldMetric.value) !== String(metric.value);
+            })
+            .map((metric) => metric.key);
+    },
+
+    schedule() {
+        this.clearTimer();
+
+        if (! this.autoRefresh || document.hidden) {
+            return;
+        }
+
+        this.timer = window.setTimeout(() => this.refresh(), this.intervalSeconds * 1000);
+    },
+
+    clearTimer() {
+        if (this.timer) {
+            window.clearTimeout(this.timer);
+            this.timer = null;
         }
     },
 }));

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BlogStudioController;
 use App\Http\Controllers\Admin\BlogTaxonomyController;
+use App\Http\Controllers\Admin\DashboardLiveMetricsController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\InboundMailConnectionController;
@@ -77,6 +78,9 @@ Route::prefix('dashboard')
         Route::get('/', OperationsOverviewController::class)
             ->middleware('can:admin.operations.view')
             ->name('dashboard');
+        Route::get('live-metrics', DashboardLiveMetricsController::class)
+            ->middleware('can:view live metrics')
+            ->name('admin.dashboard.live-metrics');
         Route::get('product-analytics', [ProductAnalyticsController::class, 'index'])
             ->middleware('can:view analytics')
             ->name('admin.product-analytics.index');
