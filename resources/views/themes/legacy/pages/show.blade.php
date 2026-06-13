@@ -1,7 +1,2 @@
-@extends('themes.legacy.layout', ['title' => $page->title ?? 'Page'])
-
-@section('content')
-    <article class="mx-auto max-w-3xl px-4 py-10">
-        <h1 class="text-2xl font-extrabold text-stone-950">{{ $page->title ?? 'Page' }}</h1>
-    </article>
-@endsection
+@extends('themes.legacy.layouts.public')
+@section('content')<article class="mx-auto max-w-4xl px-4 py-8">@include('themes.legacy.partials.breadcrumbs')<h1 class="border-b-4 border-yellow-300 pb-4 text-3xl font-extrabold sm:text-4xl">{{ $page['title'] }}</h1>@if ($page['excerpt'])<p class="mt-5 text-lg leading-8 text-stone-700">{{ $page['excerpt'] }}</p>@endif @if ($page['image'])<img src="{{ $page['image']['url'] }}" alt="{{ $page['image']['alt'] }}" class="mt-6 aspect-[16/9] w-full border-2 border-stone-950 object-cover">@endif<div class="prose prose-stone mt-8 max-w-none leading-8">{!! $page['content_html'] !!}</div>@if ($page['updated_at'])<p class="mt-8 border-t border-stone-300 pt-4 text-sm font-bold">{{ $translations['page.updated'] }}: {{ $page['updated_at'] }}</p>@endif</article>@endsection

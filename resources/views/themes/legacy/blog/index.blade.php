@@ -1,7 +1,2 @@
-@extends('themes.legacy.layout', ['title' => 'Blog'])
-
-@section('content')
-    <section class="mx-auto max-w-5xl px-4 py-10">
-        <h1 class="text-2xl font-extrabold text-stone-950">Blog</h1>
-    </section>
-@endsection
+@extends('themes.legacy.layouts.public')
+@section('content')<section class="mx-auto max-w-5xl px-4 py-8">@include('themes.legacy.partials.breadcrumbs')<header class="border-2 border-stone-950 bg-yellow-100 p-6"><h1 class="text-3xl font-extrabold">{{ $page_heading }}</h1><p class="mt-3 leading-7 text-stone-700">{{ $page_description }}</p></header>@if ($posts['items'])<div class="mt-6 grid gap-5 md:grid-cols-2">@foreach ($posts['items'] as $post)@include('themes.legacy.partials.post-card', ['post' => $post])@endforeach</div>@else<div class="mt-6 border-2 border-stone-950 p-6"><h2 class="text-xl font-bold">{{ $translations['blog.empty.title'] }}</h2><p class="mt-2">{{ $translations['blog.empty.body'] }}</p></div>@endif @include('themes.legacy.partials.pagination')</section>@endsection

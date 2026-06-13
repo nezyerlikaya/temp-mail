@@ -12,6 +12,8 @@ class TranslationGroupRegistry
             'navigation' => 'Navigation',
             'homepage' => 'Homepage',
             'mailbox_experience' => 'Mailbox Experience',
+            'public_blog' => 'Public Blog',
+            'public_pages' => 'Public Pages',
             'authentication' => 'Authentication',
             'errors_validation' => 'Errors and Validation',
             'footer' => 'Footer',

@@ -1,0 +1,4 @@
+<article class="flex h-full flex-col border border-white/10 bg-[#171d1a]">
+@if ($post['image'])<img src="{{ $post['image']['url'] }}" alt="{{ $post['image']['alt'] }}" width="{{ $post['image']['width'] }}" height="{{ $post['image']['height'] }}" class="aspect-[16/9] w-full object-cover opacity-90" loading="lazy">@endif
+<div class="flex flex-1 flex-col p-5"><p class="font-mono text-xs text-lime-300">{{ $post['published_at'] }}</p><h2 class="mt-3 text-xl font-extrabold text-white"><a href="{{ $post['url'] }}" class="focus:outline-none focus:ring-2 focus:ring-lime-300">{{ $post['title'] }}</a></h2>@if ($post['excerpt'])<p class="mt-3 text-sm leading-6 text-stone-300">{{ $post['excerpt'] }}</p>@endif<a href="{{ $post['url'] }}" class="mt-auto pt-5 font-mono text-xs font-bold uppercase text-lime-300">{{ $translations['blog.read_more'] }} →</a></div>
+</article>

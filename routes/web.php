@@ -40,8 +40,11 @@ use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CommentSubmissionController;
 use App\Http\Controllers\InstallerController;
+use App\Http\Controllers\PublicBlogController;
 use App\Http\Controllers\PublicMailboxController;
+use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicSiteController;
+use App\Http\Controllers\PublicSitemapController;
 use App\Models\User;
 use App\Services\Admin\AdminNavigationRegistry;
 use App\Services\Installer\InstallState;
@@ -65,10 +68,20 @@ Route::get('/{locale}', PublicSiteController::class)
     ->middleware(['public.locale', 'public.locale.active', 'public.theme', 'public.direction'])
     ->name('public.home');
 
+Route::get('/sitemap.xml', PublicSitemapController::class)->name('public.sitemap');
+
 Route::prefix('{locale}')
     ->where(['locale' => '[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?'])
     ->middleware(['public.locale', 'public.locale.active', 'public.theme', 'public.direction'])
     ->group(function (): void {
+        Route::get('blog', [PublicBlogController::class, 'index'])->name('public.blog.index');
+        Route::get('blog/category/{slug}', [PublicBlogController::class, 'category'])->name('public.blog.category');
+        Route::get('blog/tag/{slug}', [PublicBlogController::class, 'tag'])->name('public.blog.tag');
+        Route::get('blog/author/{slug}', [PublicBlogController::class, 'author'])->name('public.blog.author');
+        Route::get('blog/{slug}', [PublicBlogController::class, 'show'])->name('public.blog.show');
+        Route::post('blog/{post:slug}/comments', [CommentSubmissionController::class, 'storeLocalized'])
+            ->middleware(['public.content.published', 'public.comments.available', 'throttle:comments'])
+            ->name('public.blog.comments.store');
         Route::post('mailboxes', [PublicMailboxController::class, 'store'])
             ->middleware('throttle:mailbox_creation')
             ->name('public.mailbox.store');
@@ -81,6 +94,7 @@ Route::prefix('{locale}')
         Route::get('mailboxes/{mailbox}/messages/{message}', [PublicMailboxController::class, 'message'])
             ->middleware('public.mailbox.access')
             ->name('public.mailbox.messages.show');
+        Route::get('{slug}', [PublicPageController::class, 'show'])->name('public.pages.show');
     });
 
 Route::prefix('install')->name('install.')->group(function (): void {

@@ -58,7 +58,7 @@ class SeoRecordResolver
         return match ($targetType) {
             'homepage', 'temporary_email_generator' => 1.0,
             'pricing', 'disposable_email', 'ten_minute_mail' => 0.8,
-            'blog_post', 'page', 'language_landing' => 0.7,
+            'blog_post', 'blog_index', 'page', 'language_landing' => 0.7,
             default => 0.5,
         };
     }
@@ -67,7 +67,7 @@ class SeoRecordResolver
     {
         return match ($targetType) {
             'homepage', 'temporary_email_generator', 'inbox' => 'daily',
-            'blog_post', 'blog_category', 'blog_tag' => 'weekly',
+            'blog_post', 'blog_index', 'blog_category', 'blog_tag', 'blog_author' => 'weekly',
             default => 'monthly',
         };
     }
@@ -77,7 +77,8 @@ class SeoRecordResolver
         return match ($targetType) {
             'homepage', 'language_landing' => 'WebSite',
             'blog_post' => 'Article',
-            'blog_category', 'blog_tag' => 'CollectionPage',
+            'blog_index' => 'Blog',
+            'blog_category', 'blog_tag', 'blog_author' => 'CollectionPage',
             'page' => 'WebPage',
             default => null,
         };

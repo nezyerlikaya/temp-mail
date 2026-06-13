@@ -1,10 +1,17 @@
 <?php
 
+use App\Http\Middleware\ApplyActivePublicTheme;
+use App\Http\Middleware\ApplyPublicLocaleDirection;
 use App\Http\Middleware\AuthenticateApiKey;
 use App\Http\Middleware\EnforceApiUsageLimit;
 use App\Http\Middleware\EnforceApplicationMaintenance;
 use App\Http\Middleware\EnsureApiScope;
+use App\Http\Middleware\EnsurePublicCommentsAvailable;
+use App\Http\Middleware\EnsurePublishedPublicContent;
+use App\Http\Middleware\RejectInactivePublicLocale;
+use App\Http\Middleware\ResolvePublicLocale;
 use App\Http\Middleware\UseFileStorageForInstaller;
+use App\Http\Middleware\ValidatePublicMailboxAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,6 +33,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.key' => AuthenticateApiKey::class,
             'api.scope' => EnsureApiScope::class,
             'api.usage' => EnforceApiUsageLimit::class,
+            'public.locale' => ResolvePublicLocale::class,
+            'public.locale.active' => RejectInactivePublicLocale::class,
+            'public.mailbox.access' => ValidatePublicMailboxAccess::class,
+            'public.theme' => ApplyActivePublicTheme::class,
+            'public.direction' => ApplyPublicLocaleDirection::class,
+            'public.content.published' => EnsurePublishedPublicContent::class,
+            'public.comments.available' => EnsurePublicCommentsAvailable::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -1,0 +1,4 @@
+<article class="border-2 border-stone-950 bg-white p-4">
+@if ($post['image'])<img src="{{ $post['image']['url'] }}" alt="{{ $post['image']['alt'] }}" width="{{ $post['image']['width'] }}" height="{{ $post['image']['height'] }}" class="aspect-[16/9] w-full border border-stone-950 object-cover" loading="lazy">@endif
+<p class="mt-4 text-xs font-bold uppercase text-teal-800">{{ $post['published_at'] }}</p><h2 class="mt-2 text-xl font-extrabold"><a href="{{ $post['url'] }}" class="underline decoration-2 underline-offset-4">{{ $post['title'] }}</a></h2>@if ($post['excerpt'])<p class="mt-3 text-sm leading-6 text-stone-700">{{ $post['excerpt'] }}</p>@endif<a href="{{ $post['url'] }}" class="mt-5 inline-block border-2 border-stone-950 bg-yellow-200 px-3 py-2 text-sm font-extrabold">{{ $translations['blog.read_more'] }}</a>
+</article>

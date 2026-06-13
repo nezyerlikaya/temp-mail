@@ -1,7 +1,2 @@
-@extends('themes.atlas.layout', ['title' => $page->title ?? 'Page'])
-
-@section('content')
-    <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-extrabold text-white">{{ $page->title ?? 'Page' }}</h1>
-    </article>
-@endsection
+@extends('themes.atlas.layouts.public')
+@section('content')<article class="mx-auto max-w-4xl px-4 py-10 sm:px-6">@include('themes.atlas.partials.breadcrumbs')<p class="font-mono text-xs uppercase text-lime-300">Page / {{ strtoupper($locale['code']) }}</p><h1 class="mt-4 text-4xl font-extrabold text-white sm:text-5xl">{{ $page['title'] }}</h1>@if ($page['excerpt'])<p class="mt-5 text-lg leading-8 text-stone-300">{{ $page['excerpt'] }}</p>@endif @if ($page['image'])<img src="{{ $page['image']['url'] }}" alt="{{ $page['image']['alt'] }}" class="mt-8 aspect-[16/9] w-full object-cover">@endif<div class="prose prose-invert mt-10 max-w-none leading-8">{!! $page['content_html'] !!}</div>@if ($page['updated_at'])<p class="mt-10 border-t border-white/10 pt-5 font-mono text-xs text-stone-400">{{ $translations['page.updated'] }}: {{ $page['updated_at'] }}</p>@endif</article>@endsection

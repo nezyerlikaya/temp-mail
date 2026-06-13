@@ -12,6 +12,20 @@ class PublicViewDataService
     private const TRANSLATION_KEYS = [
         'common.brand.name',
         'nav.home',
+        'nav.blog',
+        'blog.index.title',
+        'blog.index.description',
+        'blog.empty.title',
+        'blog.empty.body',
+        'blog.read_more',
+        'blog.related.title',
+        'blog.comments.title',
+        'blog.comments.name',
+        'blog.comments.email',
+        'blog.comments.content',
+        'blog.comments.submit',
+        'blog.comments.closed',
+        'page.updated',
         'home.header.logo',
         'home.hero.title',
         'home.hero.description',
@@ -50,6 +64,7 @@ class PublicViewDataService
         private readonly PublicNavigationService $navigation,
         private readonly PublicBrandResolver $brand,
         private readonly PublicSeoResolver $seo,
+        private readonly PublicLegalNavigationService $legal,
         private readonly AppearanceTokenResolver $appearance,
         private readonly FontStackResolver $typography,
     ) {}
@@ -60,6 +75,33 @@ class PublicViewDataService
         $translations = $this->translations->resolve($locale, self::TRANSLATION_KEYS);
         $brand = $this->brand->resolve();
 
+        return $this->base($locale, $theme, $translations, $brand);
+    }
+
+    /**
+     * @param  array<string, mixed>  $theme
+     * @param  array<string, mixed>  $seo
+     * @param  array<int, array<string, mixed>>|null  $localeSwitcher
+     */
+    public function content(Locale $locale, array $theme, array $seo, string $navigation = 'home', ?array $localeSwitcher = null): array
+    {
+        $translations = $this->translations->resolve($locale, self::TRANSLATION_KEYS);
+        $brand = $this->brand->resolve();
+
+        return [
+            ...$this->base($locale, $theme, $translations, $brand, $navigation, $localeSwitcher),
+            'seo' => $seo,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $theme
+     * @param  array<string, string>  $translations
+     * @param  array<string, mixed>  $brand
+     * @param  array<int, array<string, mixed>>|null  $localeSwitcher
+     */
+    private function base(Locale $locale, array $theme, array $translations, array $brand, string $navigation = 'home', ?array $localeSwitcher = null): array
+    {
         $appearance = $this->safeAppearance($theme['slug']);
         $typography = $this->safeTypography($theme['slug'], $locale->locale);
 
@@ -72,8 +114,9 @@ class PublicViewDataService
                 'direction' => $locale->direction === 'rtl' ? 'rtl' : 'ltr',
             ],
             'translations' => $translations,
-            'navigation' => $this->navigation->resolve($locale, $translations),
+            'navigation' => $this->navigation->resolve($locale, $translations, $navigation, $localeSwitcher),
             'brand' => $brand,
+            'legal_links' => $this->legal->links($locale->id, $locale->locale),
             'seo' => $this->seo->home($locale, $brand),
             'appearance' => $appearance,
             'typography' => $typography,

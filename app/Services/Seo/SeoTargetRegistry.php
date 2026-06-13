@@ -7,6 +7,7 @@ use App\Models\BlogPost;
 use App\Models\BlogTag;
 use App\Models\Locale;
 use App\Models\Page;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
@@ -23,8 +24,10 @@ class SeoTargetRegistry
             'inbox' => 'Inbox',
             'pricing' => 'Pricing',
             'blog_post' => 'Blog posts',
+            'blog_index' => 'Blog indexes',
             'blog_category' => 'Blog categories',
             'blog_tag' => 'Blog tags',
+            'blog_author' => 'Blog authors',
             'page' => 'Pages',
             'language_landing' => 'Language landing pages',
         ];
@@ -53,10 +56,12 @@ class SeoTargetRegistry
             $this->staticTarget($market, 'inbox', 'inbox', 'Inbox', '/'.$market->locale.'/inbox'),
             $this->staticTarget($market, 'pricing', 'pricing', 'Pricing', '/'.$market->locale.'/pricing'),
             $this->staticTarget($market, 'language_landing', $market->locale, $market->language_name.' landing page', '/'.$market->locale),
+            $this->staticTarget($market, 'blog_index', 'blog', $market->language_name.' blog index', '/'.$market->locale.'/blog'),
             ...$this->pageTargets($market)->all(),
             ...$this->blogPostTargets($market)->all(),
             ...$this->blogCategoryTargets($market)->all(),
             ...$this->blogTagTargets($market)->all(),
+            ...$this->blogAuthorTargets($market)->all(),
         ]))->values();
     }
 
@@ -183,6 +188,33 @@ class SeoTargetRegistry
                 'canonical_path' => '/'.$locale->locale.'/blog/tag/'.$tag->slug,
                 'targetable_type' => BlogTag::class,
                 'targetable_id' => $tag->id,
+            ]);
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    private function blogAuthorTargets(Locale $locale): Collection
+    {
+        if (! Schema::hasTable('users') || ! Schema::hasTable('blog_posts')) {
+            return collect();
+        }
+
+        return User::query()
+            ->where('author_profile_active', true)
+            ->whereNotNull('public_author_slug')
+            ->whereHas('posts', fn ($query) => $query->where('locale_id', $locale->id))
+            ->orderBy('display_name')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $author): array => [
+                'locale_id' => $locale->id,
+                'locale' => $locale,
+                'target_type' => 'blog_author',
+                'target_key' => 'blog-author:'.$author->id,
+                'label' => $author->display_name ?: $author->name,
+                'description' => 'Public author archive target.',
+                'canonical_path' => '/'.$locale->locale.'/blog/author/'.$author->public_author_slug,
+                'targetable_type' => User::class,
+                'targetable_id' => $author->id,
             ]);
     }
 }

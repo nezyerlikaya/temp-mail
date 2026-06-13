@@ -1,0 +1,1 @@
+@if (! empty($breadcrumbs))<nav class="mb-6 border-b border-stone-300 pb-3 text-sm" aria-label="Breadcrumb">@foreach ($breadcrumbs as $item)@if (! $loop->first)<span class="mx-2">›</span>@endif @if ($item['url'])<a href="{{ $item['url'] }}" class="font-bold underline">{{ $item['label'] }}</a>@else<span aria-current="page">{{ $item['label'] }}</span>@endif @endforeach</nav>@endif

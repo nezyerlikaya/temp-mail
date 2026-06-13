@@ -1,7 +1,2 @@
-@extends('themes.atlas.layout', ['title' => 'Blog'])
-
-@section('content')
-    <section class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-extrabold text-white">Developer Notes</h1>
-    </section>
-@endsection
+@extends('themes.atlas.layouts.public')
+@section('content')<section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">@include('themes.atlas.partials.breadcrumbs')<header class="max-w-3xl"><p class="font-mono text-xs uppercase text-lime-300">Journal / {{ strtoupper($locale['code']) }}</p><h1 class="mt-3 text-4xl font-extrabold text-white">{{ $page_heading }}</h1><p class="mt-4 leading-7 text-stone-300">{{ $page_description }}</p></header>@if ($posts['items'])<div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">@foreach ($posts['items'] as $post)@include('themes.atlas.partials.post-card', ['post' => $post])@endforeach</div>@else<div class="mt-8 border border-white/10 p-8"><h2 class="text-xl font-bold">{{ $translations['blog.empty.title'] }}</h2><p class="mt-2 text-stone-400">{{ $translations['blog.empty.body'] }}</p></div>@endif @include('themes.atlas.partials.pagination')</section>@endsection

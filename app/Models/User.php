@@ -94,4 +94,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ApiKey::class);
     }
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(BlogPost::class, 'author_id');
+    }
 }
