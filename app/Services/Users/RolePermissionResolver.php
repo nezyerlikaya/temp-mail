@@ -138,6 +138,8 @@ class RolePermissionResolver
                 'admin.theme-launch-center.view' => 'Theme Launch Center',
                 'admin.theme-launch-center.activate' => 'Activate public themes',
                 'admin.appearance-studio.view' => 'Appearance Studio',
+                'admin.appearance-studio.update' => 'Update Appearance Studio',
+                'admin.appearance-studio.reset' => 'Reset Appearance Studio',
                 'admin.typography-center.view' => 'Typography Center',
             ],
             'Trust' => [
