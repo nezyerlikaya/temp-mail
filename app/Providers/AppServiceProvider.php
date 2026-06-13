@@ -111,6 +111,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('restore post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.restore'));
         Gate::define('trash post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.trash'));
         Gate::define('permanently delete post', fn (User $user): bool => $permissions->allows($user, 'admin.blog-studio.delete'));
+        Gate::define('view comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.view'));
+        Gate::define('moderate comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.moderate'));
+        Gate::define('approve comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.approve'));
+        Gate::define('mark comments as spam', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.spam'));
         Gate::define('view taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.view'));
         Gate::define('create taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.create'));
         Gate::define('update taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.update'));

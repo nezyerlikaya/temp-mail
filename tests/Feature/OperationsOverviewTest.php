@@ -124,7 +124,7 @@ class OperationsOverviewTest extends TestCase
             ->assertDontSee('Failed admin logins')
             ->assertDontSee('Create backup')
             ->assertDontSee('Check for updates')
-            ->assertDontSee('Review pending comments');
+            ->assertSee('Review pending comments');
 
         $admin = User::factory()->admin()->create();
 

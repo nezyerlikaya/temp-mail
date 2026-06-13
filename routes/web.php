@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BlogStudioController;
 use App\Http\Controllers\Admin\BlogTaxonomyController;
+use App\Http\Controllers\Admin\CommentModerationController;
 use App\Http\Controllers\Admin\DashboardLiveMetricsController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\EmailTemplateController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\Admin\Users\AuthorProfileController;
 use App\Http\Controllers\Admin\Users\RolePermissionController;
 use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\CommentSubmissionController;
 use App\Http\Controllers\InstallerController;
 use App\Models\User;
 use App\Services\Admin\AdminNavigationRegistry;
@@ -72,6 +74,10 @@ Route::middleware('guest')->group(function (): void {
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
+
+Route::post('/blog/{post}/comments', [CommentSubmissionController::class, 'store'])
+    ->middleware('throttle:comments')
+    ->name('comments.store');
 
 Route::prefix('dashboard')
     ->middleware(['auth', 'can:access-admin'])
@@ -653,6 +659,15 @@ Route::prefix('dashboard')
         Route::get('seo-growth-center', [SeoGrowthCenterController::class, 'index'])
             ->middleware('can:admin.seo-growth-center.view')
             ->name('admin.seo-growth-center.index');
+        Route::get('comment-moderation', [CommentModerationController::class, 'index'])
+            ->middleware('can:view comments')
+            ->name('admin.comment-moderation.index');
+        Route::post('comment-moderation/{comment}/approve', [CommentModerationController::class, 'approve'])
+            ->middleware('can:approve comments')
+            ->name('admin.comment-moderation.approve');
+        Route::post('comment-moderation/{comment}/mark', [CommentModerationController::class, 'mark'])
+            ->middleware('can:mark comments as spam')
+            ->name('admin.comment-moderation.mark');
         Route::post('seo-growth-center/diagnostics', [SeoGrowthCenterController::class, 'runDiagnostics'])
             ->middleware('can:admin.seo-growth-center.diagnostics')
             ->name('admin.seo-growth-center.diagnostics.run');
@@ -686,7 +701,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.translation-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.translation-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.comment-moderation.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 
