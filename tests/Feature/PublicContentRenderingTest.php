@@ -24,6 +24,10 @@ class PublicContentRenderingTest extends TestCase
 {
     use RefreshDatabase;
 
+    private bool $hadInstallLock;
+
+    private ?string $originalInstallLock;
+
     private Locale $english;
 
     private Locale $arabic;
@@ -34,6 +38,9 @@ class PublicContentRenderingTest extends TestCase
 
         $this->withoutVite();
         Storage::fake('public');
+        $lockPath = app(InstallState::class)->lockPath();
+        $this->hadInstallLock = File::exists($lockPath);
+        $this->originalInstallLock = $this->hadInstallLock ? File::get($lockPath) : null;
         app(InstallState::class)->lock();
         app(TranslationStore::class)->syncRegistry();
         $this->english = $this->locale('en', 'English', 'ltr', true);
@@ -43,7 +50,12 @@ class PublicContentRenderingTest extends TestCase
 
     protected function tearDown(): void
     {
-        File::delete(app(InstallState::class)->lockPath());
+        $lockPath = app(InstallState::class)->lockPath();
+        if ($this->hadInstallLock) {
+            File::put($lockPath, $this->originalInstallLock ?? '');
+        } else {
+            File::delete($lockPath);
+        }
 
         parent::tearDown();
     }

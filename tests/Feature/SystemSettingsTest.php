@@ -21,6 +21,10 @@ class SystemSettingsTest extends TestCase
 
     private ?string $originalRecovery = null;
 
+    private bool $hadInstallLock;
+
+    private ?string $originalInstallLock;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -28,6 +32,9 @@ class SystemSettingsTest extends TestCase
 
         $this->recoveryPath = storage_path('app/installer-recovery.flag');
         $this->originalRecovery = file_exists($this->recoveryPath) ? file_get_contents($this->recoveryPath) : null;
+        $lockPath = app(InstallState::class)->lockPath();
+        $this->hadInstallLock = File::exists($lockPath);
+        $this->originalInstallLock = $this->hadInstallLock ? File::get($lockPath) : null;
 
         if (file_exists($this->recoveryPath)) {
             unlink($this->recoveryPath);
@@ -42,7 +49,12 @@ class SystemSettingsTest extends TestCase
             unlink($this->recoveryPath);
         }
 
-        File::delete(app(InstallState::class)->lockPath());
+        $lockPath = app(InstallState::class)->lockPath();
+        if ($this->hadInstallLock) {
+            File::put($lockPath, $this->originalInstallLock ?? '');
+        } else {
+            File::delete($lockPath);
+        }
 
         parent::tearDown();
     }

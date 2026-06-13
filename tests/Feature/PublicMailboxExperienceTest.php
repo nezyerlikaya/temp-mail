@@ -24,11 +24,18 @@ class PublicMailboxExperienceTest extends TestCase
 {
     use RefreshDatabase;
 
+    private bool $hadInstallLock;
+
+    private ?string $originalInstallLock;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->withoutVite();
+        $lockPath = app(InstallState::class)->lockPath();
+        $this->hadInstallLock = File::exists($lockPath);
+        $this->originalInstallLock = $this->hadInstallLock ? File::get($lockPath) : null;
         app(InstallState::class)->lock();
         app(TranslationStore::class)->syncRegistry();
         $this->locale();
@@ -37,7 +44,12 @@ class PublicMailboxExperienceTest extends TestCase
 
     protected function tearDown(): void
     {
-        File::delete(app(InstallState::class)->lockPath());
+        $lockPath = app(InstallState::class)->lockPath();
+        if ($this->hadInstallLock) {
+            File::put($lockPath, $this->originalInstallLock ?? '');
+        } else {
+            File::delete($lockPath);
+        }
         parent::tearDown();
     }
 

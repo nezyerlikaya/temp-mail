@@ -21,15 +21,16 @@ class InstallState
 
     public function isRecoveringEnvironment(): bool
     {
-        return file_exists($this->recoveryPath());
+        return ! $this->hasLock() && file_exists($this->recoveryPath());
     }
 
     public function isInstalled(): bool
     {
-        if ($this->isRecoveringEnvironment()) {
-            return false;
-        }
+        return $this->hasLock();
+    }
 
+    public function hasLock(): bool
+    {
         return file_exists($this->lockPath()) || file_exists($this->legacyLockPath());
     }
 

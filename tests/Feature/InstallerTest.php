@@ -83,6 +83,12 @@ class InstallerTest extends TestCase
             ->assertSee('MySQL');
     }
 
+    public function test_uninstalled_root_redirects_to_installer(): void
+    {
+        $this->get(route('home'))
+            ->assertRedirect(route('install.readiness'));
+    }
+
     public function test_database_page_renders(): void
     {
         $this->get(route('install.database'))
@@ -217,19 +223,27 @@ class InstallerTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_environment_recovery_reopens_installer_even_when_lock_exists(): void
+    public function test_stale_environment_recovery_does_not_reopen_installer_when_lock_exists(): void
     {
         app(InstallState::class)->lock();
         file_put_contents($this->recoveryPath, 'recovered_at=testing');
 
         $this->get(route('install.readiness'))
-            ->assertOk()
-            ->assertSee('System Readiness');
+            ->assertRedirect(route('login'));
     }
 
-    public function test_environment_recovery_blocks_non_installer_pages(): void
+    public function test_stale_environment_recovery_does_not_block_installed_pages(): void
     {
         app(InstallState::class)->lock();
+        file_put_contents($this->recoveryPath, 'recovered_at=testing');
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Sign in');
+    }
+
+    public function test_environment_recovery_blocks_non_installer_pages_without_install_lock(): void
+    {
         file_put_contents($this->recoveryPath, 'recovered_at=testing');
 
         $this->get(route('login'))

@@ -19,11 +19,18 @@ class PublicExperienceFoundationTest extends TestCase
 {
     use RefreshDatabase;
 
+    private bool $hadInstallLock;
+
+    private ?string $originalInstallLock;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->withoutVite();
+        $lockPath = app(InstallState::class)->lockPath();
+        $this->hadInstallLock = File::exists($lockPath);
+        $this->originalInstallLock = $this->hadInstallLock ? File::get($lockPath) : null;
         app(InstallState::class)->lock();
         app(TranslationStore::class)->syncRegistry();
         $this->seedLocales();
@@ -31,7 +38,12 @@ class PublicExperienceFoundationTest extends TestCase
 
     protected function tearDown(): void
     {
-        File::delete(app(InstallState::class)->lockPath());
+        $lockPath = app(InstallState::class)->lockPath();
+        if ($this->hadInstallLock) {
+            File::put($lockPath, $this->originalInstallLock ?? '');
+        } else {
+            File::delete($lockPath);
+        }
         File::delete(app(InstallState::class)->legacyLockPath());
 
         parent::tearDown();
@@ -41,6 +53,40 @@ class PublicExperienceFoundationTest extends TestCase
     {
         $this->get(route('home'))
             ->assertRedirect(route('public.home', ['locale' => 'en']));
+    }
+
+    public function test_installed_root_opens_active_public_theme_and_preserves_installer_lock(): void
+    {
+        $this->activateTheme('atlas');
+        $lockPath = app(InstallState::class)->lockPath();
+
+        $this->followingRedirects()
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('data-public-theme="atlas"', false)
+            ->assertSee('Create a private temporary inbox');
+
+        $this->assertFileExists($lockPath);
+    }
+
+    public function test_authenticated_admin_can_open_public_homepage(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('public.home', ['locale' => 'en']))
+            ->assertOk()
+            ->assertSee('Private temporary email in seconds');
+    }
+
+    public function test_inactive_locale_and_missing_optional_sections_never_reopen_installer(): void
+    {
+        $this->get('/de')->assertNotFound();
+
+        $this->get(route('public.home', ['locale' => 'en']))
+            ->assertOk()
+            ->assertDontSee('System Readiness')
+            ->assertSee('Create a private temporary inbox');
     }
 
     public function test_public_home_renders_horizon_with_prepared_theme_data_and_vite(): void

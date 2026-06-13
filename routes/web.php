@@ -41,27 +41,16 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CommentSubmissionController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\PublicBlogController;
+use App\Http\Controllers\PublicEntryController;
 use App\Http\Controllers\PublicMailboxController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\PublicSitemapController;
 use App\Models\User;
 use App\Services\Admin\AdminNavigationRegistry;
-use App\Services\Installer\InstallState;
-use App\Services\PublicSite\PublicLocaleResolver;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    if (! app(InstallState::class)->isInstalled()) {
-        return redirect()->route('install.readiness');
-    }
-
-    $locale = app(PublicLocaleResolver::class)->default();
-
-    return $locale
-        ? redirect()->route('public.home', ['locale' => $locale->locale])
-        : redirect()->route('login');
-})->name('home');
+Route::get('/', PublicEntryController::class)->name('home');
 
 Route::get('/{locale}', PublicSiteController::class)
     ->where('locale', '[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?')
