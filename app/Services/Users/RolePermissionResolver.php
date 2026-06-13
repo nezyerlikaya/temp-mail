@@ -32,6 +32,7 @@ class RolePermissionResolver
                 'admin.locale-launch-center.preview' => 'Preview locale readiness',
                 'admin.locale-launch-center.publish' => 'Publish or take locale offline',
                 'admin.translation-center.view' => 'Translation Center',
+                'admin.translation-center.manage' => 'Manage translation source keys',
             ],
             'Content' => [
                 'admin.page-studio.view' => 'Page Studio',

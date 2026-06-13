@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\SeoGrowthCenterController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SmtpConnectionController;
 use App\Http\Controllers\Admin\ThemeLaunchController;
+use App\Http\Controllers\Admin\TranslationCenterController;
 use App\Http\Controllers\Admin\TypographyCenterController;
 use App\Http\Controllers\Admin\UpdateCenterController;
 use App\Http\Controllers\Admin\Users\AuthorProfileController;
@@ -463,6 +464,15 @@ Route::prefix('dashboard')
         Route::patch('locale-launch-center/{locale:locale}/status', [LocaleLaunchController::class, 'status'])
             ->middleware('can:admin.locale-launch-center.publish')
             ->name('admin.locale-launch-center.status');
+        Route::get('translation-center', [TranslationCenterController::class, 'index'])
+            ->middleware('can:view translations')
+            ->name('admin.translation-center.index');
+        Route::post('translation-center', [TranslationCenterController::class, 'store'])
+            ->middleware('can:manage translation sources')
+            ->name('admin.translation-center.sources.store');
+        Route::put('translation-center/{translationSource}', [TranslationCenterController::class, 'update'])
+            ->middleware('can:update translation sources')
+            ->name('admin.translation-center.sources.update');
 
         Route::get('page-studio', [PageStudioController::class, 'index'])
             ->middleware('can:admin.page-studio.view')
@@ -667,7 +677,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.translation-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 
