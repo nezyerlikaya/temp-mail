@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\SecurityDefenseController;
 use App\Http\Controllers\Admin\SeoGrowthCenterController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SmtpConnectionController;
+use App\Http\Controllers\Admin\ThemeLaunchController;
 use App\Http\Controllers\Admin\UpdateCenterController;
 use App\Http\Controllers\Admin\Users\AuthorProfileController;
 use App\Http\Controllers\Admin\Users\RolePermissionController;
@@ -77,6 +78,12 @@ Route::prefix('dashboard')
         Route::get('product-analytics/export', [ProductAnalyticsController::class, 'export'])
             ->middleware('can:export analytics')
             ->name('admin.product-analytics.export');
+        Route::get('theme-launch-center', [ThemeLaunchController::class, 'index'])
+            ->middleware('can:admin.theme-launch-center.view')
+            ->name('admin.theme-launch-center.index');
+        Route::post('theme-launch-center/activate', [ThemeLaunchController::class, 'activate'])
+            ->middleware('can:activate theme')
+            ->name('admin.theme-launch-center.activate');
 
         Route::get('mailbox-operations', [MailboxOperationsController::class, 'index'])
             ->middleware('can:view mailboxes')
@@ -593,7 +600,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 

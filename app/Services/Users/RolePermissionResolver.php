@@ -136,6 +136,7 @@ class RolePermissionResolver
             ],
             'Brand' => [
                 'admin.theme-launch-center.view' => 'Theme Launch Center',
+                'admin.theme-launch-center.activate' => 'Activate public themes',
                 'admin.appearance-studio.view' => 'Appearance Studio',
                 'admin.typography-center.view' => 'Typography Center',
             ],
