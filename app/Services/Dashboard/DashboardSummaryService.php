@@ -5,8 +5,11 @@ namespace App\Services\Dashboard;
 use App\Models\User;
 use App\Services\Updates\UpdateChannelResolver;
 use App\Services\Users\RolePermissionResolver;
+use DateTimeInterface;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
+use Throwable;
 
 class DashboardSummaryService
 {
@@ -23,16 +26,58 @@ class DashboardSummaryService
     public function summary(User $user): array
     {
         $role = $this->permissions->roleFor($user)->value;
+        $key = 'dashboard.operations.summary.'.$role;
+        $seconds = 20;
 
-        return Cache::remember('dashboard.operations.summary.'.$role, now()->addSeconds(20), fn (): array => [
+        $summary = Cache::get($key);
+
+        if (! is_array($summary) || ! $this->normalizeLastUpdated($summary['last_updated'] ?? null) instanceof Carbon) {
+            $summary = $this->buildSummary($user);
+            Cache::put($key, $summary, now()->addSeconds($seconds));
+        }
+
+        $summary['last_updated'] = $this->normalizeLastUpdated($summary['last_updated']);
+
+        return $summary;
+    }
+
+    /** @return array<string, mixed> */
+    private function buildSummary(User $user): array
+    {
+        return [
             'metrics' => $this->metrics->metrics($this->includeSensitive($user)),
             'health' => $this->health->items(),
             'alerts' => $this->alerts->alerts($this->includeSensitive($user)),
             'activity' => $this->activity->recent($user),
             'quick_actions' => $this->quickActions($user),
-            'last_updated' => now(),
+            'last_updated' => now()->toIso8601String(),
             'cache_seconds' => 20,
-        ]);
+        ];
+    }
+
+    private function normalizeLastUpdated(mixed $value): ?Carbon
+    {
+        try {
+            if ($value instanceof Carbon) {
+                return $value;
+            }
+
+            if ($value instanceof DateTimeInterface) {
+                return Carbon::instance($value);
+            }
+
+            if (is_int($value)) {
+                return Carbon::createFromTimestamp($value);
+            }
+
+            if (is_string($value) && $value !== '') {
+                return Carbon::parse($value);
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
     }
 
     private function includeSensitive(User $user): bool

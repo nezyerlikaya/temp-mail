@@ -159,6 +159,7 @@ class OperationsOverviewTest extends TestCase
 
         $this->assertSame($first['last_updated']->timestamp, $second['last_updated']->timestamp);
         $this->assertSame(20, $second['cache_seconds']);
+        $this->assertIsString(Cache::get('dashboard.operations.summary.admin')['last_updated']);
     }
 
     public function test_dashboard_sources_keep_queries_out_of_blade_and_avoid_forbidden_patterns(): void
