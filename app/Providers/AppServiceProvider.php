@@ -115,6 +115,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('moderate comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.moderate'));
         Gate::define('approve comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.approve'));
         Gate::define('mark comments as spam', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.spam'));
+        Gate::define('reply to comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.reply'));
+        Gate::define('edit comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.edit'));
+        Gate::define('trash restore comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.trash'));
+        Gate::define('permanently delete comments', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.delete'));
+        Gate::define('manage comment blocklist', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.blocklist'));
+        Gate::define('update comment settings', fn (User $user): bool => $permissions->allows($user, 'admin.comment-moderation.settings'));
         Gate::define('view taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.view'));
         Gate::define('create taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.create'));
         Gate::define('update taxonomy', fn (User $user): bool => $permissions->allows($user, 'admin.taxonomy.update'));

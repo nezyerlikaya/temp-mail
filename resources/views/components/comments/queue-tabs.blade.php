@@ -6,7 +6,7 @@
         'approved' => ['label' => 'Approved', 'count' => $summary['approved']],
         'spam' => ['label' => 'Spam', 'count' => $summary['spam']],
         'trashed' => ['label' => 'Trash', 'count' => $summary['trashed']],
-        'all' => ['label' => 'All', 'count' => array_sum([$summary['pending'], $summary['approved'], $summary['spam'], $summary['trashed']])],
+        'all' => ['label' => 'All', 'count' => $summary['all'] ?? array_sum([$summary['pending'], $summary['approved'], $summary['spam'], $summary['trashed']])],
     ];
 @endphp
 

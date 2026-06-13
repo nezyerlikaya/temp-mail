@@ -14,7 +14,8 @@ class CommentModerationService
     public function queue(array $filters): LengthAwarePaginator
     {
         return Comment::query()
-            ->with(['post.locale', 'user', 'approver'])
+            ->with(['post.locale', 'user', 'approver', 'replies.approver', 'editHistories.editor'])
+            ->whereNull('parent_id')
             ->when(($filters['status'] ?? 'pending') !== 'all', fn (Builder $query) => $query->where('status', $filters['status']))
             ->when(filled($filters['post_id'] ?? null), fn (Builder $query) => $query->where('blog_post_id', $filters['post_id']))
             ->when(filled($filters['locale_id'] ?? null), fn (Builder $query) => $query->where('locale_id', $filters['locale_id']))
@@ -35,7 +36,7 @@ class CommentModerationService
             ->withQueryString();
     }
 
-    /** @return array{pending: int, approved: int, spam: int, trashed: int, today: int} */
+    /** @return array{pending: int, approved: int, spam: int, trashed: int, today: int, all: int} */
     public function summary(): array
     {
         return [
@@ -44,12 +45,21 @@ class CommentModerationService
             'spam' => Comment::query()->where('status', 'spam')->count(),
             'trashed' => Comment::query()->where('status', 'trashed')->count(),
             'today' => Comment::query()->whereDate('created_at', today())->count(),
+            'all' => Comment::query()->count(),
         ];
     }
 
     public function posts(): array
     {
         return BlogPost::query()->orderBy('title')->pluck('title', 'id')->all();
+    }
+
+    public function postControls()
+    {
+        return BlogPost::query()
+            ->orderBy('title')
+            ->limit(12)
+            ->get(['id', 'title', 'comments_enabled', 'comments_closed_at', 'comments_moderation_required']);
     }
 
     public function locales(): array

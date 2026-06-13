@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'blog_post_id',
     'parent_id',
+    'reply_depth',
     'user_id',
     'locale_id',
     'author_name',
@@ -23,8 +24,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'spam_score',
     'spam_provider',
     'provider_decision',
+    'manual_override',
+    'original_provider_decision',
     'approved_by',
     'approved_at',
+    'edited_by',
+    'edited_at',
     'trashed_at',
 ])]
 class Comment extends Model
@@ -34,7 +39,9 @@ class Comment extends Model
         return [
             'user_agent_metadata' => 'array',
             'spam_score' => 'integer',
+            'reply_depth' => 'integer',
             'approved_at' => 'datetime',
+            'edited_at' => 'datetime',
             'trashed_at' => 'datetime',
         ];
     }
@@ -57,6 +64,12 @@ class Comment extends Model
         return $this->hasMany(Comment::class, 'parent_id');
     }
 
+    /** @return HasMany<CommentEditHistory, $this> */
+    public function editHistories(): HasMany
+    {
+        return $this->hasMany(CommentEditHistory::class);
+    }
+
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
@@ -73,5 +86,11 @@ class Comment extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function editor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'edited_by');
     }
 }

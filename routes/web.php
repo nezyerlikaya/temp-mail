@@ -668,6 +668,36 @@ Route::prefix('dashboard')
         Route::post('comment-moderation/{comment}/mark', [CommentModerationController::class, 'mark'])
             ->middleware('can:mark comments as spam')
             ->name('admin.comment-moderation.mark');
+        Route::post('comment-moderation/{comment}/reply', [CommentModerationController::class, 'reply'])
+            ->middleware('can:reply to comments')
+            ->name('admin.comment-moderation.reply');
+        Route::put('comment-moderation/{comment}/edit', [CommentModerationController::class, 'edit'])
+            ->middleware('can:edit comments')
+            ->name('admin.comment-moderation.edit');
+        Route::post('comment-moderation/{comment}/trash', [CommentModerationController::class, 'trash'])
+            ->middleware('can:trash restore comments')
+            ->name('admin.comment-moderation.trash');
+        Route::post('comment-moderation/{comment}/restore', [CommentModerationController::class, 'restore'])
+            ->middleware('can:trash restore comments')
+            ->name('admin.comment-moderation.restore');
+        Route::delete('comment-moderation/{comment}', [CommentModerationController::class, 'destroy'])
+            ->middleware('can:permanently delete comments')
+            ->name('admin.comment-moderation.destroy');
+        Route::post('comment-moderation/{comment}/false-positive', [CommentModerationController::class, 'falsePositive'])
+            ->middleware('can:approve comments')
+            ->name('admin.comment-moderation.false-positive');
+        Route::post('comment-moderation/bulk', [CommentModerationController::class, 'bulk'])
+            ->middleware('can:moderate comments')
+            ->name('admin.comment-moderation.bulk');
+        Route::post('comment-moderation/{comment}/block', [CommentModerationController::class, 'block'])
+            ->middleware('can:manage comment blocklist')
+            ->name('admin.comment-moderation.block');
+        Route::put('comment-moderation/settings', [CommentModerationController::class, 'settings'])
+            ->middleware('can:update comment settings')
+            ->name('admin.comment-moderation.settings');
+        Route::put('comment-moderation/posts/{post}/settings', [CommentModerationController::class, 'postSettings'])
+            ->middleware('can:update comment settings')
+            ->name('admin.comment-moderation.posts.settings');
         Route::post('seo-growth-center/diagnostics', [SeoGrowthCenterController::class, 'runDiagnostics'])
             ->middleware('can:admin.seo-growth-center.diagnostics')
             ->name('admin.seo-growth-center.diagnostics.run');

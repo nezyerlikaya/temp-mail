@@ -6,12 +6,12 @@ use App\Models\Comment;
 use App\Models\User;
 use App\Services\Comments\CommentStatusService;
 
-class ApproveCommentAction
+class RestoreCommentAction
 {
     public function __construct(private readonly CommentStatusService $status) {}
 
     public function handle(User $actor, Comment $comment): Comment
     {
-        return $this->status->approve($actor, $comment);
+        return $this->status->restore($actor, $comment);
     }
 }

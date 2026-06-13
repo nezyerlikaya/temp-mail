@@ -24,13 +24,26 @@
     </section>
 
     <div class="space-y-5">
+        <x-comments.settings-panel :settings="$settings" :can-update-settings="$canUpdateSettings" />
+        <x-comments.post-settings :posts="$postControls" :can-update-settings="$canUpdateSettings" />
         <x-comments.queue-tabs :filters="$filters" :summary="$summary" />
         <x-comments.filter-bar :filters="$filters" :posts="$posts" :locales="$locales" />
 
         @if ($comments->count() > 0)
-            <div class="space-y-4">
+            <div class="space-y-4" x-data="{ selected: [] }">
+                <x-comments.bulk-actions :can-bulk="$canTrashRestore" />
                 @foreach ($comments as $comment)
-                    <x-comments.comment-card :comment="$comment" :can-approve="$canApprove" :can-mark-spam="$canMarkSpam" :can-view-private="$canViewPrivate" />
+                    <x-comments.comment-card
+                        :comment="$comment"
+                        :can-approve="$canApprove"
+                        :can-mark-spam="$canMarkSpam"
+                        :can-reply="$canReply"
+                        :can-edit="$canEdit"
+                        :can-trash-restore="$canTrashRestore"
+                        :can-delete="$canDelete"
+                        :can-manage-blocklist="$canManageBlocklist"
+                        :can-view-private="$canViewPrivate"
+                    />
                 @endforeach
             </div>
             <x-admin.pagination :paginator="$comments" />

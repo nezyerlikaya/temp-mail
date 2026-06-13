@@ -24,6 +24,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'published_at',
     'trashed_at',
     'preview_token',
+    'comments_enabled',
+    'comments_closed_at',
+    'comments_moderation_required',
 ])]
 class BlogPost extends Model
 {
@@ -39,6 +42,9 @@ class BlogPost extends Model
             'author_id' => 'integer',
             'published_at' => 'datetime',
             'trashed_at' => 'datetime',
+            'comments_enabled' => 'boolean',
+            'comments_closed_at' => 'datetime',
+            'comments_moderation_required' => 'boolean',
         ];
     }
 

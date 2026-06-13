@@ -6,6 +6,7 @@ use App\Models\BlogPost;
 use App\Models\Comment;
 use App\Models\User;
 use App\Services\Analytics\AnalyticsEventTracker;
+use App\Services\Comments\CommentSettingsStore;
 use App\Services\Comments\CommentStore;
 use App\Services\Notifications\NotificationService;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class SubmitCommentAction
         private readonly CommentStore $store,
         private readonly NotificationService $notifications,
         private readonly AnalyticsEventTracker $analytics,
+        private readonly CommentSettingsStore $settings,
     ) {}
 
     /** @param array<string, mixed> $payload */
@@ -33,7 +35,7 @@ class SubmitCommentAction
             ],
         ]);
 
-        if ($comment->status === 'pending') {
+        if ($comment->status === 'pending' && ($this->settings->settings()['notify_pending_admins'] ?? true)) {
             $this->notifications->dispatch([
                 'event_key' => 'new_pending_comment',
                 'type' => 'content',

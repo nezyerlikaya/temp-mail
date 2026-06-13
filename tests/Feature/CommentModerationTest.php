@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\BlogPost;
 use App\Models\Comment;
 use App\Models\Locale;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\UserAuditEvent;
 use App\Services\Localization\LocaleSettingsStore;
@@ -195,6 +196,157 @@ class CommentModerationTest extends TestCase
         $this->assertStringNotContainsString('Keep this public note.', $events->pluck('metadata')->toJson());
     }
 
+    public function test_moderators_can_reply_one_level_and_edit_with_history(): void
+    {
+        $moderator = User::factory()->create(['is_admin' => true, 'role' => 'moderator']);
+        $post = $this->postForLocale('en');
+        $comment = $this->comment($post);
+
+        $this->actingAs($moderator)
+            ->post(route('admin.comment-moderation.reply', $comment), [
+                'content' => 'Thanks for the report. We will review this.',
+            ])
+            ->assertRedirect();
+
+        $reply = Comment::query()->where('parent_id', $comment->id)->firstOrFail();
+        $this->assertSame(1, $reply->reply_depth);
+        $this->assertSame('approved', $reply->status);
+
+        $this->actingAs($moderator)
+            ->post(route('admin.comment-moderation.reply', $reply), [
+                'content' => 'Nested replies should not be accepted.',
+            ])
+            ->assertSessionHasErrors('content');
+
+        $this->actingAs($moderator)
+            ->put(route('admin.comment-moderation.edit', $comment), [
+                'content' => '<p>Edited moderator-safe content.</p>',
+            ])
+            ->assertRedirect();
+
+        $comment->refresh();
+        $this->assertNotNull($comment->edited_at);
+        $this->assertSame($moderator->id, $comment->edited_by);
+        $this->assertDatabaseHas('comment_edit_histories', [
+            'comment_id' => $comment->id,
+            'edited_by' => $moderator->id,
+            'new_excerpt' => 'Edited moderator-safe content.',
+        ]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'comment.edited', 'target_id' => $comment->id]);
+    }
+
+    public function test_trash_restore_and_owner_admin_permanent_delete_are_enforced(): void
+    {
+        $moderator = User::factory()->create(['is_admin' => true, 'role' => 'moderator']);
+        $admin = User::factory()->admin()->create();
+        $post = $this->postForLocale('en');
+        $comment = $this->comment($post);
+
+        $this->actingAs($moderator)
+            ->post(route('admin.comment-moderation.trash', $comment), ['confirm' => '1'])
+            ->assertRedirect();
+
+        $comment->refresh();
+        $this->assertSame('trashed', $comment->status);
+        $this->assertNotNull($comment->trashed_at);
+
+        $this->actingAs($moderator)
+            ->delete(route('admin.comment-moderation.destroy', $comment), ['confirm_delete' => '1'])
+            ->assertForbidden();
+
+        $this->actingAs($moderator)
+            ->post(route('admin.comment-moderation.restore', $comment))
+            ->assertRedirect();
+
+        $this->assertSame('pending', $comment->refresh()->status);
+
+        $this->actingAs($admin)
+            ->post(route('admin.comment-moderation.trash', $comment), ['confirm' => '1'])
+            ->assertRedirect();
+
+        $this->actingAs($admin)
+            ->delete(route('admin.comment-moderation.destroy', $comment), ['confirm_delete' => '1'])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('comments', ['id' => $comment->id]);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'comment.deleted']);
+    }
+
+    public function test_false_positive_recovery_preserves_original_provider_decision(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $post = $this->postForLocale('en');
+        $comment = $this->comment($post, [
+            'status' => 'spam',
+            'provider_decision' => 'spam',
+            'original_provider_decision' => 'spam',
+            'spam_score' => 90,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.comment-moderation.false-positive', $comment), ['status' => 'approved'])
+            ->assertRedirect();
+
+        $comment->refresh();
+        $this->assertSame('approved', $comment->status);
+        $this->assertSame('false_positive', $comment->manual_override);
+        $this->assertSame('spam', $comment->original_provider_decision);
+        $this->assertDatabaseHas('user_audit_events', ['event' => 'comment.false_positive_restored', 'target_id' => $comment->id]);
+    }
+
+    public function test_bulk_actions_settings_and_blocklist_use_safe_metadata(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $post = $this->postForLocale('en');
+        $first = $this->comment($post, ['author_email' => 'bulk-one@example.com', 'author_email_hash' => hash('sha256', 'bulk-one@example.com')]);
+        $second = $this->comment($post, ['author_email' => 'bulk-two@example.com', 'author_email_hash' => hash('sha256', 'bulk-two@example.com')]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.comment-moderation.bulk'), [
+                'action' => 'approve',
+                'comment_ids' => [$first->id, $second->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(2, Comment::query()->whereIn('id', [$first->id, $second->id])->where('status', 'approved')->count());
+
+        $this->actingAs($admin)
+            ->post(route('admin.comment-moderation.block', $first), ['type' => 'email'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('comment_blocklists', [
+            'type' => 'email',
+            'hash' => hash('sha256', 'bulk-one@example.com'),
+        ]);
+        $this->assertDatabaseMissing('comment_blocklists', ['label' => 'bulk-one@example.com']);
+
+        $this->actingAs($admin)
+            ->put(route('admin.comment-moderation.settings'), [
+                'comments_active' => '1',
+                'approval_required' => '1',
+                'auto_close_days' => 14,
+                'replies_active' => '1',
+                'minimum_length' => 5,
+                'maximum_length' => 800,
+                'maximum_links' => 2,
+                'blocked_words' => "casino\nloan offer",
+            ])
+            ->assertRedirect();
+
+        $payload = SystemSetting::query()->where('group', 'comments')->firstOrFail()->payload;
+        $this->assertSame(14, $payload['auto_close_days']);
+        $this->assertSame(['casino', 'loan offer'], $payload['blocked_words']);
+
+        $this->actingAs($admin)
+            ->put(route('admin.comment-moderation.posts.settings', $post), [
+                'comments_enabled' => '0',
+                'comments_moderation_required' => '1',
+            ])
+            ->assertRedirect();
+
+        $this->assertFalse($post->refresh()->comments_enabled);
+    }
+
     public function test_comment_submission_route_is_rate_limited(): void
     {
         $middleware = Route::getRoutes()->getByName('comments.store')?->gatherMiddleware() ?? [];
@@ -211,10 +363,17 @@ class CommentModerationTest extends TestCase
             app_path('Services/Comments/CommentStore.php'),
             app_path('Services/Comments/CommentModerationService.php'),
             app_path('Services/Comments/CommentSpamCheckService.php'),
+            app_path('Services/Comments/CommentSettingsStore.php'),
+            app_path('Services/Comments/CommentBlocklistService.php'),
+            app_path('Actions/Comments/CommentReplyAction.php'),
+            app_path('Actions/Comments/EditCommentAction.php'),
+            app_path('Actions/Comments/BulkCommentAction.php'),
             resource_path('views/dashboard/comment-moderation/index.blade.php'),
             resource_path('views/components/comments/comment-card.blade.php'),
             resource_path('views/components/comments/action-bar.blade.php'),
             resource_path('views/components/comments/filter-bar.blade.php'),
+            resource_path('views/components/comments/settings-panel.blade.php'),
+            resource_path('views/components/comments/bulk-actions.blade.php'),
         ];
 
         foreach ($files as $file) {
