@@ -1,7 +1,13 @@
-@extends('themes.atlas.layout', ['title' => 'Mailbox'])
+@extends('themes.atlas.layouts.public')
 
 @section('content')
-    <section class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-extrabold text-white">Mailbox</h1>
+    <section class="py-8">
+        <div class="mx-auto grid max-w-7xl gap-5 px-4 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:px-8">
+            <div class="space-y-5">
+                @include('themes.atlas.partials.mailbox-status')
+                @include('themes.atlas.partials.message-list')
+            </div>
+            @include('themes.atlas.partials.message-preview')
+        </div>
     </section>
 @endsection

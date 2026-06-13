@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CommentSubmissionController;
 use App\Http\Controllers\InstallerController;
+use App\Http\Controllers\PublicMailboxController;
 use App\Http\Controllers\PublicSiteController;
 use App\Models\User;
 use App\Services\Admin\AdminNavigationRegistry;
@@ -63,6 +64,24 @@ Route::get('/{locale}', PublicSiteController::class)
     ->where('locale', '[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?')
     ->middleware(['public.locale', 'public.locale.active', 'public.theme', 'public.direction'])
     ->name('public.home');
+
+Route::prefix('{locale}')
+    ->where(['locale' => '[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?'])
+    ->middleware(['public.locale', 'public.locale.active', 'public.theme', 'public.direction'])
+    ->group(function (): void {
+        Route::post('mailboxes', [PublicMailboxController::class, 'store'])
+            ->middleware('throttle:mailbox_creation')
+            ->name('public.mailbox.store');
+        Route::get('mailboxes/{mailbox}', [PublicMailboxController::class, 'show'])
+            ->middleware('public.mailbox.access')
+            ->name('public.mailbox.show');
+        Route::post('mailboxes/{mailbox}/refresh', [PublicMailboxController::class, 'refresh'])
+            ->middleware(['public.mailbox.access', 'throttle:inbox_refresh'])
+            ->name('public.mailbox.refresh');
+        Route::get('mailboxes/{mailbox}/messages/{message}', [PublicMailboxController::class, 'message'])
+            ->middleware('public.mailbox.access')
+            ->name('public.mailbox.messages.show');
+    });
 
 Route::prefix('install')->name('install.')->group(function (): void {
     Route::get('/', [InstallerController::class, 'readiness'])->name('readiness');

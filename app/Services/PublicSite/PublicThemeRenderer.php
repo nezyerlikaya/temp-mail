@@ -16,4 +16,14 @@ class PublicThemeRenderer
 
         return view($view, $data);
     }
+
+    /** @param array<string, mixed> $data */
+    public function mailbox(array $data): View
+    {
+        $view = $data['theme']['public_path'].'.mailbox';
+
+        abort_unless(ViewFacade::exists($view), 404);
+
+        return view($view, $data);
+    }
 }

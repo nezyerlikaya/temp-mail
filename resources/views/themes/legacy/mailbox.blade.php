@@ -1,7 +1,13 @@
-@extends('themes.legacy.layout', ['title' => 'Mailbox'])
+@extends('themes.legacy.layouts.public')
 
 @section('content')
-    <section class="mx-auto max-w-5xl px-4 py-10">
-        <h1 class="text-2xl font-extrabold text-stone-950">Mailbox</h1>
+    <section class="bg-yellow-50 py-8">
+        <div class="mx-auto grid max-w-5xl gap-5 px-4 lg:grid-cols-[.9fr_1.1fr]">
+            <div class="space-y-5">
+                @include('themes.legacy.partials.mailbox-status')
+                @include('themes.legacy.partials.message-list')
+            </div>
+            @include('themes.legacy.partials.message-preview')
+        </div>
     </section>
 @endsection

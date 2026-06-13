@@ -4,6 +4,9 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         @include('themes.horizon.partials.seo-meta')
+        @if (! empty($faq_schema))
+            <script type="application/ld+json">{!! json_encode($faq_schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @endif
         @if ($brand['favicon'])
             <link rel="icon" href="{{ $brand['favicon']['url'] }}">
         @endif
