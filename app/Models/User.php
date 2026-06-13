@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Services\Analytics\AnalyticsEventTracker;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -44,6 +45,19 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::created(function (User $user): void {
+            app(AnalyticsEventTracker::class)->trackSafely('user.registered', [
+                'user' => $user,
+                'metadata' => [
+                    'source' => $user->hasAdminAccess() ? 'admin' : 'product',
+                    'status' => (string) $user->status,
+                ],
+            ]);
+        });
+    }
 
     /**
      * Get the attributes that should be cast.

@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Models\Membership;
 use App\Models\User;
+use App\Services\Analytics\AnalyticsEventTracker;
 use App\Services\Audit\AuditLogger;
 
 class MembershipExpiryService
@@ -12,6 +13,7 @@ class MembershipExpiryService
         private readonly MembershipService $memberships,
         private readonly MembershipNotificationDispatcher $notifications,
         private readonly AuditLogger $audit,
+        private readonly AnalyticsEventTracker $analytics,
     ) {}
 
     /** @return array{expired: int, expiring: int} */
@@ -36,6 +38,14 @@ class MembershipExpiryService
                         'membership_id' => $membership->id,
                         'previous_plan_key' => $membership->plan->key,
                     ], ['module' => 'billing', 'action' => 'User downgraded to Free', 'target' => $membership]);
+                    $this->analytics->trackSafely('premium.expired', [
+                        'user' => $membership->user,
+                        'metadata' => [
+                            'source' => 'billing',
+                            'plan_key' => $membership->plan->key,
+                            'status' => $membership->status,
+                        ],
+                    ]);
                     $expired++;
 
                     return;

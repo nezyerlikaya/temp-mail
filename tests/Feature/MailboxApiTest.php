@@ -111,6 +111,7 @@ class MailboxApiTest extends TestCase
 
         $this->assertDatabaseHas('api_request_logs', ['key_prefix' => $key->key_prefix, 'response_status' => 429]);
         $this->assertDatabaseHas('abuse_signals', ['signal_type' => 'rate_limited_request', 'source_module' => 'api']);
+        $this->assertDatabaseHas('analytics_events', ['event_key' => 'security.rate_limited']);
     }
 
     public function test_invalid_key_and_validation_use_consistent_error_shape(): void

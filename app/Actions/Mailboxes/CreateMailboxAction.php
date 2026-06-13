@@ -4,6 +4,7 @@ namespace App\Actions\Mailboxes;
 
 use App\Models\Mailbox;
 use App\Models\User;
+use App\Services\Analytics\AnalyticsEventTracker;
 use App\Services\Audit\AuditLogger;
 use App\Services\Mailboxes\MailboxDomainResolver;
 use App\Services\Mailboxes\MailboxStore;
@@ -14,6 +15,7 @@ class CreateMailboxAction
         private readonly MailboxDomainResolver $domains,
         private readonly MailboxStore $store,
         private readonly AuditLogger $audit,
+        private readonly AnalyticsEventTracker $analytics,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -29,6 +31,18 @@ class CreateMailboxAction
             'owner_assigned' => $mailbox->user_id !== null,
             'locale_assigned' => $mailbox->locale_id !== null,
         ], ['module' => 'mailbox', 'action' => 'Mailbox created', 'target' => $mailbox]);
+        $this->analytics->trackSafely('mailbox.created', [
+            'user' => $mailbox->user_id,
+            'locale_id' => $mailbox->locale_id,
+            'domain' => $domain,
+            'ip' => $ip,
+            'metadata' => [
+                'source' => 'admin',
+                'mailbox_type' => $mailbox->mailbox_type,
+                'owner_assigned' => $mailbox->user_id !== null,
+                'locale_assigned' => $mailbox->locale_id !== null,
+            ],
+        ]);
 
         return $mailbox;
     }

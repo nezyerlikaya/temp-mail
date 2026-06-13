@@ -4,13 +4,14 @@ namespace App\Services\Mailboxes;
 
 use App\Models\Mailbox;
 use App\Models\MailboxMessage;
+use App\Services\Analytics\AnalyticsEventTracker;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class MailboxMessageService
 {
-    public function __construct(private readonly MessageSanitizer $sanitizer) {}
+    public function __construct(private readonly MessageSanitizer $sanitizer, private readonly AnalyticsEventTracker $analytics) {}
 
     public function list(Mailbox $mailbox, int $perPage = 20): LengthAwarePaginator
     {
@@ -34,6 +35,16 @@ class MailboxMessageService
                 'message_count' => $mailbox->messages()->whereNull('deleted_at')->count(),
                 'last_activity_at' => $message->received_at,
             ])->save();
+            $this->analytics->trackSafely('mailbox.email_received', [
+                'user' => $mailbox->user_id,
+                'locale_id' => $mailbox->locale_id,
+                'domain_id' => $mailbox->domain_id,
+                'metadata' => [
+                    'source' => 'mailbox',
+                    'mailbox_type' => $mailbox->mailbox_type,
+                    'status' => $mailbox->status,
+                ],
+            ]);
 
             return $message;
         });

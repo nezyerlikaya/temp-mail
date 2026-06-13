@@ -22,6 +22,7 @@ use App\Models\Locale;
 use App\Models\Mailbox;
 use App\Models\MailboxMessage;
 use App\Models\User;
+use App\Services\Analytics\AnalyticsEventTracker;
 use App\Services\Mailboxes\MailboxLifecycleService;
 use App\Services\Mailboxes\MailboxMessageService;
 use App\Services\Mailboxes\MailboxPrivacyGuard;
@@ -68,9 +69,16 @@ class MailboxOperationsController extends Controller
         return redirect()->route('admin.mailbox-operations.show', $mailbox)->with('status', 'Mailbox created.');
     }
 
-    public function show(MailboxFilterRequest $request, Mailbox $mailbox, MailboxLifecycleService $lifecycle, MailboxMessageService $messages): View
+    public function show(MailboxFilterRequest $request, Mailbox $mailbox, MailboxLifecycleService $lifecycle, MailboxMessageService $messages, AnalyticsEventTracker $analytics): View
     {
         $request->user()?->can('view mailbox') || abort(403);
+        $analytics->trackSafely('inbox.viewed', [
+            'user' => $mailbox->user_id,
+            'locale_id' => $mailbox->locale_id,
+            'domain_id' => $mailbox->domain_id,
+            'ip' => $request->ip(),
+            'metadata' => ['source' => 'admin', 'mailbox_type' => $mailbox->mailbox_type],
+        ]);
 
         return view('dashboard.mailbox-operations.show', [
             'adminUser' => $request->user(), 'mailbox' => $mailbox->load(['domain', 'user', 'locale', 'creator']),

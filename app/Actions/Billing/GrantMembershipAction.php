@@ -5,6 +5,7 @@ namespace App\Actions\Billing;
 use App\Models\Membership;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\Analytics\AnalyticsEventTracker;
 use App\Services\Audit\AuditLogger;
 use App\Services\Billing\MembershipService;
 use App\Services\Billing\MembershipStatusResolver;
@@ -17,6 +18,7 @@ class GrantMembershipAction
         private readonly MembershipService $memberships,
         private readonly MembershipStatusResolver $statuses,
         private readonly AuditLogger $audit,
+        private readonly AnalyticsEventTracker $analytics,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -50,6 +52,14 @@ class GrantMembershipAction
                 'preset' => $data['preset'] ?? 'custom',
                 'ends_at' => $membership->ends_at?->toIso8601String(),
             ], ['module' => 'billing', 'action' => 'Membership granted', 'target' => $membership]);
+            $this->analytics->trackSafely('premium.granted', [
+                'user' => $user,
+                'metadata' => [
+                    'source' => 'billing',
+                    'plan_key' => $plan->key,
+                    'status' => $membership->status,
+                ],
+            ]);
 
             return $membership;
         });

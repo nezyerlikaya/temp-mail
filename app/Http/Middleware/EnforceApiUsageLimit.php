@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Analytics\AnalyticsEventTracker;
 use App\Services\Api\ApiJsonResponse;
 use App\Services\Api\ApiRateLimitResolver;
 use App\Services\Api\ApiUsageTracker;
@@ -17,6 +18,7 @@ class EnforceApiUsageLimit
         private readonly ApiUsageTracker $usage,
         private readonly ApiJsonResponse $json,
         private readonly AbuseSignalService $signals,
+        private readonly AnalyticsEventTracker $analytics,
     ) {}
 
     /** @param Closure(Request): Response $next */
@@ -38,6 +40,16 @@ class EnforceApiUsageLimit
                     'endpoint' => $request->path(),
                     'method' => $request->method(),
                     'key_prefix' => $key->key_prefix,
+                ],
+            ]);
+            $this->analytics->trackSafely('security.rate_limited', [
+                'user' => $key->user,
+                'ip' => $request->ip(),
+                'metadata' => [
+                    'source' => 'api',
+                    'route' => $request->path(),
+                    'method' => $request->method(),
+                    'response_status' => 429,
                 ],
             ]);
             $this->usage->recordRequest($key, $request->path(), $request->method(), 429, $this->duration($started));

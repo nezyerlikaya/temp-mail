@@ -6,6 +6,7 @@ use App\Models\ApiKey;
 use App\Models\Domain;
 use App\Models\Mailbox;
 use App\Models\MailboxMessage;
+use App\Services\Analytics\AnalyticsEventTracker;
 use App\Services\Billing\PlanLimitResolver;
 use App\Services\Mailboxes\MailboxAddressService;
 use App\Services\Mailboxes\MailboxLifecycleService;
@@ -20,6 +21,7 @@ class MailboxApiService
         private readonly MailboxAddressService $addresses,
         private readonly MailboxLifecycleService $lifecycle,
         private readonly PlanLimitResolver $limits,
+        private readonly AnalyticsEventTracker $analytics,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -42,7 +44,7 @@ class MailboxApiService
         $address = $this->addresses->address($localPart, $domain);
         $this->addresses->ensureAvailable($address);
 
-        return Mailbox::query()->create([
+        $mailbox = Mailbox::query()->create([
             'domain_id' => $domain->id,
             'user_id' => $key->user_id,
             'address' => $address,
@@ -57,6 +59,19 @@ class MailboxApiService
             'api_key_id' => $key->id,
             'api_environment' => $key->environment,
         ])->load('domain');
+
+        $this->analytics->trackSafely('mailbox.created', [
+            'user' => $key->user,
+            'domain' => $domain,
+            'metadata' => [
+                'source' => 'api',
+                'environment' => $key->environment,
+                'mailbox_type' => $mailbox->mailbox_type,
+                'owner_assigned' => true,
+            ],
+        ]);
+
+        return $mailbox;
     }
 
     public function list(ApiKey $key, int $perPage = 15): LengthAwarePaginator
@@ -91,7 +106,18 @@ class MailboxApiService
             'expires_at' => now(),
         ])->save();
 
-        return $this->lifecycle->record($owned, 'api_mailbox_expired', 'Mailbox expired', 'Mailbox was expired by API request.')->load('domain');
+        $expired = $this->lifecycle->record($owned, 'api_mailbox_expired', 'Mailbox expired', 'Mailbox was expired by API request.')->load('domain');
+        $this->analytics->trackSafely('mailbox.expired', [
+            'user' => $key->user,
+            'domain_id' => $expired->domain_id,
+            'metadata' => [
+                'source' => 'api',
+                'environment' => $key->environment,
+                'mailbox_type' => $expired->mailbox_type,
+            ],
+        ]);
+
+        return $expired;
     }
 
     public function messages(ApiKey $key, Mailbox $mailbox, int $perPage = 15): ?LengthAwarePaginator
