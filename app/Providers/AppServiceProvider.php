@@ -225,6 +225,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('assign abuse case', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.assign'));
         Gate::define('update abuse case status', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.status'));
         Gate::define('view sensitive abuse reporter information', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.sensitive'));
+        Gate::define('view abuse case evidence', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.evidence.view'));
+        Gate::define('manage abuse evidence', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.evidence.manage'));
+        Gate::define('add internal abuse notes', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.notes'));
+        Gate::define('resolve or reject abuse case', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.resolve'));
+        Gate::define('reopen or archive abuse case', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.lifecycle'));
+        Gate::define('execute abuse operational actions', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.operational-actions'));
         Gate::define('view email templates', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.view'));
         Gate::define('create email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.create'));
         Gate::define('update email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.update'));

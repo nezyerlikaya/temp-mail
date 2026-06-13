@@ -287,6 +287,15 @@ Route::prefix('dashboard')
         Route::put('abuse-reports/{abuseReport}/status', [AbuseReportController::class, 'status'])
             ->middleware('can:update abuse case status')
             ->name('admin.abuse-reports.status');
+        Route::post('abuse-reports/{abuseReport}/notes', [AbuseReportController::class, 'note'])->name('admin.abuse-reports.notes.store');
+        Route::post('abuse-reports/{abuseReport}/evidence', [AbuseReportController::class, 'addEvidence'])->name('admin.abuse-reports.evidence.store');
+        Route::get('abuse-reports/{abuseReport}/evidence/{abuseEvidence}', [AbuseReportController::class, 'downloadEvidence'])->name('admin.abuse-reports.evidence.download');
+        Route::delete('abuse-reports/{abuseReport}/evidence/{abuseEvidence}', [AbuseReportController::class, 'removeEvidence'])->name('admin.abuse-reports.evidence.destroy');
+        Route::post('abuse-reports/{abuseReport}/resolve', [AbuseReportController::class, 'resolve'])->name('admin.abuse-reports.resolve');
+        Route::post('abuse-reports/{abuseReport}/reject', [AbuseReportController::class, 'reject'])->name('admin.abuse-reports.reject');
+        Route::post('abuse-reports/{abuseReport}/reopen', [AbuseReportController::class, 'reopen'])->name('admin.abuse-reports.reopen');
+        Route::post('abuse-reports/{abuseReport}/archive', [AbuseReportController::class, 'archive'])->name('admin.abuse-reports.archive');
+        Route::post('abuse-reports/{abuseReport}/operational-actions', [AbuseReportController::class, 'operationalAction'])->name('admin.abuse-reports.operational-actions.execute');
         Route::get('activity-audit-logs/export', [AuditLogController::class, 'export'])
             ->middleware('can:admin.activity-audit-logs.export')
             ->name('admin.activity-audit-logs.export');

@@ -14,6 +14,6 @@ class UpdateAbuseCaseStatusRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['status' => ['required', Rule::in(['new', 'reviewing', 'awaiting_information', 'resolved', 'rejected', 'archived'])]];
+        return ['status' => ['required', Rule::in(['new', 'reviewing', 'awaiting_information'])]];
     }
 }

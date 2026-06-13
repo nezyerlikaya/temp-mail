@@ -8,7 +8,7 @@ use App\Services\Audit\AuditLogger;
 
 class AbuseCaseService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly AbuseCaseTimelineService $timeline) {}
 
     public function assign(User $actor, AbuseReport $report, ?User $assignee): AbuseReport
     {
@@ -20,6 +20,10 @@ class AbuseCaseService
             'previous_assignee_id' => $previous,
             'assignee_id' => $assignee?->id,
         ], ['module' => 'trust', 'target' => $report]);
+        $this->timeline->record($report, $actor, 'case_reassigned', $assignee ? 'Case assigned to '.$assignee->name.'.' : 'Case assignment cleared.', [
+            'previous_assignee_id' => $previous,
+            'assignee_id' => $assignee?->id,
+        ]);
 
         return $report->refresh();
     }
@@ -35,6 +39,10 @@ class AbuseCaseService
             'status' => $status,
             'priority' => $report->priority,
         ], ['module' => 'trust', 'target' => $report]);
+        $this->timeline->record($report, $actor, 'status_changed', 'Review status changed to '.str($status)->replace('_', ' ')->toString().'.', [
+            'previous_status' => $previous,
+            'status' => $status,
+        ]);
 
         return $report->refresh();
     }

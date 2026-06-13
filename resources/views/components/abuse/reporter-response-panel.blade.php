@@ -1,0 +1,7 @@
+@props(['report', 'readiness', 'prefix' => 'resolution'])
+<fieldset class="rounded-lg border border-stone-200 p-4">
+    <legend class="px-1 text-sm font-extrabold text-stone-900">Reporter response readiness</legend>
+    <div class="mb-3 rounded-lg px-3 py-2 text-xs font-semibold {{ $readiness['status'] === 'ready' ? 'bg-emerald-50 text-emerald-900' : 'bg-amber-50 text-amber-900' }}">{{ $readiness['message'] }} Internal notes are never merged into this response.</div>
+    <label for="{{ $prefix }}-reporter-response-subject" class="text-sm font-bold text-stone-900">Response subject</label><input id="{{ $prefix }}-reporter-response-subject" name="reporter_response_subject" value="{{ old('reporter_response_subject', $report->reporter_response_subject) }}" maxlength="160" class="mt-2 min-h-11 w-full rounded-lg border border-stone-300 px-3 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
+    <label for="{{ $prefix }}-reporter-response-body" class="mt-3 block text-sm font-bold text-stone-900">Response draft</label><textarea id="{{ $prefix }}-reporter-response-body" name="reporter_response_body" rows="4" maxlength="5000" class="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">{{ old('reporter_response_body', $report->reporter_response_body) }}</textarea>
+</fieldset>
