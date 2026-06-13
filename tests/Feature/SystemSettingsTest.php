@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\Installer\InstallState;
 use App\Services\Settings\BrandAssetResolver;
 use App\Services\Settings\LegalPageResolver;
 use App\Services\Settings\SettingsResolver;
 use App\Services\Settings\SettingsStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
 use Tests\TestCase;
 
@@ -39,6 +41,8 @@ class SystemSettingsTest extends TestCase
         } elseif (file_exists($this->recoveryPath)) {
             unlink($this->recoveryPath);
         }
+
+        File::delete(app(InstallState::class)->lockPath());
 
         parent::tearDown();
     }
@@ -137,6 +141,8 @@ class SystemSettingsTest extends TestCase
     public function test_maintenance_mode_blocks_public_home_but_never_locks_admin_routes(): void
     {
         $owner = User::factory()->owner()->create();
+        app(InstallState::class)->lock();
+
         app(SettingsStore::class)->put('maintenance', [
             'enabled' => true,
             'message' => 'Service maintenance is in progress.',

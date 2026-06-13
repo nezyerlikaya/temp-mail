@@ -40,16 +40,29 @@ use App\Http\Controllers\Admin\Users\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CommentSubmissionController;
 use App\Http\Controllers\InstallerController;
+use App\Http\Controllers\PublicSiteController;
 use App\Models\User;
 use App\Services\Admin\AdminNavigationRegistry;
 use App\Services\Installer\InstallState;
+use App\Services\PublicSite\PublicLocaleResolver;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return app(InstallState::class)->isInstalled()
-        ? redirect()->route('login')
-        : redirect()->route('install.readiness');
+    if (! app(InstallState::class)->isInstalled()) {
+        return redirect()->route('install.readiness');
+    }
+
+    $locale = app(PublicLocaleResolver::class)->default();
+
+    return $locale
+        ? redirect()->route('public.home', ['locale' => $locale->locale])
+        : redirect()->route('login');
 })->name('home');
+
+Route::get('/{locale}', PublicSiteController::class)
+    ->where('locale', '[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})?')
+    ->middleware(['public.locale', 'public.locale.active', 'public.theme', 'public.direction'])
+    ->name('public.home');
 
 Route::prefix('install')->name('install.')->group(function (): void {
     Route::get('/', [InstallerController::class, 'readiness'])->name('readiness');
