@@ -143,6 +143,8 @@ class RolePermissionResolver
                 'admin.appearance-studio.publish' => 'Publish Appearance Studio',
                 'admin.appearance-studio.rollback' => 'Rollback Appearance Studio',
                 'admin.typography-center.view' => 'Typography Center',
+                'admin.typography-center.families' => 'Manage font families',
+                'admin.typography-center.assignments' => 'Manage font assignments',
             ],
             'Trust' => [
                 'admin.security-defense-center.view' => 'Security Defense Center',

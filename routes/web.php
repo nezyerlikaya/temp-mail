@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\SeoGrowthCenterController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SmtpConnectionController;
 use App\Http\Controllers\Admin\ThemeLaunchController;
+use App\Http\Controllers\Admin\TypographyCenterController;
 use App\Http\Controllers\Admin\UpdateCenterController;
 use App\Http\Controllers\Admin\Users\AuthorProfileController;
 use App\Http\Controllers\Admin\Users\RolePermissionController;
@@ -106,6 +107,21 @@ Route::prefix('dashboard')
         Route::post('appearance-studio/reset-token', [AppearanceStudioController::class, 'resetToken'])
             ->middleware('can:reset appearance')
             ->name('admin.appearance-studio.reset-token');
+        Route::get('typography-center', [TypographyCenterController::class, 'index'])
+            ->middleware('can:view typography')
+            ->name('admin.typography-center.index');
+        Route::put('typography-center/families/{fontFamily:slug}', [TypographyCenterController::class, 'updateFamily'])
+            ->middleware('can:manage font families')
+            ->name('admin.typography-center.families.update');
+        Route::post('typography-center/families/{fontFamily:slug}/activate', [TypographyCenterController::class, 'activate'])
+            ->middleware('can:manage font families')
+            ->name('admin.typography-center.families.activate');
+        Route::post('typography-center/families/{fontFamily:slug}/deactivate', [TypographyCenterController::class, 'deactivate'])
+            ->middleware('can:manage font families')
+            ->name('admin.typography-center.families.deactivate');
+        Route::put('typography-center/assignments', [TypographyCenterController::class, 'updateAssignments'])
+            ->middleware('can:manage font assignments')
+            ->name('admin.typography-center.assignments.update');
 
         Route::get('mailbox-operations', [MailboxOperationsController::class, 'index'])
             ->middleware('can:view mailboxes')
@@ -622,7 +638,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 

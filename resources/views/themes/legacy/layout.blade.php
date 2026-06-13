@@ -6,7 +6,7 @@
         <title>{{ $title ?? config('app.name', 'Temp Mail') }}</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-white font-sans text-stone-900 antialiased">
+    <body class="min-h-screen bg-white font-sans text-stone-900 antialiased" style="{{ $publicTypographyStyle ?? '' }}">
         @include('themes.legacy.partials.header')
         <main>
             @yield('content')

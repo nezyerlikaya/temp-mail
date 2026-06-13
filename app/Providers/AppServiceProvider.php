@@ -14,6 +14,7 @@ use App\Services\Notifications\NotificationService;
 use App\Services\Security\RateLimitPolicyStore;
 use App\Services\Security\RateLimitResolver;
 use App\Services\Settings\SettingsResolver;
+use App\Services\Typography\FontStackResolver;
 use App\Services\Users\RolePermissionResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -76,6 +77,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('preview appearance', fn (User $user): bool => $permissions->allows($user, 'admin.appearance-studio.view'));
         Gate::define('publish appearance', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('rollback appearance', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('view typography', fn (User $user): bool => $permissions->allows($user, 'admin.typography-center.view'));
+        Gate::define('manage font families', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('manage font assignments', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('preview-locale-readiness', fn (User $user): bool => $permissions->allows($user, 'admin.locale-launch-center.preview'));
         Gate::define('view pages', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.view'));
         Gate::define('create page', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.create'));
@@ -234,6 +238,18 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('notificationUnreadCount', $user ? app(NotificationService::class)->unreadCount($user) : 0);
         });
+
+        foreach (['horizon', 'atlas', 'legacy'] as $publicTheme) {
+            View::composer('themes.'.$publicTheme.'.layout', function (ViewContract $view) use ($publicTheme): void {
+                try {
+                    $typography = app(FontStackResolver::class)->resolve($publicTheme, app()->getLocale());
+
+                    $view->with('publicTypographyStyle', trim($typography['inline_style'].' font-family: var(--tm-font-body);'));
+                } catch (Throwable) {
+                    $view->with('publicTypographyStyle', '');
+                }
+            });
+        }
 
         foreach (['login', 'register', 'forgot_password', 'mailbox_creation', 'inbox_refresh', 'comments', 'contact_form', 'api_requests'] as $limiter) {
             RateLimiter::for($limiter, fn (Request $request) => app(RateLimitResolver::class)->for($limiter, $request));

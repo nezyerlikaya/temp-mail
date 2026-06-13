@@ -6,7 +6,7 @@
         <title>{{ $title ?? config('app.name', 'Temp Mail') }}</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-[#f6f8fb] font-sans text-stone-950 antialiased">
+    <body class="min-h-screen bg-[#f6f8fb] font-sans text-stone-950 antialiased" style="{{ $publicTypographyStyle ?? '' }}">
         @include('themes.horizon.partials.header')
         <main>
             @yield('content')
