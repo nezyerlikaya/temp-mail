@@ -1,0 +1,1 @@
+<div class="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-10 text-center"><p class="text-base font-extrabold text-stone-950">No abuse cases match this queue</p><p class="mt-2 text-sm text-stone-600">New human-submitted reports will appear here without mixing with automated security signals.</p></div>

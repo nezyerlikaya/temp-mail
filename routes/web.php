@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AbuseReportSubmissionController;
+use App\Http\Controllers\Admin\AbuseReportController;
 use App\Http\Controllers\Admin\ApiAccessController;
 use App\Http\Controllers\Admin\AppearanceStudioController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -78,6 +80,11 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 Route::post('/blog/{post}/comments', [CommentSubmissionController::class, 'store'])
     ->middleware('throttle:comments')
     ->name('comments.store');
+
+Route::get('/report-abuse', [AbuseReportSubmissionController::class, 'create'])->name('abuse-report.create');
+Route::post('/report-abuse', [AbuseReportSubmissionController::class, 'store'])
+    ->middleware('throttle:abuse_reports')
+    ->name('abuse-report.store');
 
 Route::prefix('dashboard')
     ->middleware(['auth', 'can:access-admin'])
@@ -268,6 +275,18 @@ Route::prefix('dashboard')
         Route::get('activity-audit-logs', [AuditLogController::class, 'index'])
             ->middleware('can:admin.activity-audit-logs.view')
             ->name('admin.activity-audit-logs.index');
+        Route::get('abuse-reports', [AbuseReportController::class, 'index'])
+            ->middleware('can:view abuse reports')
+            ->name('admin.abuse-reports.index');
+        Route::get('abuse-reports/{abuseReport}', [AbuseReportController::class, 'show'])
+            ->middleware('can:review abuse case')
+            ->name('admin.abuse-reports.show');
+        Route::put('abuse-reports/{abuseReport}/assignment', [AbuseReportController::class, 'assign'])
+            ->middleware('can:assign abuse case')
+            ->name('admin.abuse-reports.assign');
+        Route::put('abuse-reports/{abuseReport}/status', [AbuseReportController::class, 'status'])
+            ->middleware('can:update abuse case status')
+            ->name('admin.abuse-reports.status');
         Route::get('activity-audit-logs/export', [AuditLogController::class, 'export'])
             ->middleware('can:admin.activity-audit-logs.export')
             ->name('admin.activity-audit-logs.export');
@@ -731,7 +750,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.translation-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.comment-moderation.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.abuse-reports.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.translation-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.comment-moderation.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 

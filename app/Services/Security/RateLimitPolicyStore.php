@@ -86,6 +86,7 @@ class RateLimitPolicyStore
             'inbox_refresh' => ['label' => 'Inbox refresh', 'max_attempts' => 60, 'window_minutes' => 1, 'cooldown_minutes' => 1, 'strategy' => 'per_session', 'is_active' => true],
             'comments' => ['label' => 'Comment submission', 'max_attempts' => 3, 'window_minutes' => 5, 'cooldown_minutes' => 5, 'strategy' => 'per_ip', 'is_active' => true],
             'contact_form' => ['label' => 'Contact form', 'max_attempts' => 3, 'window_minutes' => 5, 'cooldown_minutes' => 5, 'strategy' => 'per_ip', 'is_active' => true],
+            'abuse_reports' => ['label' => 'Abuse report submission', 'max_attempts' => 3, 'window_minutes' => 10, 'cooldown_minutes' => 10, 'strategy' => 'per_ip', 'is_active' => true],
             'api_requests' => ['label' => 'API requests', 'max_attempts' => 60, 'window_minutes' => 1, 'cooldown_minutes' => 1, 'strategy' => 'per_user', 'is_active' => false],
         ];
     }

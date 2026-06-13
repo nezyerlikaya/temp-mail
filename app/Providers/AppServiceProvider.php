@@ -220,6 +220,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view security operations', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin', 'moderator'], true));
         Gate::define('review abuse signal', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin', 'moderator'], true));
         Gate::define('resolve abuse signal', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin', 'moderator'], true));
+        Gate::define('view abuse reports', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.view'));
+        Gate::define('review abuse case', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.review'));
+        Gate::define('assign abuse case', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.assign'));
+        Gate::define('update abuse case status', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.status'));
+        Gate::define('view sensitive abuse reporter information', fn (User $user): bool => $permissions->allows($user, 'admin.abuse-reports.sensitive'));
         Gate::define('view email templates', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.view'));
         Gate::define('create email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.create'));
         Gate::define('update email template', fn (User $user): bool => $permissions->allows($user, 'admin.email-templates.update'));
@@ -278,7 +283,7 @@ class AppServiceProvider extends ServiceProvider
             });
         }
 
-        foreach (['login', 'register', 'forgot_password', 'mailbox_creation', 'inbox_refresh', 'comments', 'contact_form', 'api_requests'] as $limiter) {
+        foreach (['login', 'register', 'forgot_password', 'mailbox_creation', 'inbox_refresh', 'comments', 'contact_form', 'abuse_reports', 'api_requests'] as $limiter) {
             RateLimiter::for($limiter, fn (Request $request) => app(RateLimitResolver::class)->for($limiter, $request));
         }
     }
