@@ -130,6 +130,9 @@ class RolePermissionResolver
                 'admin.blocked-lists.create' => 'Create blocked-list entries',
                 'admin.blocked-lists.update' => 'Update blocked-list entries',
                 'admin.blocked-lists.toggle' => 'Activate or deactivate blocked-list entries',
+                'admin.blocked-lists.bulk' => 'Bulk modify blocked-list entries',
+                'admin.blocked-lists.import' => 'Import blocked-list entries',
+                'admin.blocked-lists.export' => 'Export blocked-list entries',
             ],
             'Growth' => [
                 'admin.plans-memberships.view' => 'Plans & Memberships',
@@ -329,7 +332,7 @@ class RolePermissionResolver
                 'admin.comment-moderation.reply', 'admin.comment-moderation.edit',
                 'admin.comment-moderation.trash',
                 'admin.blocked-lists.view', 'admin.blocked-lists.create',
-                'admin.blocked-lists.update', 'admin.blocked-lists.toggle', 'admin.domains.view',
+                'admin.blocked-lists.update', 'admin.blocked-lists.toggle', 'admin.blocked-lists.bulk', 'admin.domains.view',
                 'admin.people-identity.view', 'admin.abuse-reports.view',
                 'admin.abuse-reports.review', 'admin.abuse-reports.assign',
                 'admin.abuse-reports.status',

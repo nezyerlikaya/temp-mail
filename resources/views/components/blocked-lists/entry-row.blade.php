@@ -7,6 +7,7 @@
                 <x-blocked-lists.status-badge :status="$entry->status" />
                 <x-blocked-lists.source-badge :source="$entry->source" />
                 <x-blocked-lists.expiration-badge :entry="$entry" />
+                <x-blocked-lists.expiry-warning :entry="$entry" />
             </div>
             <h3 class="mt-3 break-words text-base font-extrabold text-stone-950">
                 @if ($entry->entry_type === 'ip_address' && $canViewSensitiveIp)

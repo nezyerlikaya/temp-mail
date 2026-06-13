@@ -282,6 +282,21 @@ Route::prefix('dashboard')
         Route::post('blocked-lists', [BlockedListController::class, 'store'])
             ->middleware('can:create blocked entry')
             ->name('admin.blocked-lists.store');
+        Route::post('blocked-lists/test', [BlockedListController::class, 'test'])
+            ->middleware('can:run enforcement test')
+            ->name('admin.blocked-lists.test');
+        Route::post('blocked-lists/import', [BlockedListController::class, 'import'])
+            ->middleware('can:import blocked entries')
+            ->name('admin.blocked-lists.import');
+        Route::get('blocked-lists/export', [BlockedListController::class, 'export'])
+            ->middleware('can:export blocked entries')
+            ->name('admin.blocked-lists.export');
+        Route::post('blocked-lists/bulk', [BlockedListController::class, 'bulk'])
+            ->middleware('can:bulk modify blocked entries')
+            ->name('admin.blocked-lists.bulk');
+        Route::post('blocked-lists/expire', [BlockedListController::class, 'expire'])
+            ->middleware('can:bulk modify blocked entries')
+            ->name('admin.blocked-lists.expire');
         Route::put('blocked-lists/{blockedListEntry}', [BlockedListController::class, 'update'])
             ->middleware('can:update blocked entry')
             ->name('admin.blocked-lists.update');

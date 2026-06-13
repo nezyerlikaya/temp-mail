@@ -18,6 +18,7 @@ class BlockedListSearchService
             ->when(($filters['status'] ?? 'all') !== 'all', fn (Builder $query) => $query->where('status', $filters['status']))
             ->when(($filters['source'] ?? 'all') !== 'all', fn (Builder $query) => $query->where('source', $filters['source']))
             ->when(($filters['expiry'] ?? 'all') === 'expires', fn (Builder $query) => $query->whereNotNull('expires_at')->where('expires_at', '>', now()))
+            ->when(($filters['expiry'] ?? 'all') === 'expiring_soon', fn (Builder $query) => $query->whereNotNull('expires_at')->whereBetween('expires_at', [now(), now()->addDays(7)]))
             ->when(($filters['expiry'] ?? 'all') === 'expired', fn (Builder $query) => $query->whereNotNull('expires_at')->where('expires_at', '<=', now()))
             ->when(filled($filters['created_by'] ?? null), fn (Builder $query) => $query->where('created_by', $filters['created_by']))
             ->when(filled($filters['q'] ?? null), function (Builder $query) use ($filters): void {

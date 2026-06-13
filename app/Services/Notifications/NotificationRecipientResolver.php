@@ -61,7 +61,7 @@ class NotificationRecipientResolver
         return match ($module) {
             'content' => ['admin.comment-moderation.view', 'admin.page-studio.view', 'admin.blog-studio.view', 'admin.sections-studio.view'],
             'trust' => ['admin.security-defense-center.view', 'admin.abuse-reports.view', 'admin.activity-audit-logs.view'],
-            'mail-infrastructure' => ['admin.domains.view', 'admin.imap-smtp.view', 'admin.mailbox-operations.view'],
+            'mail-infrastructure' => ['admin.domains.view', 'admin.imap-smtp.view', 'admin.mailbox-operations.view', 'admin.blocked-lists.view'],
             'system' => ['admin.update-center.view', 'admin.backups-health.view', 'admin.settings.view'],
             'billing' => ['admin.plans-memberships.view'],
             default => ['admin.notifications.view'],

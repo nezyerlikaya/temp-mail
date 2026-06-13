@@ -5,6 +5,10 @@
     <x-blocked-lists.layout :summary="$summary" :notification-readiness="$notificationReadiness">
         <x-blocked-lists.type-tabs :groups="$groups" :active="$filters['group']" />
         <x-blocked-lists.filter-bar :filters="$filters" :types="$types" :statuses="$statuses" :sources="$sources" :administrators="$administrators" />
+        <div class="flex flex-wrap gap-2">
+            <x-blocked-lists.expired-filter :filters="$filters" />
+        </div>
+        <x-blocked-lists.bulk-actions :entries="$entries" :can-bulk-modify="$canBulkModify" />
         <section class="grid gap-5 xl:grid-cols-[1fr_420px]">
             <div class="space-y-3">
                 @forelse ($entries as $entry)
@@ -14,7 +18,12 @@
                 @endforelse
                 {{ $entries->links() }}
             </div>
-            <x-blocked-lists.entry-editor :entry="$editEntry" :types="$types" :statuses="$statuses" :sources="$sources" :can-create="$canCreate" :can-update="$canUpdate" />
+            <div class="space-y-5">
+                <x-blocked-lists.entry-editor :entry="$editEntry" :types="$types" :statuses="$statuses" :sources="$sources" :can-create="$canCreate" :can-update="$canUpdate" />
+                <x-blocked-lists.enforcement-test :types="$types" :can-run="$canRunEnforcementTest" :result="$matchResult" />
+                <x-blocked-lists.import-panel :can-import="$canImport" :preview="$importPreview" />
+                <x-blocked-lists.export-panel :can-export="$canExport" :filters="$filters" :can-view-sensitive-ip="$canViewSensitiveIp" />
+            </div>
         </section>
     </x-blocked-lists.layout>
 </x-admin.layout>

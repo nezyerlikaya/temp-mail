@@ -13,6 +13,7 @@ class BlockedListStore
     public function __construct(
         private readonly BlockedValueNormalizer $normalizer,
         private readonly AuditLogger $audit,
+        private readonly BlockedListCacheService $cache,
     ) {}
 
     /** @param array<string, mixed> $payload */
@@ -39,6 +40,7 @@ class BlockedListStore
         ]);
 
         $this->auditChange('blocked_lists.entry_created', $actor, $entry);
+        $this->cache->invalidate();
 
         return $entry->refresh();
     }
@@ -66,6 +68,7 @@ class BlockedListStore
         ])->save();
 
         $this->auditChange('blocked_lists.entry_updated', $actor, $entry);
+        $this->cache->invalidate();
 
         return $entry->refresh();
     }
@@ -75,6 +78,7 @@ class BlockedListStore
         $this->assertNoActiveDuplicate($entry->entry_type, $entry->normalized_hash, $entry);
         $entry->forceFill(['status' => 'active', 'updated_by' => $actor->id])->save();
         $this->auditChange('blocked_lists.entry_activated', $actor, $entry);
+        $this->cache->invalidate();
 
         return $entry->refresh();
     }
@@ -83,6 +87,7 @@ class BlockedListStore
     {
         $entry->forceFill(['status' => 'inactive', 'updated_by' => $actor->id])->save();
         $this->auditChange('blocked_lists.entry_deactivated', $actor, $entry);
+        $this->cache->invalidate();
 
         return $entry->refresh();
     }

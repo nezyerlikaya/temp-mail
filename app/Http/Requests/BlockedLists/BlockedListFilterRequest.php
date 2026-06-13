@@ -19,7 +19,7 @@ class BlockedListFilterRequest extends FormRequest
             'entry_type' => ['nullable', 'string', 'max:48'],
             'status' => ['nullable', Rule::in(['all', 'active', 'inactive', 'expired'])],
             'source' => ['nullable', Rule::in(['all', 'manual', 'abuse_report', 'security_review', 'comment_moderation'])],
-            'expiry' => ['nullable', Rule::in(['all', 'expires', 'expired'])],
+            'expiry' => ['nullable', Rule::in(['all', 'expires', 'expiring_soon', 'expired'])],
             'created_by' => ['nullable', 'integer', 'exists:users,id'],
             'q' => ['nullable', 'string', 'max:120'],
         ];

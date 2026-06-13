@@ -5,11 +5,15 @@ namespace App\Services\Comments;
 use App\Models\Comment;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\BlockedLists\BlockedListEnforcementService;
 use Illuminate\Support\Facades\DB;
 
 class CommentBlocklistService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly BlockedListEnforcementService $enforcement,
+    ) {}
 
     public function blocks(Comment $comment): bool
     {
@@ -18,11 +22,20 @@ class CommentBlocklistService
             'ip' => $comment->ip_hash,
         ]);
 
-        if ($hashes === []) {
-            return false;
+        $central = $this->enforcement->comment($comment->author_email, request()->ip(), $comment->content);
+
+        if ($central['decision'] === 'blocked') {
+            $this->audit->record('blocked_lists.comment_enforced', null, null, [
+                'comment_id' => $comment->id,
+                'decision' => $central['decision'],
+                'checked_type' => $central['checked_type'],
+                'rule_id' => $central['entry']['id'] ?? null,
+            ], ['module' => 'content', 'target' => $comment]);
+
+            return true;
         }
 
-        return DB::table('comment_blocklists')
+        return $hashes !== [] && DB::table('comment_blocklists')
             ->where(fn ($query) => collect($hashes)->each(fn (string $hash, string $type) => $query->orWhere(fn ($inner) => $inner->where('type', $type)->where('hash', $hash))))
             ->exists();
     }

@@ -5,6 +5,7 @@ namespace App\Services\Mailboxes;
 use App\Models\Domain;
 use App\Models\Mailbox;
 use App\Models\User;
+use App\Services\BlockedLists\BlockedListEnforcementService;
 use Illuminate\Support\Carbon;
 
 class MailboxStore
@@ -12,6 +13,7 @@ class MailboxStore
     public function __construct(
         private readonly MailboxAddressService $addresses,
         private readonly MailboxLifecycleService $lifecycle,
+        private readonly BlockedListEnforcementService $enforcement,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -19,6 +21,7 @@ class MailboxStore
     {
         $localPart = $this->addresses->normalizeLocalPart((string) $data['local_part']);
         $address = $this->addresses->address($localPart, $domain);
+        $this->enforcement->ensureMailboxCreationAllowed($address, $domain->domain_name, $ip);
         $this->addresses->ensureAvailable($address);
 
         return Mailbox::query()->create([

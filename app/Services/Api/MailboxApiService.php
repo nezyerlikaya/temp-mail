@@ -8,6 +8,7 @@ use App\Models\Mailbox;
 use App\Models\MailboxMessage;
 use App\Services\Analytics\AnalyticsEventTracker;
 use App\Services\Billing\PlanLimitResolver;
+use App\Services\BlockedLists\BlockedListEnforcementService;
 use App\Services\Mailboxes\MailboxAddressService;
 use App\Services\Mailboxes\MailboxLifecycleService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -22,6 +23,7 @@ class MailboxApiService
         private readonly MailboxLifecycleService $lifecycle,
         private readonly PlanLimitResolver $limits,
         private readonly AnalyticsEventTracker $analytics,
+        private readonly BlockedListEnforcementService $enforcement,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -42,6 +44,7 @@ class MailboxApiService
             ? $this->addresses->normalizeLocalPart((string) $data['local_part'])
             : Str::lower(Str::random(12));
         $address = $this->addresses->address($localPart, $domain);
+        $this->enforcement->ensureMailboxCreationAllowed($address, $domain->domain_name, request()->ip());
         $this->addresses->ensureAvailable($address);
 
         $mailbox = Mailbox::query()->create([

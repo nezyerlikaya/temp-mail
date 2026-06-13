@@ -28,7 +28,7 @@ class DashboardActivityService
                     'module' => $event->module ?: 'system',
                     'severity' => $event->severity ?: 'info',
                     'actor' => $event->actor?->name ?: 'System',
-                    'time' => $event->created_at,
+                    'time' => $event->created_at?->diffForHumans() ?? 'Just now',
                 ])
                 ->all();
         } catch (Throwable) {
