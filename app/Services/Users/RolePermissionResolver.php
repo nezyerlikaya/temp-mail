@@ -127,6 +127,9 @@ class RolePermissionResolver
                 'admin.api-access.view' => 'API Access',
                 'admin.api-access.manage' => 'Manage API access settings and keys',
                 'admin.integrations.view' => 'Integrations',
+                'admin.integrations.configure' => 'Configure integrations',
+                'admin.integrations.activate' => 'Activate or deactivate integrations',
+                'admin.integrations.reveal-secret' => 'Reveal integration secrets',
             ],
             'People' => [
                 'admin.people-identity.view' => 'People & Identity',

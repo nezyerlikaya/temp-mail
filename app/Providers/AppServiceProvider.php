@@ -185,6 +185,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view API keys', fn (User $user): bool => $permissions->allows($user, 'admin.api-access.view'));
         Gate::define('create own API key', fn (User $user): bool => app(ApiAccessPolicyService::class)->canCreateFor($user, $user));
         Gate::define('mutate own API key', fn (User $user, ApiKey $key): bool => app(ApiAccessPolicyService::class)->canMutate($user, $key));
+        Gate::define('view integrations', fn (User $user): bool => $permissions->allows($user, 'admin.integrations.view'));
+        Gate::define('configure integrations', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('activate deactivate integrations', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('reveal integration secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

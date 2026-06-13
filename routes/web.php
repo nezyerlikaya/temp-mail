@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\BlogTaxonomyController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\InboundMailConnectionController;
+use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\LocaleLaunchController;
 use App\Http\Controllers\Admin\MailboxOperationsController;
 use App\Http\Controllers\Admin\MailboxRulesController;
@@ -177,6 +178,22 @@ Route::prefix('dashboard')
             ->middleware('can:cancel downgrade membership')->name('admin.plans-memberships.memberships.cancel');
         Route::post('plans-memberships/memberships/{membership}/downgrade', [PlanMembershipController::class, 'downgrade'])
             ->middleware('can:cancel downgrade membership')->name('admin.plans-memberships.memberships.downgrade');
+
+        Route::get('integrations', [IntegrationController::class, 'index'])
+            ->middleware('can:view integrations')
+            ->name('admin.integrations.index');
+        Route::put('integrations/{integration}', [IntegrationController::class, 'update'])
+            ->middleware('can:configure integrations')
+            ->name('admin.integrations.update');
+        Route::post('integrations/{integration}/activate', [IntegrationController::class, 'activate'])
+            ->middleware('can:activate deactivate integrations')
+            ->name('admin.integrations.activate');
+        Route::post('integrations/{integration}/deactivate', [IntegrationController::class, 'deactivate'])
+            ->middleware('can:activate deactivate integrations')
+            ->name('admin.integrations.deactivate');
+        Route::get('integrations/{integration}/secrets/{field}', [IntegrationController::class, 'reveal'])
+            ->middleware('can:reveal integration secret')
+            ->name('admin.integrations.secrets.reveal');
 
         Route::get('api-access', [ApiAccessController::class, 'index'])
             ->middleware('can:view API keys')->name('admin.api-access.index');
@@ -641,7 +658,7 @@ Route::prefix('dashboard')
 
         foreach (app(AdminNavigationRegistry::class)->groups() as $group) {
             foreach ($group['items'] as $item) {
-                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
+                if (in_array($item['route'], ['dashboard', 'admin.mailbox-operations.index', 'admin.product-analytics.index', 'admin.theme-launch-center.index', 'admin.appearance-studio.index', 'admin.typography-center.index', 'admin.mailbox-rules.index', 'admin.plans-memberships.index', 'admin.integrations.index', 'admin.api-access.index', 'admin.people-identity.index', 'admin.roles-permissions.index', 'admin.author-profiles.index', 'admin.settings.index', 'admin.activity-audit-logs.index', 'admin.domains.index', 'admin.imap-smtp.index', 'admin.security-defense-center.index', 'admin.backups-health.index', 'admin.update-center.index', 'admin.notifications.index', 'admin.email-templates.index', 'admin.locale-launch-center.index', 'admin.page-studio.index', 'admin.blog-studio.index', 'admin.taxonomy.index', 'admin.sections-studio.index', 'admin.media-library.index', 'admin.seo-growth-center.index'], true)) {
                     continue;
                 }
 
