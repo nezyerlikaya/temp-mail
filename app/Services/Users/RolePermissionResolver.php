@@ -24,6 +24,7 @@ class RolePermissionResolver
                 'admin.mailbox-operations.empty' => 'Empty mailboxes',
                 'admin.mailbox-operations.message-state' => 'Manage mailbox message state',
                 'admin.product-analytics.view' => 'Product Analytics',
+                'admin.product-analytics.export' => 'Export Product Analytics',
             ],
             'Markets' => [
                 'admin.locale-launch-center.view' => 'Locale Launch Center',
