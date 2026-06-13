@@ -43,7 +43,7 @@ class IntegrationSettingsStore
             'payload' => $payload,
             'masked_secrets' => $maskedSecrets,
             'is_active' => $setting?->is_active ?? false,
-            'connection_status' => $setting?->connection_status ?? 'not_configured',
+            'connection_status' => $setting?->connection_status ?? 'not_tested',
             'last_tested_at' => $setting?->last_tested_at,
             'configuration_complete' => $complete,
             'checklist' => $checklist,
@@ -82,7 +82,7 @@ class IntegrationSettingsStore
                 'payload' => $payload,
                 'encrypted_secrets' => $mergedSecrets === [] ? $existing?->encrypted_secrets : $this->secrets->encrypt($mergedSecrets),
                 'is_active' => $existing?->is_active ?? false,
-                'connection_status' => $complete ? ($existing?->connection_status ?? 'ready') : 'missing_configuration',
+                'connection_status' => $complete ? $this->activeStatus($existing?->connection_status) : 'not_tested',
                 'test_history' => $existing?->test_history ?? [],
                 'last_tested_at' => $existing?->last_tested_at,
                 'updated_by' => $actor->id,
@@ -99,11 +99,12 @@ class IntegrationSettingsStore
             'environment' => $environment,
             'payload' => [],
             'encrypted_secrets' => null,
-            'connection_status' => 'missing_configuration',
+            'connection_status' => 'not_tested',
         ]);
 
         $setting->forceFill([
             'is_active' => true,
+            'connection_status' => $setting->connection_status === 'disabled' ? 'not_tested' : $this->activeStatus($setting->connection_status),
             'updated_by' => $actor->id,
         ])->save();
 
@@ -119,11 +120,12 @@ class IntegrationSettingsStore
             'environment' => $environment,
             'payload' => [],
             'encrypted_secrets' => null,
-            'connection_status' => 'not_configured',
+            'connection_status' => 'not_tested',
         ]);
 
         $setting->forceFill([
             'is_active' => false,
+            'connection_status' => 'disabled',
             'updated_by' => $actor->id,
         ])->save();
 
@@ -145,6 +147,11 @@ class IntegrationSettingsStore
             ->where('integration_key', $key)
             ->where('environment', $environment)
             ->first();
+    }
+
+    private function activeStatus(?string $status): string
+    {
+        return in_array($status, ['connected', 'degraded', 'failed'], true) ? $status : 'not_tested';
     }
 
     /** @return array<int, array{key: string, label: string, complete: bool, secret: bool}> */

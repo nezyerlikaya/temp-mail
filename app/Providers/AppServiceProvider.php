@@ -189,6 +189,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('configure integrations', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('activate deactivate integrations', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal integration secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');
+        Gate::define('view integration health', fn (User $user): bool => $permissions->allows($user, 'admin.integrations.view'));
+        Gate::define('test integration connection', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('retry integration test', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('view security settings', fn (User $user): bool => $permissions->allows($user, 'admin.security-defense-center.view'));
         Gate::define('update security settings', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('reveal security secret', fn (User $user): bool => $permissions->roleFor($user)->value === 'owner');

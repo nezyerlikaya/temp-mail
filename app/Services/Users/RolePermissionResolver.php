@@ -130,6 +130,8 @@ class RolePermissionResolver
                 'admin.integrations.configure' => 'Configure integrations',
                 'admin.integrations.activate' => 'Activate or deactivate integrations',
                 'admin.integrations.reveal-secret' => 'Reveal integration secrets',
+                'admin.integrations.health' => 'View integration health',
+                'admin.integrations.test' => 'Test integration connections',
             ],
             'People' => [
                 'admin.people-identity.view' => 'People & Identity',

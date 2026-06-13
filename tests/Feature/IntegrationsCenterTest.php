@@ -161,6 +161,7 @@ class IntegrationsCenterTest extends TestCase
     public function test_no_forbidden_patterns_and_route_is_real(): void
     {
         $this->assertTrue(Route::has('admin.integrations.index'));
+        $this->assertTrue(Route::has('admin.integrations.test'));
 
         $paths = [
             app_path('Services/Integrations'),
@@ -182,5 +183,99 @@ class IntegrationsCenterTest extends TestCase
         $this->assertStringNotContainsString('livewire', $source);
         $this->assertStringNotContainsString('127.0.0.1', $source);
         $this->assertStringNotContainsString('http://localhost', $source);
+    }
+
+    public function test_missing_configuration_connection_test_records_friendly_failure_without_secret_leak(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->post(route('admin.integrations.activate', 'stripe'), ['environment' => 'sandbox'])->assertRedirect();
+
+        $this->actingAs($admin)->post(route('admin.integrations.test', 'stripe'), [
+            'environment' => 'sandbox',
+        ])->assertRedirect(route('admin.integrations.index', ['integration' => 'stripe', 'environment' => 'sandbox']));
+
+        $setting = IntegrationSetting::query()->where('integration_key', 'stripe')->where('environment', 'sandbox')->firstOrFail();
+
+        $this->assertSame('failed', $setting->connection_status);
+        $this->assertCount(1, $setting->test_history);
+        $this->assertSame('missing_configuration', $setting->test_history[0]['error_code']);
+        $this->assertStringContainsString('Required configuration is incomplete', $setting->test_history[0]['message']);
+
+        $auditPayload = json_encode(DB::table('user_audit_events')->where('event', 'integrations.connection_tested')->latest('id')->first(), JSON_THROW_ON_ERROR);
+        $this->assertStringNotContainsString('secret', strtolower($auditPayload));
+    }
+
+    public function test_connection_test_records_connected_status_and_keeps_last_five_history(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $secret = 'sk_test_super_secret_value_123456789';
+
+        $this->actingAs($admin)->put(route('admin.integrations.update', 'stripe'), [
+            'environment' => 'sandbox',
+            'settings' => ['publishable_key' => 'pk_test_public'],
+            'secrets' => ['secret_key' => $secret],
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->post(route('admin.integrations.activate', 'stripe'), ['environment' => 'sandbox'])->assertRedirect();
+
+        foreach (range(1, 6) as $index) {
+            $this->actingAs($admin)->post(route('admin.integrations.test', 'stripe'), ['environment' => 'sandbox'])->assertRedirect();
+        }
+
+        $setting = IntegrationSetting::query()->where('integration_key', 'stripe')->where('environment', 'sandbox')->firstOrFail();
+
+        $this->assertSame('connected', $setting->connection_status);
+        $this->assertCount(5, $setting->test_history);
+        $this->assertSame('sandbox', $setting->test_history[0]['environment']);
+        $this->assertArrayHasKey('duration_ms', $setting->test_history[0]);
+        $this->assertStringNotContainsString($secret, json_encode($setting->test_history, JSON_THROW_ON_ERROR));
+        $this->assertStringNotContainsString($secret, json_encode(DB::table('user_audit_events')->where('event', 'integrations.connection_tested')->get()->all(), JSON_THROW_ON_ERROR));
+    }
+
+    public function test_dependency_warnings_render_for_active_integrations_without_enabling_modules(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->put(route('admin.integrations.update', 'stripe'), [
+            'environment' => 'sandbox',
+            'settings' => ['publishable_key' => 'pk_test_public'],
+            'secrets' => ['secret_key' => 'sk_test_secret'],
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->post(route('admin.integrations.activate', 'stripe'), ['environment' => 'sandbox'])->assertRedirect();
+
+        $this->actingAs($admin)->get(route('admin.integrations.index', ['integration' => 'stripe', 'environment' => 'sandbox']))
+            ->assertOk()
+            ->assertSee('Payment provider is active while payment mode remains manual')
+            ->assertSee('No checkout automation was enabled');
+    }
+
+    public function test_connection_test_respects_environment_and_owner_admin_permission(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $editor = User::factory()->editor()->create();
+
+        $this->actingAs($admin)->put(route('admin.integrations.update', 'stripe'), [
+            'environment' => 'production',
+            'settings' => ['publishable_key' => 'pk_live_public'],
+            'secrets' => ['secret_key' => 'sk_live_secret'],
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->post(route('admin.integrations.activate', 'stripe'), ['environment' => 'production'])->assertRedirect();
+        $this->actingAs($admin)->post(route('admin.integrations.test', 'stripe'), ['environment' => 'production'])->assertRedirect();
+
+        $this->actingAs($editor)->post(route('admin.integrations.test', 'stripe'), ['environment' => 'production'])->assertForbidden();
+
+        $this->assertDatabaseHas('integration_settings', [
+            'integration_key' => 'stripe',
+            'environment' => 'production',
+            'connection_status' => 'connected',
+        ]);
+        $this->assertDatabaseMissing('integration_settings', [
+            'integration_key' => 'stripe',
+            'environment' => 'sandbox',
+            'connection_status' => 'connected',
+        ]);
     }
 }

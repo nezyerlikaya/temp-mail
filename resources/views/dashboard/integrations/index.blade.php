@@ -37,9 +37,20 @@
                     <span class="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-extrabold text-stone-700 ring-1 ring-stone-200">{{ $environments[$selected['environment']] }}</span>
                 </div>
 
-                <x-integrations.dependency-warning :dependency="$dependency" />
+                <x-integrations.provider-readiness :summary="$healthSummary" :environment="$environments[$activeEnvironment]" />
+
+                <x-integrations.dependency-warning :warnings="$dependencyWarnings" />
 
                 <x-integrations.required-fields-checklist :items="$selected['checklist']" />
+
+                @if ($canViewHealth)
+                    <x-integrations.test-panel
+                        :integration="$selected"
+                        :environment="$activeEnvironment"
+                        :history="$healthHistory"
+                        :can-test="$canTest"
+                    />
+                @endif
 
                 <x-integrations.integration-settings-form
                     :integration="$selected"

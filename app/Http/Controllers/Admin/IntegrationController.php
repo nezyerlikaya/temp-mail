@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Integrations\ActivateIntegrationAction;
 use App\Actions\Integrations\DeactivateIntegrationAction;
+use App\Actions\Integrations\TestIntegrationConnectionAction;
 use App\Actions\Integrations\UpdateIntegrationSettingsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Integrations\IntegrationFilterRequest;
+use App\Http\Requests\Integrations\TestIntegrationConnectionRequest;
 use App\Http\Requests\Integrations\ToggleIntegrationRequest;
 use App\Http\Requests\Integrations\UpdateIntegrationSettingsRequest;
 use App\Services\Integrations\IntegrationDependencyResolver;
 use App\Services\Integrations\IntegrationFieldRegistry;
+use App\Services\Integrations\IntegrationHealthService;
 use App\Services\Integrations\IntegrationRegistry;
 use App\Services\Integrations\IntegrationSettingsStore;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +29,7 @@ class IntegrationController extends Controller
         IntegrationRegistry $registry,
         IntegrationSettingsStore $settings,
         IntegrationDependencyResolver $dependencies,
+        IntegrationHealthService $health,
     ): View {
         $category = (string) $request->validated('category', 'all');
         $environment = (string) $request->validated('environment', 'sandbox');
@@ -41,10 +45,14 @@ class IntegrationController extends Controller
             'activeEnvironment' => $environment,
             'integrations' => $cards,
             'selected' => $selected,
-            'dependency' => $dependencies->warningsFor($selected),
+            'dependencyWarnings' => $dependencies->warningsFor($selected),
+            'healthSummary' => $health->summary($category, $environment),
+            'healthHistory' => $health->history($selected['setting']),
             'canConfigure' => $request->user()?->can('configure integrations') ?? false,
             'canToggle' => $request->user()?->can('activate deactivate integrations') ?? false,
             'canReveal' => $request->user()?->can('reveal integration secret') ?? false,
+            'canTest' => $request->user()?->can('test integration connection') ?? false,
+            'canViewHealth' => $request->user()?->can('view integration health') ?? false,
         ]);
     }
 
@@ -76,6 +84,15 @@ class IntegrationController extends Controller
         $action->handle($request->user(), $integration, (string) $request->validated('environment'));
 
         return back()->with('status', 'Integration deactivated. Configuration was preserved.');
+    }
+
+    public function test(TestIntegrationConnectionRequest $request, string $integration, TestIntegrationConnectionAction $action): RedirectResponse
+    {
+        $setting = $action->handle($request->user(), $integration, (string) $request->validated('environment'));
+
+        return redirect()
+            ->route('admin.integrations.index', ['integration' => $integration, 'environment' => $setting->environment])
+            ->with('status', 'Connection test recorded with status: '.str($setting->connection_status)->replace('_', ' ')->headline().'.');
     }
 
     public function reveal(

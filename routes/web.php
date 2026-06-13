@@ -191,6 +191,9 @@ Route::prefix('dashboard')
         Route::post('integrations/{integration}/deactivate', [IntegrationController::class, 'deactivate'])
             ->middleware('can:activate deactivate integrations')
             ->name('admin.integrations.deactivate');
+        Route::post('integrations/{integration}/test', [IntegrationController::class, 'test'])
+            ->middleware('can:test integration connection')
+            ->name('admin.integrations.test');
         Route::get('integrations/{integration}/secrets/{field}', [IntegrationController::class, 'reveal'])
             ->middleware('can:reveal integration secret')
             ->name('admin.integrations.secrets.reveal');

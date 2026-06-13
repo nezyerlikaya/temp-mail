@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('integration_key');
             $table->string('environment')->default('sandbox');
             $table->boolean('is_active')->default(false);
-            $table->string('connection_status')->default('not_configured');
+            $table->string('connection_status')->default('not_tested');
             $table->json('payload')->nullable();
             $table->text('encrypted_secrets')->nullable();
             $table->json('test_history')->nullable();
