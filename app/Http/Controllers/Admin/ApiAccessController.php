@@ -14,16 +14,26 @@ use App\Http\Requests\Api\UpdateApiSettingsRequest;
 use App\Models\ApiKey;
 use App\Models\User;
 use App\Services\Api\ApiAccessPolicyService;
+use App\Services\Api\ApiDocumentationService;
+use App\Services\Api\ApiRateLimitResolver;
 use App\Services\Api\ApiScopeRegistry;
 use App\Services\Api\ApiSettingsStore;
+use App\Services\Api\ApiUsageTracker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ApiAccessController extends Controller
 {
-    public function index(Request $request, ApiSettingsStore $settings, ApiScopeRegistry $scopes, ApiAccessPolicyService $policy): View
-    {
+    public function index(
+        Request $request,
+        ApiSettingsStore $settings,
+        ApiScopeRegistry $scopes,
+        ApiAccessPolicyService $policy,
+        ApiDocumentationService $docs,
+        ApiUsageTracker $usage,
+        ApiRateLimitResolver $limits,
+    ): View {
         $user = $request->user();
         $canManage = $user?->can('manage API globally') ?? false;
         $keys = ApiKey::query()
@@ -42,6 +52,11 @@ class ApiAccessController extends Controller
                 : collect([$user]),
             'canManageGlobally' => $canManage,
             'canCreateOwnKey' => $user ? $policy->canCreateFor($user, $user) : false,
+            'documentation' => $docs->payload(),
+            'usageSummary' => $canManage
+                ? $usage->platformSummary($keys->sum(fn (ApiKey $key): int => $limits->monthlyLimit($key)))
+                : $usage->summary($user, 0),
+            'requestLogs' => $canManage ? $usage->recentPlatform() : $usage->recent($user),
         ]);
     }
 

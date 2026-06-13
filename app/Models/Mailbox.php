@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'created_ip_hash',
     'activity_timeline',
     'created_by',
+    'api_key_id',
+    'api_environment',
 ])]
 #[Hidden(['created_ip_hash'])]
 class Mailbox extends Model
@@ -54,6 +56,11 @@ class Mailbox extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
+    }
+
+    public function apiKey(): BelongsTo
+    {
+        return $this->belongsTo(ApiKey::class);
     }
 
     public function messages(): HasMany

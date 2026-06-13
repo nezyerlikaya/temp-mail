@@ -20,6 +20,7 @@
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div class="space-y-6">
+            <x-api.usage-cards :summary="$usageSummary" />
             <x-api.create-key-panel
                 :users="$users"
                 :scopes="$scopes"
@@ -35,12 +36,15 @@
                 @endforelse
                 @if($keys->hasPages())<div class="mt-5">{{ $keys->links() }}</div>@endif
             </x-admin.card>
+
+            <x-api.documentation-panel :documentation="$documentation" />
         </div>
 
         <aside class="space-y-6">
             <x-api.status-card :settings="$settings" :can-manage="$canManageGlobally" />
+            <x-api.request-log-sample :logs="$requestLogs" />
             <x-admin.card title="Security boundary" description="API scopes control programmatic Temp Mail access only. They never grant owner, admin, editor, moderator, or author permissions." />
-            <x-admin.card title="Deferred from this MVP" description="Mailbox/message API endpoints, OAuth apps, SDK generation, webhooks, and a full developer portal are intentionally out of scope." />
+            <x-admin.card title="Deferred from this MVP" description="OAuth apps, SDK generation, API webhooks, marketplace workflows, and a full developer portal remain intentionally out of scope." />
         </aside>
     </div>
 </x-admin.layout>
