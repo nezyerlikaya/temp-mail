@@ -52,15 +52,17 @@ class FontAssignmentService
                 }
             }
 
-            Locale::query()->orderBy('sort_order')->get()->each(function (Locale $locale): void {
-                $preset = $this->localePresetFor($locale->locale);
-                foreach ($preset as $usage => $slug) {
-                    FontAssignment::query()->firstOrCreate(
-                        ['scope' => 'locale', 'scope_key' => $locale->locale, 'usage' => $usage],
-                        ['font_family_slug' => $slug, 'fallback_stack' => $this->fallbackFor($slug)],
-                    );
-                }
-            });
+            if (! FontAssignment::query()->where('scope', 'locale')->exists()) {
+                Locale::query()->orderBy('sort_order')->get()->each(function (Locale $locale): void {
+                    $preset = $this->localePresetFor($locale->locale);
+                    foreach ($preset as $usage => $slug) {
+                        FontAssignment::query()->firstOrCreate(
+                            ['scope' => 'locale', 'scope_key' => $locale->locale, 'usage' => $usage],
+                            ['font_family_slug' => $slug, 'fallback_stack' => $this->fallbackFor($slug)],
+                        );
+                    }
+                });
+            }
         });
     }
 
@@ -141,6 +143,14 @@ class FontAssignmentService
                 );
             });
         });
+    }
+
+    public function resetLocaleOverride(Locale $locale, User $actor): int
+    {
+        return FontAssignment::query()
+            ->where('scope', 'locale')
+            ->where('scope_key', $locale->locale)
+            ->delete();
     }
 
     /** @return array<int, string> */

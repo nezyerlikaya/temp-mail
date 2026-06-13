@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Localization\LocaleSettingsStore;
 use App\Services\Typography\FontAssignmentService;
 use App\Services\Typography\FontCoverageService;
+use App\Services\Typography\FontPerformanceService;
 use App\Services\Typography\FontStackResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
@@ -38,6 +39,9 @@ class TypographyCenterTest extends TestCase
             ->assertSee('Global Assignment')
             ->assertSee('Theme Assignment')
             ->assertSee('Locale Overrides')
+            ->assertSee('Typography Preview')
+            ->assertSee('Script Coverage')
+            ->assertSee('Fallback Simulator')
             ->assertSee('Plus Jakarta Sans')
             ->assertSee('--tm-font-ui')
             ->assertDontSee('Module workspace coming next');
@@ -165,6 +169,85 @@ class TypographyCenterTest extends TestCase
         $this->actingAs($admin)->get(route('dashboard'))
             ->assertOk()
             ->assertDontSee('--tm-font-ui');
+    }
+
+    public function test_multilingual_preview_supports_required_samples_and_rtl_ltr_modes(): void
+    {
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->get(route('admin.typography-center.index', [
+            'locale' => 'ar',
+            'preview_language' => 'ar',
+            'preview_mode' => 'mobile',
+            'preview_direction' => 'rtl',
+        ]))
+            ->assertOk()
+            ->assertSee('Arabic')
+            ->assertSee('صندوق بريدك المؤقت جاهز')
+            ->assertSee('dir="rtl"', false)
+            ->assertSee('IBM Plex Sans Arabic');
+
+        $this->actingAs($admin)->get(route('admin.typography-center.index', [
+            'locale' => 'tr',
+            'preview_language' => 'tr',
+            'preview_direction' => 'ltr',
+        ]))
+            ->assertOk()
+            ->assertSee('Geçici posta kutunuz', false)
+            ->assertSee('dir="ltr"', false);
+    }
+
+    public function test_coverage_fallback_and_performance_diagnostics_report_risks(): void
+    {
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        app(FontAssignmentService::class)->ensureDefaults();
+
+        FontAssignment::query()->where('scope', 'locale')->where('scope_key', 'ar')->delete();
+        FontAssignment::query()->updateOrCreate(
+            ['scope' => 'theme', 'scope_key' => 'horizon', 'usage' => 'body'],
+            ['font_family_slug' => 'plus-jakarta-sans', 'fallback_stack' => []],
+        );
+        FontAssignment::query()->updateOrCreate(
+            ['scope' => 'theme', 'scope_key' => 'horizon', 'usage' => 'ui'],
+            ['font_family_slug' => 'inter', 'fallback_stack' => []],
+        );
+        FontAssignment::query()->updateOrCreate(
+            ['scope' => 'theme', 'scope_key' => 'horizon', 'usage' => 'heading'],
+            ['font_family_slug' => 'jetbrains-mono', 'fallback_stack' => []],
+        );
+        FontAssignment::query()->updateOrCreate(
+            ['scope' => 'theme', 'scope_key' => 'horizon', 'usage' => 'mono'],
+            ['font_family_slug' => 'manrope', 'fallback_stack' => []],
+        );
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->get(route('admin.typography-center.index', ['locale' => 'ar']))
+            ->assertOk()
+            ->assertSee('Missing fallback')
+            ->assertSee('misses arabic')
+            ->assertSee('Monospace fonts in heading or body can harm readability');
+
+        $summary = app(FontPerformanceService::class)->summary(app(FontStackResolver::class)->resolve('horizon', 'ar')['stacks']);
+        $this->assertNotEmpty($summary['warnings']);
+    }
+
+    public function test_owner_admin_can_reset_locale_override_and_audit_it(): void
+    {
+        app(LocaleSettingsStore::class)->ensureSeeded();
+        app(FontAssignmentService::class)->ensureDefaults();
+        $admin = User::factory()->admin()->create();
+
+        $this->assertDatabaseHas('font_assignments', ['scope' => 'locale', 'scope_key' => 'ar']);
+
+        $this->actingAs($admin)->post(route('admin.typography-center.locales.reset', ['locale' => 'ar']))
+            ->assertRedirect(route('admin.typography-center.index', ['locale' => 'ar']));
+
+        $this->assertDatabaseMissing('font_assignments', ['scope' => 'locale', 'scope_key' => 'ar']);
+        $this->assertDatabaseHas('user_audit_events', [
+            'event' => 'typography.locale_override_reset',
+            'actor_id' => $admin->id,
+        ]);
     }
 
     public function test_rtl_compatibility_warning_blocks_latin_only_locale_assignment(): void

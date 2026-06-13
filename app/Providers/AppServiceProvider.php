@@ -80,6 +80,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view typography', fn (User $user): bool => $permissions->allows($user, 'admin.typography-center.view'));
         Gate::define('manage font families', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('manage font assignments', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('preview typography', fn (User $user): bool => $permissions->allows($user, 'admin.typography-center.view'));
+        Gate::define('view typography diagnostics', fn (User $user): bool => $permissions->allows($user, 'admin.typography-center.view'));
+        Gate::define('reset locale font override', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('preview-locale-readiness', fn (User $user): bool => $permissions->allows($user, 'admin.locale-launch-center.preview'));
         Gate::define('view pages', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.view'));
         Gate::define('create page', fn (User $user): bool => $permissions->allows($user, 'admin.page-studio.create'));

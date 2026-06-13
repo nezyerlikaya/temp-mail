@@ -30,6 +30,15 @@
                 @endif
             </x-admin.card>
 
+            <x-typography.preview-panel
+                :preview="$preview"
+                :samples="$previewSamples"
+                :modes="$previewModes"
+                :directions="$previewDirections"
+                :selected-theme="$selectedTheme"
+                :selected-locale="$selectedLocale"
+            />
+
             <x-typography.assignment-panel
                 title="Global Assignment"
                 description="Baseline public font stack used when no theme or locale override exists."
@@ -77,12 +86,40 @@
                             :warnings="$coverageWarnings"
                             :can-manage="$canManageAssignments"
                         />
+
+                        <x-typography.reset-warning
+                            :locale="$selectedLocaleModel"
+                            :can-reset="$canResetLocaleOverride"
+                        />
                     @endif
                 @endif
             </x-admin.card>
         </div>
 
         <aside class="space-y-6">
+            @if ($canViewDiagnostics)
+                <x-typography.performance-summary :summary="$performanceSummary" />
+
+                <x-typography.coverage-grid
+                    :grid="$coverageGrid"
+                    :risks="$missingGlyphRisks"
+                    :scripts="$scripts"
+                    :rtl-summary="$rtlSummary"
+                />
+
+                <x-typography.pairing-warning :warnings="$pairingWarnings" />
+
+                <x-typography.fallback-simulator :simulation="$fallbackSimulation" />
+
+                <x-admin.card title="Language Readiness" description="Per-language typography readiness for active public font stacks.">
+                    <div class="space-y-3">
+                        @foreach ($readinessCards as $card)
+                            <x-typography.readiness-card :card="$card" />
+                        @endforeach
+                    </div>
+                </x-admin.card>
+            @endif
+
             <x-admin.card title="Resolved Stack" description="Runtime CSS variables generated from locale, theme, then global priority.">
                 <div class="space-y-4">
                     @foreach (($localeResolved ?? $globalResolved)['stacks'] as $stack)

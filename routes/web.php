@@ -122,6 +122,9 @@ Route::prefix('dashboard')
         Route::put('typography-center/assignments', [TypographyCenterController::class, 'updateAssignments'])
             ->middleware('can:manage font assignments')
             ->name('admin.typography-center.assignments.update');
+        Route::post('typography-center/locales/{locale:locale}/reset', [TypographyCenterController::class, 'resetLocaleOverride'])
+            ->middleware('can:reset locale font override')
+            ->name('admin.typography-center.locales.reset');
 
         Route::get('mailbox-operations', [MailboxOperationsController::class, 'index'])
             ->middleware('can:view mailboxes')

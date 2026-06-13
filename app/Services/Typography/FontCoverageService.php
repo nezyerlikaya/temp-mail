@@ -77,4 +77,53 @@ class FontCoverageService
             'rtl_ready' => $family->rtl_support,
         ];
     }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $resolvedStacks
+     * @return array<string, array<string, mixed>>
+     */
+    public function grid(array $resolvedStacks, Locale|string|null $locale = null): array
+    {
+        return collect($resolvedStacks)->map(function (array $stack, string $usage) use ($locale): array {
+            $font = $stack['font'] ?? null;
+
+            if (! $font instanceof FontFamily) {
+                return [
+                    'usage' => $usage,
+                    'font' => null,
+                    'supported' => [],
+                    'required' => $locale ? $this->scriptsForLocale($locale) : [],
+                    'missing' => ['unresolved'],
+                    'critical' => true,
+                ];
+            }
+
+            $summary = $this->coverageSummary($font, $locale);
+
+            return [
+                'usage' => $usage,
+                'font' => $font->name,
+                'supported' => $summary['supported'],
+                'required' => $summary['required'],
+                'missing' => $summary['missing'],
+                'critical' => $summary['missing'] !== [],
+            ];
+        })->all();
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $resolvedStacks
+     * @return array<int, array{level: string, message: string}>
+     */
+    public function missingGlyphRisks(array $resolvedStacks, Locale|string|null $locale = null): array
+    {
+        return collect($this->grid($resolvedStacks, $locale))
+            ->filter(fn (array $row): bool => $row['missing'] !== [])
+            ->map(fn (array $row): array => [
+                'level' => $row['critical'] ? 'warning' : 'notice',
+                'message' => strtoupper($row['usage']).' font '.($row['font'] ?? 'unresolved').' misses '.implode(', ', $row['missing']).'.',
+            ])
+            ->values()
+            ->all();
+    }
 }

@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Typography\ActivateFontFamilyAction;
 use App\Actions\Typography\DeactivateFontFamilyAction;
+use App\Actions\Typography\ResetLocaleFontOverrideAction;
 use App\Actions\Typography\UpdateFontAssignmentAction;
 use App\Actions\Typography\UpdateFontFamilyAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Typography\PreviewTypographyRequest;
+use App\Http\Requests\Typography\ResetLocaleFontOverrideRequest;
 use App\Http\Requests\Typography\ToggleFontFamilyRequest;
 use App\Http\Requests\Typography\UpdateFontAssignmentRequest;
 use App\Http\Requests\Typography\UpdateFontFamilyRequest;
@@ -15,32 +18,41 @@ use App\Models\Locale;
 use App\Services\Themes\ThemeManager;
 use App\Services\Typography\FontAssignmentService;
 use App\Services\Typography\FontCoverageService;
+use App\Services\Typography\FontFallbackSimulator;
+use App\Services\Typography\FontPairingService;
+use App\Services\Typography\FontPerformanceService;
+use App\Services\Typography\FontPreviewService;
 use App\Services\Typography\FontRegistry;
 use App\Services\Typography\FontStackResolver;
+use App\Services\Typography\TypographyReadinessService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 class TypographyCenterController extends Controller
 {
     public function index(
-        Request $request,
+        PreviewTypographyRequest $request,
         FontAssignmentService $fonts,
         FontRegistry $registry,
         FontStackResolver $resolver,
         FontCoverageService $coverage,
+        FontPreviewService $preview,
+        FontPerformanceService $performance,
+        FontPairingService $pairing,
+        FontFallbackSimulator $fallbacks,
+        TypographyReadinessService $readiness,
         ThemeManager $themes,
     ): View {
         $cards = $themes->cards();
         $activeTheme = $themes->active()->slug;
-        $selectedTheme = (string) $request->query('theme', $activeTheme);
+        $selectedTheme = (string) $request->validated('theme', $activeTheme);
         if (! $cards->pluck('slug')->contains($selectedTheme)) {
             $selectedTheme = $activeTheme;
         }
 
         $locales = Locale::query()->orderByDesc('is_default')->orderBy('sort_order')->orderBy('language_name')->get();
-        $selectedLocale = (string) $request->query('locale', $locales->first()?->locale ?? '');
+        $selectedLocale = (string) $request->validated('locale', $locales->first()?->locale ?? '');
         if ($selectedLocale !== '' && ! $locales->pluck('locale')->contains($selectedLocale)) {
             $selectedLocale = $locales->first()?->locale ?? '';
         }
@@ -49,6 +61,10 @@ class TypographyCenterController extends Controller
         $families = $fonts->families();
         $activeFamilies = $families->where('is_active', true)->values();
         $selectedLocaleModel = $selectedLocale !== '' ? $locales->firstWhere('locale', $selectedLocale) : null;
+        $resolved = $selectedLocale !== '' ? $resolver->resolve($selectedTheme, $selectedLocale) : $resolver->resolve($selectedTheme);
+        $previewLanguage = (string) $request->validated('preview_language', $selectedLocale ?: 'en');
+        $previewMode = (string) $request->validated('preview_mode', 'desktop');
+        $previewDirection = (string) $request->validated('preview_direction', 'auto');
 
         return view('dashboard.typography-center.index', [
             'adminUser' => $request->user(),
@@ -67,10 +83,23 @@ class TypographyCenterController extends Controller
             'selectedLocaleModel' => $selectedLocaleModel,
             'assignments' => $assignments,
             'globalResolved' => $resolver->resolve($selectedTheme),
-            'localeResolved' => $selectedLocale !== '' ? $resolver->resolve($selectedTheme, $selectedLocale) : null,
+            'localeResolved' => $selectedLocale !== '' ? $resolved : null,
+            'preview' => $preview->build($selectedTheme, $selectedLocaleModel ?? $selectedLocale, $previewLanguage, $previewMode, $previewDirection),
+            'previewSamples' => $preview->samples(),
+            'previewModes' => $preview->modes(),
+            'previewDirections' => $preview->directions(),
+            'coverageGrid' => $coverage->grid($resolved['stacks'], $selectedLocaleModel ?? $selectedLocale),
+            'missingGlyphRisks' => $coverage->missingGlyphRisks($resolved['stacks'], $selectedLocaleModel ?? $selectedLocale),
+            'performanceSummary' => $performance->summary($resolved['stacks']),
+            'pairingWarnings' => $pairing->warnings($resolved['stacks']),
+            'fallbackSimulation' => $fallbacks->simulate($resolved['stacks'], $selectedTheme, $selectedLocale ?: null),
+            'readinessCards' => $readiness->languageCards($locales, $selectedTheme),
+            'rtlSummary' => $readiness->rtlSummary($locales, $selectedTheme),
             'coverageWarnings' => $this->coverageWarnings($coverage, $families, $selectedLocaleModel),
             'canManageFamilies' => $request->user()?->can('manage font families') ?? false,
             'canManageAssignments' => $request->user()?->can('manage font assignments') ?? false,
+            'canViewDiagnostics' => $request->user()?->can('view typography diagnostics') ?? false,
+            'canResetLocaleOverride' => $request->user()?->can('reset locale font override') ?? false,
         ]);
     }
 
@@ -101,6 +130,15 @@ class TypographyCenterController extends Controller
         $action($validated['scope'], $validated['scope_key'], $validated['assignments'], $request->user());
 
         return back()->with('status', 'Typography assignments saved.');
+    }
+
+    public function resetLocaleOverride(ResetLocaleFontOverrideRequest $request, Locale $locale, ResetLocaleFontOverrideAction $action): RedirectResponse
+    {
+        $action($locale, $request->user());
+
+        return redirect()
+            ->route('admin.typography-center.index', ['locale' => $locale->locale])
+            ->with('status', 'Locale font override reset. Theme and global assignments now apply.');
     }
 
     /**

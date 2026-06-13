@@ -145,6 +145,8 @@ class RolePermissionResolver
                 'admin.typography-center.view' => 'Typography Center',
                 'admin.typography-center.families' => 'Manage font families',
                 'admin.typography-center.assignments' => 'Manage font assignments',
+                'admin.typography-center.diagnostics' => 'View typography diagnostics',
+                'admin.typography-center.reset-locale' => 'Reset locale typography overrides',
             ],
             'Trust' => [
                 'admin.security-defense-center.view' => 'Security Defense Center',
