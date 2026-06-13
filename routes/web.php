@@ -470,6 +470,15 @@ Route::prefix('dashboard')
         Route::post('translation-center', [TranslationCenterController::class, 'store'])
             ->middleware('can:manage translation sources')
             ->name('admin.translation-center.sources.store');
+        Route::post('translation-center/editor/save', [TranslationCenterController::class, 'save'])
+            ->middleware('can:edit translations')
+            ->name('admin.translation-center.translations.save');
+        Route::post('translation-center/editor/review', [TranslationCenterController::class, 'review'])
+            ->middleware('can:review translations')
+            ->name('admin.translation-center.translations.review');
+        Route::post('translation-center/editor/publish', [TranslationCenterController::class, 'publish'])
+            ->middleware('can:publish translations')
+            ->name('admin.translation-center.translations.publish');
         Route::put('translation-center/{translationSource}', [TranslationCenterController::class, 'update'])
             ->middleware('can:update translation sources')
             ->name('admin.translation-center.sources.update');

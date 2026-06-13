@@ -12,9 +12,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'value',
     'status',
     'updated_by',
+    'reviewed_by',
+    'reviewed_at',
+    'published_by',
+    'published_at',
 ])]
 class TranslationValue extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'reviewed_at' => 'datetime',
+            'published_at' => 'datetime',
+        ];
+    }
+
     public function source(): BelongsTo
     {
         return $this->belongsTo(TranslationSource::class, 'translation_source_id');

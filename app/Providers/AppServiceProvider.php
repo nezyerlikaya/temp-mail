@@ -71,6 +71,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view translations', fn (User $user): bool => $permissions->allows($user, 'admin.translation-center.view'));
         Gate::define('manage translation sources', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('update translation sources', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
+        Gate::define('edit translations', fn (User $user): bool => $permissions->allows($user, 'admin.translation-center.edit'));
+        Gate::define('review translations', fn (User $user): bool => $permissions->allows($user, 'admin.translation-center.review'));
+        Gate::define('publish translations', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));
         Gate::define('view live metrics', fn (User $user): bool => $permissions->allows($user, 'admin.operations.view'));
         Gate::define('view analytics', fn (User $user): bool => $permissions->allows($user, 'admin.product-analytics.view'));
         Gate::define('export analytics', fn (User $user): bool => in_array($permissions->roleFor($user)->value, ['owner', 'admin'], true));

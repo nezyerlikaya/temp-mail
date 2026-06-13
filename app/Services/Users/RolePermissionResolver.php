@@ -33,6 +33,9 @@ class RolePermissionResolver
                 'admin.locale-launch-center.publish' => 'Publish or take locale offline',
                 'admin.translation-center.view' => 'Translation Center',
                 'admin.translation-center.manage' => 'Manage translation source keys',
+                'admin.translation-center.edit' => 'Edit locale translations',
+                'admin.translation-center.review' => 'Review locale translations',
+                'admin.translation-center.publish' => 'Publish locale translations',
             ],
             'Content' => [
                 'admin.page-studio.view' => 'Page Studio',
@@ -269,6 +272,7 @@ class RolePermissionResolver
             UserRole::Editor->value => [
                 'admin.operations.view', 'admin.product-analytics.view',
                 'admin.locale-launch-center.view', 'admin.translation-center.view',
+                'admin.translation-center.edit', 'admin.translation-center.review',
                 'admin.page-studio.view', 'admin.page-studio.create', 'admin.page-studio.update',
                 'admin.page-studio.publish', 'admin.page-studio.hide', 'admin.page-studio.preview',
                 'admin.page-studio.restore', 'admin.page-studio.trash',

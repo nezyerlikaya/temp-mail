@@ -13,7 +13,123 @@
         <x-admin.alert variant="success" class="mb-6">{{ session('status') }}</x-admin.alert>
     @endif
 
-    <x-error-summary />
+    <x-localization.translation-validation-summary />
+
+    <section class="mb-6 flex flex-col gap-4 rounded-lg border border-stone-200 bg-white p-4 shadow-sm lg:flex-row lg:items-end lg:justify-between" aria-label="Translation Center workspace">
+        <div>
+            <p class="text-xs font-extrabold uppercase text-stone-500">Workspace mode</p>
+            <div class="mt-2 flex flex-wrap gap-2">
+                <a href="{{ route('admin.translation-center.index') }}" @class(['rounded-lg px-4 py-2 text-sm font-extrabold focus:outline-none focus:ring-4 focus:ring-teal-600/20', 'bg-stone-950 text-white' => ! $isEditor, 'border border-stone-300 text-stone-700' => $isEditor])>
+                    Source registry
+                </a>
+                @if ($targetLocales->isNotEmpty())
+                    <a href="{{ route('admin.translation-center.index', ['mode' => 'editor', 'locale' => $selectedLocale?->locale ?? $targetLocales->first()->locale]) }}" @class(['rounded-lg px-4 py-2 text-sm font-extrabold focus:outline-none focus:ring-4 focus:ring-teal-600/20', 'bg-stone-950 text-white' => $isEditor, 'border border-stone-300 text-stone-700' => ! $isEditor])>
+                        Locale editor
+                    </a>
+                @endif
+            </div>
+        </div>
+
+        <form method="GET" action="{{ route('admin.translation-center.index') }}" class="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <input type="hidden" name="mode" value="editor">
+            <div>
+                <label for="target-locale" class="text-xs font-extrabold uppercase text-stone-500">Active target locale</label>
+                <select id="target-locale" name="locale" class="mt-1 min-h-11 min-w-56 rounded-lg border border-stone-300 px-3 text-sm font-bold focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20" @disabled($targetLocales->isEmpty())>
+                    @forelse ($targetLocales as $locale)
+                        <option value="{{ $locale->locale }}" @selected($selectedLocale?->is($locale))>{{ $locale->language_name }} ({{ $locale->locale }})</option>
+                    @empty
+                        <option>No active target locales</option>
+                    @endforelse
+                </select>
+            </div>
+            <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-teal-700 px-4 py-2 text-sm font-extrabold text-white focus:outline-none focus:ring-4 focus:ring-teal-600/25" @disabled($targetLocales->isEmpty())>
+                Open editor
+            </button>
+        </form>
+    </section>
+
+    @if ($isEditor)
+        <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Translation coverage">
+            @foreach ([
+                ['label' => 'Locale coverage', 'value' => $coverage['coverage'].'%', 'description' => $coverage['completed'].' of '.$coverage['total'].' keys completed'],
+                ['label' => 'Required coverage', 'value' => $coverage['required_coverage'].'%', 'description' => $coverage['required_completed'].' of '.$coverage['required_total'].' required keys'],
+                ['label' => 'Missing queue', 'value' => $coverage['missing'], 'description' => 'Keys falling back to English'],
+                ['label' => 'Publish readiness', 'value' => $coverage['publish_ready'] ? 'Ready' : 'Needs review', 'description' => $coverage['published'].' published, '.$coverage['reviewed'].' reviewed'],
+            ] as $metric)
+                <div class="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+                    <p class="text-xs font-extrabold uppercase text-stone-500">{{ $metric['label'] }}</p>
+                    <p class="mt-2 text-2xl font-extrabold text-stone-950">{{ $metric['value'] }}</p>
+                    <p class="mt-1 text-sm text-stone-600">{{ $metric['description'] }}</p>
+                </div>
+            @endforeach
+        </section>
+
+        <div class="space-y-5">
+            <x-localization.translation-group-tabs :groups="$groups" :filters="$filters" :total="$coverage['total']" />
+            <x-localization.translation-filters :filters="$filters" :groups="$groups" editor />
+
+            <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <form
+                    method="POST"
+                    action="{{ route('admin.translation-center.translations.save') }}"
+                    class="min-w-0 space-y-4"
+                    x-data="{
+                        dirty: false,
+                        submitting: false,
+                        selectAll: false,
+                        selectedCount: 0,
+                        toggleAll() {
+                            document.querySelectorAll('.js-translation-select').forEach((box) => box.checked = this.selectAll);
+                            this.updateSelected();
+                        },
+                        updateSelected() {
+                            this.selectedCount = document.querySelectorAll('.js-translation-select:checked').length;
+                        }
+                    }"
+                    x-on:change="dirty = true; updateSelected()"
+                    x-on:submit="submitting = true; dirty = false; $el.classList.add('pointer-events-none', 'opacity-75'); $el.setAttribute('aria-busy', 'true')"
+                    x-on:beforeunload.window="if (dirty) { $event.preventDefault(); $event.returnValue = '' }"
+                >
+                    @csrf
+                    <input type="hidden" name="locale" value="{{ $selectedLocale->locale }}">
+                    <div class="sr-only" role="status" aria-live="polite" x-text="dirty ? 'Unsaved translation changes.' : 'Translation editor ready.'"></div>
+
+                    <x-localization.translation-bulk-actions :can-review="$canReviewTranslations" :can-publish="$canPublishTranslations" />
+
+                    @if ($sources->count() > 0)
+                        @foreach ($sources as $source)
+                            <x-localization.translation-editor-row :source="$source" :locale="$selectedLocale" :can-edit="$canEditTranslations" />
+                        @endforeach
+
+                        <x-admin.pagination :paginator="$sources" />
+                        <x-localization.translation-save-bar :can-edit="$canEditTranslations" />
+                    @else
+                        <x-localization.translation-empty-state />
+                    @endif
+                </form>
+
+                <aside class="space-y-5">
+                    <x-admin.card title="Group coverage" description="Progress is calculated from active source keys.">
+                        <div class="space-y-4">
+                            @foreach ($groupCoverage as $group)
+                                <x-localization.translation-progress :score="$group['coverage']" />
+                                <p class="-mt-3 text-xs font-bold text-stone-600">{{ $group['label'] }}: {{ $group['completed'] }}/{{ $group['total'] }}</p>
+                            @endforeach
+                        </div>
+                    </x-admin.card>
+
+                    <x-admin.card title="Publishing safety" description="English remains the canonical fallback.">
+                        <div class="space-y-3 text-sm leading-6 text-stone-700">
+                            <p>Saving changed copy returns it to Draft.</p>
+                            <p>Only saved values can be reviewed.</p>
+                            <p>Only reviewed values can be published.</p>
+                            <p>Missing or unpublished values safely resolve to English.</p>
+                        </div>
+                    </x-admin.card>
+                </aside>
+            </div>
+        </div>
+    @else
 
     <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Translation source summary">
         @foreach ([
@@ -150,4 +266,5 @@
             </aside>
         </div>
     </div>
+    @endif
 </x-admin.layout>

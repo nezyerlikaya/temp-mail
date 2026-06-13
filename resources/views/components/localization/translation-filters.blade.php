@@ -1,6 +1,10 @@
-@props(['filters', 'groups'])
+@props(['filters', 'groups', 'editor' => false])
 
 <form method="GET" action="{{ route('admin.translation-center.index') }}" {{ $attributes->merge(['class' => 'rounded-lg border border-stone-200 bg-white p-4 shadow-sm']) }}>
+    <input type="hidden" name="mode" value="{{ $editor ? 'editor' : 'registry' }}">
+    @if ($editor)
+        <input type="hidden" name="locale" value="{{ $filters['locale'] }}">
+    @endif
     <div class="grid gap-4 lg:grid-cols-[minmax(220px,1.5fr)_repeat(5,minmax(140px,1fr))]">
         <div>
             <label for="translation-search" class="text-xs font-extrabold uppercase tracking-wide text-stone-500">Search</label>
@@ -9,7 +13,7 @@
                 name="q"
                 value="{{ $filters['q'] ?? '' }}"
                 type="search"
-                placeholder="Key or English source"
+                placeholder="{{ $editor ? 'Key, source, or translation' : 'Key or English source' }}"
                 class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-900 shadow-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20"
             >
         </div>
@@ -34,12 +38,21 @@
         </div>
 
         <div>
-            <label for="translation-state" class="text-xs font-extrabold uppercase tracking-wide text-stone-500">State</label>
-            <select id="translation-state" name="state" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-900 shadow-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
-                <option value="all" @selected(($filters['state'] ?? 'all') === 'all')>All</option>
-                <option value="active" @selected(($filters['state'] ?? 'all') === 'active')>Active</option>
-                <option value="passive" @selected(($filters['state'] ?? 'all') === 'passive')>Passive</option>
-            </select>
+            @if ($editor)
+                <label for="translation-status" class="text-xs font-extrabold uppercase tracking-wide text-stone-500">Status</label>
+                <select id="translation-status" name="status" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-900 shadow-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
+                    @foreach (['all' => 'All statuses', 'missing' => 'Missing', 'draft' => 'Draft', 'translated' => 'Translated', 'reviewed' => 'Reviewed', 'published' => 'Published'] as $value => $label)
+                        <option value="{{ $value }}" @selected(($filters['status'] ?? 'all') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            @else
+                <label for="translation-state" class="text-xs font-extrabold uppercase tracking-wide text-stone-500">State</label>
+                <select id="translation-state" name="state" class="mt-1 min-h-11 w-full rounded-lg border border-stone-300 px-3 text-sm font-semibold text-stone-900 shadow-sm focus:border-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
+                    <option value="all" @selected(($filters['state'] ?? 'all') === 'all')>All</option>
+                    <option value="active" @selected(($filters['state'] ?? 'all') === 'active')>Active</option>
+                    <option value="passive" @selected(($filters['state'] ?? 'all') === 'passive')>Passive</option>
+                </select>
+            @endif
         </div>
 
         <div>
@@ -64,7 +77,7 @@
         <button type="submit" class="inline-flex min-h-11 items-center rounded-lg bg-teal-700 px-4 py-2 text-sm font-extrabold text-white shadow-sm transition hover:bg-teal-800 focus:outline-none focus:ring-4 focus:ring-teal-600/25">
             Apply filters
         </button>
-        <a href="{{ route('admin.translation-center.index') }}" class="inline-flex min-h-11 items-center rounded-lg border border-stone-300 px-4 py-2 text-sm font-extrabold text-stone-700 transition hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
+        <a href="{{ route('admin.translation-center.index', $editor ? ['mode' => 'editor', 'locale' => $filters['locale']] : []) }}" class="inline-flex min-h-11 items-center rounded-lg border border-stone-300 px-4 py-2 text-sm font-extrabold text-stone-700 transition hover:bg-stone-50 focus:outline-none focus:ring-4 focus:ring-teal-600/20">
             Reset
         </a>
     </div>

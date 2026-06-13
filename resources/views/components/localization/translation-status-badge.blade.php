@@ -18,6 +18,8 @@
         'optional' => 'border-stone-200 bg-stone-50 text-stone-700',
         'missing' => 'border-amber-200 bg-amber-50 text-amber-900',
         'translated' => 'border-emerald-200 bg-emerald-50 text-emerald-800',
+        'reviewed' => 'border-sky-200 bg-sky-50 text-sky-800',
+        'published' => 'border-emerald-300 bg-emerald-100 text-emerald-900',
         'short_text' => 'border-sky-200 bg-sky-50 text-sky-800',
         'long_text' => 'border-indigo-200 bg-indigo-50 text-indigo-800',
         'rich_text' => 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800',

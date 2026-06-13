@@ -3,10 +3,13 @@
 namespace App\Services\Localization;
 
 use App\Models\Locale;
+use App\Services\Translations\TranslationCoverageService;
 use Illuminate\Support\Collection;
 
 class LocaleReadinessService
 {
+    public function __construct(private readonly TranslationCoverageService $translationCoverage) {}
+
     /**
      * @param  Collection<int, Locale>  $locales
      * @return array{total: int, active: int, passive: int, ready: int, launched: int, live: int, in_review: int, draft: int, offline: int, rtl: int, average_translation_coverage: int, default_locale: string|null, issues: array<int, string>}
@@ -85,7 +88,7 @@ class LocaleReadinessService
         $stored = is_array($locale->readiness) ? $locale->readiness : [];
 
         $scores = [
-            'copy_ui_text' => $stored['copy_ui_text'] ?? ($locale->market_readiness === 'ready' ? 92 : 42),
+            'copy_ui_text' => $this->translationCoverage->forLocale($locale)['coverage'],
             'content' => $stored['content'] ?? match ($locale->launch_status) {
                 'launched' => 88,
                 'ready' => 74,
