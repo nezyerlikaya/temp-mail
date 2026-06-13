@@ -66,7 +66,7 @@ class AdminShellTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Operations Overview')
-            ->assertSee('Admin shell is ready')
+            ->assertSee('Operational metrics')
             ->assertSee('Skip to main content')
             ->assertSee('Mailbox Operations')
             ->assertSee('Settings')

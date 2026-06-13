@@ -2,40 +2,36 @@
     <x-admin.page-header
         eyebrow="Workspace"
         title="Operations Overview"
-        description="Monitor the foundation of your Temp Mail SaaS workspace and prepare for operational modules."
+        description="A cached command view of inbox activity, infrastructure health, security attention, and system readiness."
     >
         <x-slot:actions>
-            <x-admin.status-badge status="Active" />
+            <x-dashboard.last-updated :timestamp="$summary['last_updated']" :seconds="$summary['cache_seconds']" />
         </x-slot:actions>
     </x-admin.page-header>
 
-    <x-admin.alert variant="success" title="Admin shell is ready" class="mb-6">
-        Authentication, admin authorization, responsive navigation, and the shared operations layout are active.
-    </x-admin.alert>
+    <x-dashboard.alert-strip :alerts="$summary['alerts']" />
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
-        <x-admin.card title="Operational workspace" description="Live operational modules will appear here as they are enabled.">
-            <x-admin.empty-state
-                title="No operational signals yet"
-                description="Mailbox activity, infrastructure health, and product analytics will populate this workspace in later module steps."
-            />
-        </x-admin.card>
+    <section aria-labelledby="operations-metrics-title" class="mb-6">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <h2 id="operations-metrics-title" class="text-base font-extrabold text-stone-950">Operational metrics</h2>
+            <p class="text-xs font-bold text-stone-500">Cached lightweight summary</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            @foreach ($summary['metrics'] as $metric)
+                <x-dashboard.metric-card :metric="$metric" />
+            @endforeach
+        </div>
+    </section>
 
-        <x-admin.card title="Foundation status" description="Core controls available in this release.">
-            <dl class="divide-y divide-stone-200">
-                <div class="flex items-center justify-between gap-4 py-3 first:pt-0">
-                    <dt class="text-sm font-semibold text-stone-600">Admin access</dt>
-                    <dd><x-admin.status-badge status="Active" /></dd>
-                </div>
-                <div class="flex items-center justify-between gap-4 py-3">
-                    <dt class="text-sm font-semibold text-stone-600">Installer</dt>
-                    <dd><x-admin.status-badge status="Locked" /></dd>
-                </div>
-                <div class="flex items-center justify-between gap-4 py-3 last:pb-0">
-                    <dt class="text-sm font-semibold text-stone-600">Operations data</dt>
-                    <dd><x-admin.status-badge status="Draft" /></dd>
-                </div>
-            </dl>
-        </x-admin.card>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <div class="space-y-6">
+            <x-dashboard.health-summary-card :items="$summary['health']" />
+            <x-dashboard.activity-feed :items="$summary['activity']" />
+        </div>
+
+        <aside class="space-y-6">
+            <x-dashboard.attention-queue :alerts="$summary['alerts']" />
+            <x-dashboard.quick-actions :actions="$summary['quick_actions']" />
+        </aside>
     </div>
 </x-admin.layout>

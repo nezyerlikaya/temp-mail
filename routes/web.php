@@ -74,7 +74,9 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 Route::prefix('dashboard')
     ->middleware(['auth', 'can:access-admin'])
     ->group(function (): void {
-        Route::get('/', OperationsOverviewController::class)->name('dashboard');
+        Route::get('/', OperationsOverviewController::class)
+            ->middleware('can:admin.operations.view')
+            ->name('dashboard');
         Route::get('product-analytics', [ProductAnalyticsController::class, 'index'])
             ->middleware('can:view analytics')
             ->name('admin.product-analytics.index');
