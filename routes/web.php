@@ -113,10 +113,6 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
 
-Route::post('/blog/{post}/comments', [CommentSubmissionController::class, 'store'])
-    ->middleware('throttle:comments')
-    ->name('comments.store');
-
 Route::get('/report-abuse', [AbuseReportSubmissionController::class, 'create'])->name('abuse-report.create');
 Route::post('/report-abuse', [AbuseReportSubmissionController::class, 'store'])
     ->middleware('throttle:abuse_reports')

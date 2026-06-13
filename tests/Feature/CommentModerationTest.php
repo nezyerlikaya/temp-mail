@@ -31,11 +31,11 @@ class CommentModerationTest extends TestCase
         $admin = User::factory()->admin()->create();
         $post = $this->postForLocale('en');
 
-        $this->from('/blog/privacy-note')->post(route('comments.store', $post), [
+        $this->from('/en/blog/privacy-note')->post($this->commentRoute($post), [
             'author_name' => 'Reader One',
             'author_email' => 'reader@example.com',
             'content' => '<p>Hello <strong>team</strong></p><span style="color:red">clean note</span>',
-        ])->assertRedirect('/blog/privacy-note');
+        ])->assertRedirect('/en/blog/privacy-note');
 
         $comment = Comment::query()->firstOrFail();
 
@@ -61,11 +61,11 @@ class CommentModerationTest extends TestCase
     {
         $post = $this->postForLocale('en');
 
-        $this->from('/blog/privacy-note')->post(route('comments.store', $post), [
+        $this->from('/en/blog/privacy-note')->post($this->commentRoute($post), [
             'author_name' => 'Unsafe Reader',
             'author_email' => 'unsafe@example.com',
             'content' => '<script>alert(1)</script>',
-        ])->assertRedirect('/blog/privacy-note')
+        ])->assertRedirect('/en/blog/privacy-note')
             ->assertSessionHasErrors('content');
 
         $this->assertDatabaseCount('comments', 0);
@@ -79,7 +79,7 @@ class CommentModerationTest extends TestCase
 
         $post = $this->postForLocale('en');
 
-        $this->post(route('comments.store', $post), [
+        $this->post($this->commentRoute($post), [
             'author_name' => 'Reader Two',
             'author_email' => 'reader-two@example.com',
             'content' => 'This is a thoughtful product question.',
@@ -98,7 +98,7 @@ class CommentModerationTest extends TestCase
         User::factory()->admin()->create();
         $post = $this->postForLocale('en');
 
-        $this->post(route('comments.store', $post), [
+        $this->post($this->commentRoute($post), [
             'author_name' => 'Promo Bot',
             'author_email' => 'promo@example.com',
             'content' => 'casino viagra free money http://one.test http://two.test http://three.test',
@@ -349,9 +349,30 @@ class CommentModerationTest extends TestCase
 
     public function test_comment_submission_route_is_rate_limited(): void
     {
-        $middleware = Route::getRoutes()->getByName('comments.store')?->gatherMiddleware() ?? [];
+        $middleware = Route::getRoutes()->getByName('public.blog.comments.store')?->gatherMiddleware() ?? [];
 
         $this->assertContains('throttle:comments', $middleware);
+        $this->assertContains('public.content.published', $middleware);
+        $this->assertContains('public.comments.available', $middleware);
+    }
+
+    public function test_comment_submission_rejects_unpublished_or_closed_posts(): void
+    {
+        $draft = $this->postForLocale('en', [
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+        $closed = $this->postForLocale('en', ['comments_enabled' => false]);
+
+        $payload = [
+            'author_name' => 'Reader',
+            'author_email' => 'reader@example.com',
+            'content' => 'This comment must not bypass public visibility rules.',
+        ];
+
+        $this->post($this->commentRoute($draft), $payload)->assertNotFound();
+        $this->post($this->commentRoute($closed), $payload)->assertNotFound();
+        $this->assertDatabaseCount('comments', 0);
     }
 
     public function test_comment_moderation_sources_avoid_forbidden_patterns(): void
@@ -385,6 +406,11 @@ class CommentModerationTest extends TestCase
             $this->assertStringNotContainsString('unpkg.com/alpine', $contents, $file);
             $this->assertStringNotContainsString('127.0.0.1', $contents, $file);
         }
+    }
+
+    private function commentRoute(BlogPost $post): string
+    {
+        return route('public.blog.comments.store', ['locale' => 'en', 'post' => $post]);
     }
 
     /** @param array<string, mixed> $overrides */
